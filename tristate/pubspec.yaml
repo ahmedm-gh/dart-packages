@@ -1,7 +1,7 @@
-name: value
-description: A container object representing optional values, separating unset (absent) from explicitly null.
+name: tristate
+description: An ultra-fast, zero-overhead Dart container for tri-state optional values, cleanly separating absent from explicitly null.
 version: 1.0.0
-repository: https://github.com/ahmedm-gh/dart-packages/tree/main/value
+repository: https://github.com/ahmedm-gh/dart-packages/tree/main/tristate
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

@@ -1,4 +1,4 @@
-import 'package:value/value.dart';
+import 'package:tristate/tristate.dart';
 
 /// A typical immutable data model with non-nullable and nullable fields.
 class UserProfile {

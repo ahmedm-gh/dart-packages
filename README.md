@@ -1,4 +1,4 @@
-﻿# Dart Packages
+# Dart Packages
 
 A monorepo collection of standalone Dart packages.
 
@@ -6,7 +6,7 @@ A monorepo collection of standalone Dart packages.
 
 | Package | Description | Pub |
 | :--- | :--- | :--- |
-| [`value`](./value) | A container object representing optional values, separating unset (absent) from explicitly null. | [![pub package](https://img.shields.io/pub/v/value.svg)](https://pub.dev/packages/value) |
+| [`tristate`](./tristate) | An ultra-fast, zero-overhead Dart container for tri-state optional values, cleanly separating absent from explicitly null. | [![pub package](https://img.shields.io/pub/v/tristate.svg)](https://pub.dev/packages/tristate) |
 
 ## License
 

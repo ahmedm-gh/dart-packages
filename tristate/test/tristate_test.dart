@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:value/value.dart';
+import 'package:tristate/tristate.dart';
 
 void main() {
   group('Val', () {

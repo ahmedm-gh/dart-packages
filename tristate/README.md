@@ -1,4 +1,4 @@
-# value
+# tristate
 
 An ultra-fast, zero-overhead Dart container for tri-state optional values—cleanly separating absent from explicitly null at sub-nanosecond speeds (~0.21 ns/op).
 
@@ -16,7 +16,7 @@ Used to represent optional values, cleanly separating the state of a value being
 > **Note**: `Val` is primarily intended for **nullable fields** (`Val<T?>`). Non-nullable fields typically do not need `Val` because a standard nullable parameter (`String? name`) already uses `null` to mean "keep current value" (`name ?? this.name`). Passing `Val(null)` to a non-nullable `Val<T>` will fail fast with a `TypeError`.
 
 ```dart
-import 'package:value/value.dart';
+import 'package:tristate/tristate.dart';
 
 class User {
   final String name; // non-nullable: uses standard Dart
