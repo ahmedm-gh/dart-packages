@@ -1,0 +1,8 @@
+﻿# Miscellaneous
+*.log
+.DS_Store
+
+# Dart/Flutter
+.dart_tool/
+.packages
+pubspec.lock

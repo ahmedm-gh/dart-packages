@@ -1,0 +1,11 @@
+name: value
+description: A container object representing optional values, separating unset (absent) from explicitly null.
+version: 1.0.0
+repository: https://github.com/ahmedm-gh/dart-packages/tree/main/value
+
+environment:
+  sdk: ^3.13.4
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
