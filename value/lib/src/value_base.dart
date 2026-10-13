@@ -2,54 +2,66 @@
 ///
 /// Used to represent optional values, separating the state of a value being
 /// unset (absent) from a value being explicitly null.
-class Val<T> {
-  /// The wrapped value, or `null`.
-  final T? value;
-
-  const Val._() : value = null;
+///
+/// **Note**: [Val] is primarily intended for nullable fields (e.g. `Val<String?>`)
+/// to differentiate between keeping the existing value (absent) and explicitly
+/// clearing it to `null`. Non-nullable fields typically do not require [Val]
+/// in methods like `copyWith`, because a standard nullable parameter (`String? name`)
+/// already uses `null` to indicate that the field should remain unchanged (`name ?? this.name`).
+abstract class Val<T> {
+  const Val._();
 
   /// Creates a [Val] wrapping the specified [value].
-  const Val(this.value);
+  const factory Val(T? value) = _Val<T>._;
 
   /// Creates a [Val] representing an absent value.
-  const factory Val.absent() = Absent<T>._;
-
-  /// Creates a [Val] explicitly wrapping `null` to clear/reset a field.
-  const Val.clear() : value = null;
+  const factory Val.absent() = _Absent<T>._;
 
   /// Whether this [Val] is absent.
-  bool get isAbsent => false;
+  bool get isAbsent;
 
   /// Resolves the value, returning [current] if this [Val] is absent.
+  T call(T current);
+}
+
+class _Val<T> extends Val<T> {
+  const _Val._(this.value) : super._();
+
+  final T? value;
+
+  @override
+  bool get isAbsent => false;
+
+  @override
   T call(T current) => value as T;
 
   @override
   bool operator ==(Object other) {
-    return other is Val<Object?> &&
-        isAbsent == other.isAbsent &&
-        value == other.value;
+    return other is _Val<Object?> && value == other.value;
   }
 
   @override
-  int get hashCode => isAbsent.hashCode ^ value.hashCode;
+  int get hashCode => value.hashCode;
 
   @override
-  String toString() => '$runtimeType($value)';
+  String toString() => 'Val<$T>($value)';
 }
 
-/// Represents an absent [Val] container.
-class Absent<T> extends Val<T> {
-  const Absent._() : super._();
+class _Absent<T> extends Val<T> {
+  const _Absent._() : super._();
 
   @override
   bool get isAbsent => true;
 
   @override
   T call(T current) => current;
-}
 
-/// Extension to convert any value of type [T] into a [Val].
-extension ValX<T extends Object?> on T {
-  /// Wraps this value into a [Val].
-  Val<T> get asVal => Val<T>(this);
+  @override
+  bool operator ==(Object other) => other is _Absent<Object?>;
+
+  @override
+  int get hashCode => 0;
+
+  @override
+  String toString() => 'Val<$T>.absent()';
 }
