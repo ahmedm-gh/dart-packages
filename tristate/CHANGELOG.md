@@ -1,3 +1,7 @@
+## 1.0.3
+
+- Added GitHub sponsorship and community support links to README.
+
 ## 1.0.2
 
 - Refined `Val(T value)` and `_Val.value` to `T` for compile-time rejection of `null` on non-nullable types.

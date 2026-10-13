@@ -1,5 +1,10 @@
 # tristate
 
+[![pub package](https://img.shields.io/pub/v/tristate.svg)](https://pub.dev/packages/tristate)
+[![GitHub](https://img.shields.io/badge/GitHub-ahmedm--gh-blue?logo=github)](https://github.com/ahmedm-gh)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/ahmedm-gh)
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+
 An ultra-fast, zero-overhead Dart container for tri-state optional values—cleanly separating absent from explicitly null at sub-nanosecond speeds (~0.21 ns/op).
 
 Used to represent optional values, cleanly separating the state of a value being **unset (absent)** from a value being **explicitly null** (e.g. for `copyWith` methods, patch requests, and optional parameters).
@@ -177,3 +182,25 @@ void main() {
 
 - **Call-Site Wrapping**: Dart lacks union types (`T | Val<T>`), requiring callers to wrap arguments (`Val(value)` or `const Val(null)`) for nullable fields.
 - **Unnecessary for Non-Nullable Fields**: Non-nullable fields (`String name`) do not need `Val`, as standard Dart `String? name` with `name ?? this.name` already handles the omitted state cleanly.
+
+## Supporting & Contributing
+
+If you find `tristate` helpful, here are several ways you can support the project:
+
+### 🌟 Community Support
+
+- **Star the Repository**: Star [ahmedm-gh/dart-packages](https://github.com/ahmedm-gh/dart-packages) on GitHub to help others discover it.
+- **Report Issues & Ideas**: Found a bug or need an improvement? Open an issue on [GitHub Issues](https://github.com/ahmedm-gh/dart-packages/issues).
+- **Contribute**: Pull requests for optimizations, documentation, or examples are always welcome.
+- **Spread the Word**: Recommend `tristate` in your Flutter/Dart teams, blogs, or communities.
+
+### ☕ Sponsorship & Backing
+
+- **Sponsor on GitHub**: If this package brings value to your commercial apps, consider supporting its maintenance via [GitHub Sponsors](https://github.com/sponsors/ahmedm-gh).
+
+## Author & Maintainer
+
+Created and maintained by **[AHMED M.](https://github.com/ahmedm-gh)**  
+
+- GitHub: [@ahmedm-gh](https://github.com/ahmedm-gh)
+- Repository: [ahmedm-gh/dart-packages](https://github.com/ahmedm-gh/dart-packages)
