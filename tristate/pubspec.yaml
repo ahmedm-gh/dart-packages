@@ -1,6 +1,6 @@
 name: tristate
 description: An ultra-fast, zero-overhead Dart container for tri-state optional values, cleanly separating absent from explicitly null.
-version: 1.0.0
+version: 1.0.1
 repository: https://github.com/ahmedm-gh/dart-packages/tree/main/tristate
 
 environment:
