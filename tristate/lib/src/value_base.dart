@@ -12,7 +12,7 @@ abstract class Val<T> {
   const Val._();
 
   /// Creates a [Val] wrapping the specified [value].
-  const factory Val(T? value) = _Val<T>._;
+  const factory Val(T value) = _Val<T>._;
 
   /// Creates a [Val] representing an absent value.
   const factory Val.absent() = _Absent<T>._;
@@ -27,13 +27,13 @@ abstract class Val<T> {
 class _Val<T> extends Val<T> {
   const _Val._(this.value) : super._();
 
-  final T? value;
+  final T value;
 
   @override
   bool get isAbsent => false;
 
   @override
-  T call(T current) => value as T;
+  T call(T current) => value;
 
   @override
   bool operator ==(Object other) {
