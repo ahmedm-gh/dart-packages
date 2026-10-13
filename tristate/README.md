@@ -11,6 +11,31 @@ Used to represent optional values, cleanly separating the state of a value being
 - **`Val<T>.absent()`**: Represents an absent / omitted value.
 - Callable instance `fooVal(current)` to conveniently resolve fallback values when absent.
 
+## Getting Started
+
+### Installation
+
+Add `tristate` to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  tristate: ^1.0.0
+```
+
+Or run:
+
+```bash
+dart pub add tristate
+# or for Flutter
+flutter pub add tristate
+```
+
+### Import
+
+```dart
+import 'package:tristate/tristate.dart';
+```
+
 ## Usage
 
 > **Note**: `Val` is primarily intended for **nullable fields** (`Val<T?>`). Non-nullable fields typically do not need `Val` because a standard nullable parameter (`String? name`) already uses `null` to mean "keep current value" (`name ?? this.name`). Passing `Val(null)` to a non-nullable `Val<T>` will fail fast with a `TypeError`.
