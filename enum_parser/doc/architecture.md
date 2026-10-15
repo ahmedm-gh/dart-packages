@@ -1,0 +1,20 @@
+# Architecture & Design of `enum_parser`
+
+`enum_parser` is designed as a zero-dependency, high-throughput utility for safely parsing and resolving Dart enums from dynamic, loose, and heterogeneous input sources.
+
+## Design Goals
+
+1. **Zero Runtime Dependencies**: Pure Dart implementation that runs identically on all 6 platforms (Android, iOS, Web/WASM, macOS, Linux, Windows).
+2. **Matching Strategy Flexibility**: Support multiple parsing strategies:
+   - `EnumParserMode.strict`: Case-sensitive exact matching against `Enum.name` without any transformations.
+   - `EnumParserMode.simple`: Fast case-insensitive comparison against lowercased names.
+   - `EnumParserMode.loose`: Delimiter-agnostic (strips spaces, underscores, hyphens) and type-prefix-stripping (`Enum.name`) matching.
+3. **High-Throughput Optimization**:
+   - Direct enum instance return short-circuits.
+   - Zero regex evaluation; delimiter checks use branch-optimized ASCII and Unicode code unit ranges.
+   - ASCII lowercase conversions avoid intermediate string allocations where possible.
+   - `EnumIndex` pre-computes lookup tables once to allow $O(1)$ resolutions during high-frequency parsing.
+   - `parseList` employs tiered optimization:
+     - 1 item: Direct scalar lookup without map allocations.
+     - 2–4 items: Direct array iterations avoiding map instantiation overhead.
+     - 5+ items: Single-pass pre-indexed map creation for amortized $O(V + N)$ execution.

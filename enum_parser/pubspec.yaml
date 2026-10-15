@@ -1,0 +1,19 @@
+name: enum_parser
+description: An ultra-fast, zero-dependency Dart utility for safely parsing and resolving enums from strings and dynamic values with multiple matching modes
+version: 1.0.0
+repository: https://github.com/ahmedm-gh/dart-packages/tree/main/enum_parser
+issue_tracker: https://github.com/ahmedm-gh/dart-packages/issues
+
+topics:
+  - enum
+  - parser
+  - parsing
+  - utilities
+  - serialization
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
