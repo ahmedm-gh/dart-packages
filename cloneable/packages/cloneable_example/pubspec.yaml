@@ -1,0 +1,19 @@
+name: cloneable_example
+description: Example application demonstrating the cloneable package and copyWith code generation.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+resolution: workspace
+
+dependencies:
+  cloneable:
+
+dev_dependencies:
+  build_runner: ^2.4.8
+  cloneable_generator:
+  path: ^1.9.0
+  test: ^1.24.0
+  lints: ^3.0.0

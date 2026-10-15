@@ -1,0 +1,9 @@
+name: cloneable_workspace
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+workspace:
+  - packages/cloneable
+  - packages/cloneable_generator
+  - packages/cloneable_example

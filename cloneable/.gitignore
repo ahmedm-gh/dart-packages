@@ -1,0 +1,13 @@
+# Files and directories created by pub
+.dart_tool/
+.packages
+pubspec.lock
+
+# Build outputs
+build/
+*.g.part
+
+# Avoid committing generated binaries
+*.exe
+*.o
+*.a

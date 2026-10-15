@@ -1,0 +1,14 @@
+name: cloneable
+description: Standalone Dart annotations and runtime utilities for generating strongly-typed copyWith methods.
+version: 1.0.0
+homepage: https://github.com/ahmedm-gh/dart-packages/tree/main/cloneable/packages/cloneable
+repository: https://github.com/ahmedm-gh/dart-packages
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+resolution: workspace
+
+dev_dependencies:
+  test: ^1.24.0
+  lints: ^3.0.0

@@ -1,0 +1,17 @@
+targets:
+  $default:
+    builders:
+      cloneable_generator:
+        generate_for:
+          - test/**
+          - example/**
+          - lib/**
+
+builders:
+  cloneable_generator:
+    import: "package:cloneable_generator/builder.dart"
+    builder_factories: ["cloneableBuilder"]
+    build_extensions: {".dart": [".cloneable.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]
