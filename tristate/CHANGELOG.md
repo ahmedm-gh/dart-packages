@@ -1,3 +1,8 @@
+## 1.0.4
+
+- Aligned `README.md` documentation, section dividers, and usage examples with standard repository guidelines.
+- Added package `topics` and `issue_tracker` to `pubspec.yaml` for pub.dev discovery.
+
 ## 1.0.3
 
 - Added GitHub sponsorship and community support links to README.
