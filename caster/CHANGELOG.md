@@ -1,0 +1,32 @@
+## 1.0.0
+
+- Initial release of `caster`.
+- Added `safeCast<T>` with multi-tiered resolution:
+  - Exact match fast path.
+  - Explicit fallback support.
+  - Custom registered type defaults.
+  - Built-in type defaults (`int`, `double`, `num`, `bool`, `String`, `List`, `Set`, `Map`).
+  - Nullable target fallback.
+  - Concrete type enforcement (`CasterArgumentException` if `T` is `Object`).
+- Added `safeCastOrNull<T>` for quick nullable casting without default fallback resolution.
+- Added central `Caster` namespace for configuration and type default management:
+  - `Caster.registerDefaultValue<T>` and `Caster.registerDefaultValues`
+  - `Caster.unregisterDefaultValue<T>` and `Caster.unregisterDefaultValues`
+  - `Caster.resetDefaultValues`
+  - `Caster.builtInDefault<T>()`
+  - `Caster.loggerName` (configurable tag for diagnostic logs)
+  - `Caster.debug` (global flag to enable diagnostic developer logging)
+- Added `useDefaults` parameter (defaults to `true`) to `safeCast` and `safeCastFirst` to selectively disable automatic fallback defaults.
+- Added `MapCaster<K, V>` extension methods (in `src/map_caster.dart`):
+  - `safeCast<T>`: Safely extracts and casts a single value.
+  - `safeCastOrNull<T>`: Safely extracts and casts a single value, returning `null` on failure.
+  - `safeCastFirst<T>`: Evaluates keys in order and returns the first castable value.
+  - `safeCastList<T>`: Safely extracts and filters elements into a typed `List<T>`.
+  - `safeCastListOrNull<T>`: Safely extracts elements or returns `null` if the key is absent/non-iterable.
+  - `convert<T>`: Transforms a value via custom converter function with required fallback.
+  - `tryConvert<T>`: Transforms a value via custom converter function returning `T?` with optional fallback.
+  - `convertList<T>`: Maps and filters collection elements into a typed `List<T>` with optional element fallback.
+  - `convertListOrNull<T>`: Maps elements or returns `null` if the key is absent/non-iterable.
+- Added typed exception hierarchy with `CasterException` (implementing `Exception`), `CasterArgumentException`, and `CasterTypeException`.
+- Concrete type enforcement rejecting `Object`, `Object?`, and `dynamic` with `CasterArgumentException`.
+- Added zero-dependency debug diagnostic logging directly via `dart:developer.log`.

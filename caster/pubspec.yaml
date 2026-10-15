@@ -1,0 +1,18 @@
+name: caster
+description: A safe, zero-dependency Dart casting utility with built-in fallbacks, custom defaults, and map extraction extensions.
+version: 1.0.0
+repository: https://github.com/ahmedm-gh/dart-packages/tree/main/caster
+issue_tracker: https://github.com/ahmedm-gh/dart-packages/issues
+
+topics:
+  - casting
+  - type-safety
+  - map
+  - utilities
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
