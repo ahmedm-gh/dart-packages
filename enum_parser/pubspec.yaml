@@ -3,6 +3,12 @@ description: An ultra-fast, zero-dependency Dart utility for safely parsing and 
 version: 1.0.0
 repository: https://github.com/ahmedm-gh/dart-packages/tree/main/enum_parser
 issue_tracker: https://github.com/ahmedm-gh/dart-packages/issues
+documentation: https://github.com/ahmedm-gh/dart-packages/tree/main/enum_parser
+
+funding:
+  - https://github.com/sponsors/ahmedm-gh
+  - https://buymeacoffee.com/ahmeds1
+
 
 topics:
   - enum

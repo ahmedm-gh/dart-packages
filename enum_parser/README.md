@@ -1,6 +1,7 @@
 # enum_parser
 
 [![pub package](https://img.shields.io/pub/v/enum_parser.svg)](https://pub.dev/packages/enum_parser)
+[![Star on GitHub](https://img.shields.io/badge/Star_on_GitHub-★-deeppink?style=flat&logo=github)](https://github.com/ahmedm-gh/dart-packages)
 [![GitHub](https://img.shields.io/badge/GitHub-ahmedm--gh-blue?logo=github)](https://github.com/ahmedm-gh)
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/ahmedm-gh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
@@ -17,7 +18,7 @@ An ultra-fast, zero-dependency Dart utility for safely parsing and resolving enu
   - `EnumParserMode.loose` *(default)*: Delimiter-agnostic (strips spaces, underscores, hyphens) and enum type prefix stripping (`'Status.active'`).
 - **Enum-to-Enum Mapping**: Seamlessly convert between different enum types, automatically reconciling naming conventions (e.g. `SCREAMING_SNAKE_CASE` to `camelCase`).
 - **List & Delimited String Parsing**: High-performance batch resolution from separated strings (`'low, medium, high'`) or dynamic iterables.
-- **Pre-Indexed O(1) Lookups**: Pre-compute immutable lookup tables with `EnumIndex` for high-throughput serialization pipelines.
+- **Pre-Indexed Lookups**: Pre-compute immutable lookup tables with `EnumIndex` for amortized $O(1)$ expected lookup times in high-throughput serialization pipelines.
 - **Ergonomic Extension Methods**: Parse directly on any enum values collection via `values.parse(...)`.
 - **Zero Dependencies**: Pure Dart with 100% platform compatibility across Android, iOS, Web/WASM, macOS, Linux, and Windows.
 - **Blazing Fast**: Optimized ASCII case checks, zero-regex delimiter stripping, and tiered batch list processing to minimize allocations.
@@ -200,7 +201,7 @@ void main() {
 
 ### 5. High-Throughput Pre-Indexing with `EnumIndex`
 
-When parsing high volumes of data (e.g., inside loops, database mappers, or network deserializers), pre-index the enum once for $O(1)$ lookups without repetitive string processing:
+When parsing high volumes of data (e.g., inside loops, database mappers, or network deserializers), pre-index the enum once for amortized $O(1)$ hash map lookups without repetitive linear scans:
 
 ```dart
 final statusIndex = Status.values.toEnumIndex(mode: EnumParserMode.loose);
@@ -242,6 +243,7 @@ If you find `enum_parser` helpful, here are several ways you can support the pro
 ### ☕ Sponsorship & Backing
 
 - **Sponsor on GitHub**: If this package brings value to your commercial apps, consider supporting its maintenance via [GitHub Sponsors](https://github.com/sponsors/ahmedm-gh).
+- **Buy Me a Coffee**: Support development with a one-time coffee or recurring donation via [Buy Me a Coffee](https://buymeacoffee.com/ahmeds1).
 
 ## Author & Maintainer
 

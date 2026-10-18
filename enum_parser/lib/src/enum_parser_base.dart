@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 /// Defines the strategy used by [EnumParser] to match values against enum names.
 enum EnumParserMode {
   /// Strict, case-sensitive exact matching. Matches the input string directly
@@ -41,6 +43,12 @@ abstract final class EnumParser {
   ///    - Under [EnumParserMode.loose]: normalizes delimiters (whitespace, underscores, hyphens), strips type prefixes, and compares case-insensitively.
   /// 4. If no match is found, invokes [converter] if provided.
   /// 5. Falls back to [fallback] if neither parsing nor [converter] yielded a match.
+  ///
+  /// If multiple enum declarations normalize to the same key under [mode]
+  /// (e.g. `fooBar` and `foo_bar` in loose mode), resolution is deterministic:
+  /// the first matching enum declared in [values] is returned across all modes
+  /// and parsing paths.
+  @pragma('vm:prefer-inline')
   static T? parse<T extends Enum>(
     Object? src, {
     required Iterable<T> values,
@@ -51,21 +59,35 @@ abstract final class EnumParser {
     if (src is T) return src;
     if (src == null || values.isEmpty) return fallback;
 
-    return switch (mode) {
-      EnumParserMode.strict => _parseStrict,
-      EnumParserMode.simple => _parseSimple,
-      EnumParserMode.loose => _parseLoose,
-    }<T>(
-      src,
-      values: values,
-      converter: converter,
-      fallback: fallback,
-    );
+    switch (mode) {
+      case EnumParserMode.strict:
+        return _parseStrict<T>(
+          src,
+          values: values,
+          converter: converter,
+          fallback: fallback,
+        );
+      case EnumParserMode.simple:
+        return _parseSimple<T>(
+          src,
+          values: values,
+          converter: converter,
+          fallback: fallback,
+        );
+      case EnumParserMode.loose:
+        return _parseLoose<T>(
+          src,
+          values: values,
+          converter: converter,
+          fallback: fallback,
+        );
+    }
   }
 
   /// Parses and returns an enum of type [T] from [src] using strict matching ([EnumParserMode.strict]).
   ///
   /// Matches the exact case-sensitive declared member name without transformations.
+  @pragma('vm:prefer-inline')
   static T? parseStrict<T extends Enum>(
     Object? src, {
     required Iterable<T> values,
@@ -83,6 +105,7 @@ abstract final class EnumParser {
   /// Parses and returns an enum of type [T] from [src] using simple matching ([EnumParserMode.simple]).
   ///
   /// Compares the lowercased input directly against lowercased enum names.
+  @pragma('vm:prefer-inline')
   static T? parseSimple<T extends Enum>(
     Object? src, {
     required Iterable<T> values,
@@ -100,6 +123,7 @@ abstract final class EnumParser {
   /// Parses and returns an enum of type [T] from [src] using loose matching ([EnumParserMode.loose]).
   ///
   /// Strips delimiters (spaces, underscores, hyphens) and class prefixes.
+  @pragma('vm:prefer-inline')
   static T? parseLoose<T extends Enum>(
     Object? src, {
     required Iterable<T> values,
@@ -115,6 +139,7 @@ abstract final class EnumParser {
   }
 
   /// Creates a reusable, immutable [EnumIndex] over [values] for high-throughput parsing.
+  @pragma('vm:prefer-inline')
   static EnumIndex<T> index<T extends Enum>(
     Iterable<T> values, {
     EnumParserMode mode = EnumParserMode.loose,
@@ -123,6 +148,7 @@ abstract final class EnumParser {
   }
 
   /// Internal strict parsing implementation.
+  @pragma('vm:prefer-inline')
   static T? _parseStrict<T extends Enum>(
     Object? src, {
     required Iterable<T> values,
@@ -132,11 +158,14 @@ abstract final class EnumParser {
     if (src is T) return src;
     if (src == null || values.isEmpty) return fallback;
 
-    final resolved = switch (src) {
-      final String s => s,
-      final Enum e => e.name,
-      _ => null,
-    };
+    final String? resolved;
+    if (src is String) {
+      resolved = src;
+    } else if (src is Enum) {
+      resolved = src.name;
+    } else {
+      resolved = null;
+    }
 
     if (resolved != null) {
       for (final T e in values) {
@@ -148,6 +177,7 @@ abstract final class EnumParser {
   }
 
   /// Internal simple parsing implementation.
+  @pragma('vm:prefer-inline')
   static T? _parseSimple<T extends Enum>(
     Object? src, {
     required Iterable<T> values,
@@ -157,14 +187,15 @@ abstract final class EnumParser {
     if (src is T) return src;
     if (src == null || values.isEmpty) return fallback;
 
-    final resolved = switch (src) {
-      final String s => () {
-          final trimmed = s.trim();
-          return trimmed.isEmpty ? null : trimmed.toLowerCase();
-        }(),
-      final Enum e => e.name.toLowerCase(),
-      _ => null,
-    };
+    final String? resolved;
+    if (src is String) {
+      final trimmed = src.trim();
+      resolved = trimmed.isEmpty ? null : trimmed.toLowerCase();
+    } else if (src is Enum) {
+      resolved = src.name.toLowerCase();
+    } else {
+      resolved = null;
+    }
 
     if (resolved != null) {
       for (final T e in values) {
@@ -176,6 +207,7 @@ abstract final class EnumParser {
   }
 
   /// Internal loose parsing implementation.
+  @pragma('vm:prefer-inline')
   static T? _parseLoose<T extends Enum>(
     Object? src, {
     required Iterable<T> values,
@@ -185,14 +217,16 @@ abstract final class EnumParser {
     if (src is T) return src;
     if (src == null || values.isEmpty) return fallback;
 
-    final resolved = switch (src) {
-      final String s => () {
-          final trimmed = s.trim();
-          return trimmed.isEmpty ? null : _normalize(trimmed);
-        }(),
-      final Enum e => _normalize(e.name),
-      _ => null,
-    };
+    final String? resolved;
+    if (src is String) {
+      final normalized = _normalize(src);
+      resolved = normalized.isEmpty ? null : normalized;
+    } else if (src is Enum) {
+      final normalized = _normalize(src.name);
+      resolved = normalized.isEmpty ? null : normalized;
+    } else {
+      resolved = null;
+    }
 
     if (resolved != null) {
       for (final T e in values) {
@@ -231,6 +265,20 @@ abstract final class EnumParser {
 
     final List<Object?> items;
     if (src is String) {
+      final sepIdx = src.indexOf(separator);
+      if (sepIdx == -1) {
+        final item = mode == EnumParserMode.strict ? src : src.trim();
+        if (item.isEmpty) return fallback;
+        final parsed = parse<T>(
+          item,
+          values: values,
+          mode: mode,
+          converter: converter,
+        );
+        return parsed != null
+            ? List<T>.filled(1, parsed, growable: false)
+            : fallback;
+      }
       items = _extractItemsFromString(
         src,
         separator,
@@ -252,11 +300,14 @@ abstract final class EnumParser {
         mode: mode,
         converter: converter,
       );
-      return parsed != null ? [parsed] : fallback;
+      return parsed != null
+          ? List<T>.filled(1, parsed, growable: false)
+          : fallback;
     }
 
-    // For small batches (<= 4 items), direct lookup avoids HashMap allocation
-    if (items.length <= 4) {
+    // Direct linear parsing avoids EnumIndex and HashMap allocation churn
+    // for small to medium lists (empirically faster up to 16 items)
+    if (items.length <= 16) {
       final result = <T>[];
       for (final item in items) {
         final parsed = parse<T>(
@@ -270,59 +321,13 @@ abstract final class EnumParser {
       return result.isEmpty ? fallback : result.toList(growable: false);
     }
 
-    // High-performance path for larger lists: pre-index enum metadata once
-    final names = <String, T>{};
-    for (final T e in values) {
-      final key = switch (mode) {
-        EnumParserMode.strict => e.name,
-        EnumParserMode.simple => e.name.toLowerCase(),
-        EnumParserMode.loose => _normalize(e.name),
-      };
-      names[key] = e;
-    }
-    final nameMap = names;
-
-    final result = <T>[];
-    for (final item in items) {
-      if (item is T) {
-        result.add(item);
-        continue;
-      }
-      if (item == null) continue;
-
-      final resolved = switch (item) {
-        final String s when s.isNotEmpty => switch (mode) {
-            EnumParserMode.strict => s,
-            EnumParserMode.simple => () {
-                final trimmed = s.trim();
-                return trimmed.isEmpty ? null : trimmed.toLowerCase();
-              }(),
-            EnumParserMode.loose => () {
-                final trimmed = s.trim();
-                return trimmed.isEmpty ? null : _normalize(trimmed);
-              }(),
-          },
-        final Enum e => switch (mode) {
-            EnumParserMode.strict => e.name,
-            EnumParserMode.simple => e.name.toLowerCase(),
-            EnumParserMode.loose => _normalize(e.name),
-          },
-        _ => null,
-      };
-
-      T? match;
-      if (resolved != null) {
-        match = nameMap[resolved];
-      }
-
-      match ??= converter?.call(item, values);
-
-      if (match != null) {
-        result.add(match);
-      }
-    }
-
-    return result.isEmpty ? fallback : result.toList(growable: false);
+    // High-performance path for very large lists: delegate to EnumIndex
+    final index = EnumIndex<T>(values, mode: mode);
+    return index.parseList(
+      items,
+      converter: converter,
+      fallback: fallback,
+    );
   }
 
   /// Parses each item in [src] using strict matching ([EnumParserMode.strict]).
@@ -409,22 +414,43 @@ abstract final class EnumParser {
     final actualStart = dotIndex != -1 ? dotIndex + 1 : start;
     if (actualStart > end) return '';
 
-    // 4. Scan and build normalized character buffer
-    final resultUnits = <int>[];
+    var i = actualStart;
     var hasNonAscii = false;
 
-    for (var i = actualStart; i <= end; i++) {
+    // Fast path: if bounds match source exactly, check if already normalized
+    if (actualStart == 0 && end == len - 1) {
+      while (i <= end) {
+        final c = units[i];
+        if (_isDelimiter(c) || (c >= 0x41 && c <= 0x5A) || c > 127) {
+          break;
+        }
+        i++;
+      }
+      if (i > end) return source;
+    }
+
+    final maxLen = end - actualStart + 1;
+    final buffer = Uint16List(maxLen);
+    var outLen = 0;
+
+    // Copy already-clean prefix up to i
+    for (var j = actualStart; j < i; j++) {
+      buffer[outLen++] = units[j];
+    }
+
+    // Process remainder
+    for (; i <= end; i++) {
       final c = units[i];
       if (_isDelimiter(c)) continue;
       if (c >= 0x41 && c <= 0x5A) {
-        resultUnits.add(c + 32); // fast ASCII lowercase
+        buffer[outLen++] = c + 32; // fast ASCII lowercase
       } else {
         if (c > 127) hasNonAscii = true;
-        resultUnits.add(c);
+        buffer[outLen++] = c;
       }
     }
 
-    final result = String.fromCharCodes(resultUnits);
+    final result = String.fromCharCodes(buffer, 0, outLen);
     return hasNonAscii ? result.toLowerCase() : result;
   }
 
@@ -468,8 +494,11 @@ abstract final class EnumParser {
       if (ca >= 0x41 && ca <= 0x5A) ca += 32;
       if (cb >= 0x41 && cb <= 0x5A) cb += 32;
       if (ca != cb) {
-        // Fallback for non-ASCII case conversion
-        return a.toLowerCase() == b.toLowerCase();
+        // Fast-path: ASCII mismatch can never match under case conversion
+        if (ca > 127 || cb > 127) {
+          return a.toLowerCase() == b.toLowerCase();
+        }
+        return false;
       }
     }
     return true;
@@ -494,8 +523,11 @@ abstract final class EnumParser {
       if (nameC >= 0x41 && nameC <= 0x5A) nameC += 32;
       final normC = normalized.codeUnitAt(normIdx);
       if (nameC != normC) {
-        // Fallback for non-ASCII characters
-        return _normalize(enumName) == normalized;
+        // Fast-path: ASCII mismatch can never match under loose normalization
+        if (nameC > 127 || normC > 127) {
+          return _normalize(enumName) == normalized;
+        }
+        return false;
       }
       normIdx++;
     }
@@ -530,9 +562,12 @@ abstract final class EnumParser {
 
 /// An immutable, pre-indexed lookup index for high-throughput enum parsing.
 ///
-/// Pre-computes normalized name lookups once upon creation,
-/// allowing subsequent [parse] and [parseList] calls to execute in O(1) time
-/// without repetitive string normalizations or linear scans.
+/// Pre-computes normalized name lookups once upon creation into an internal
+/// hash map, allowing subsequent [parse] and [parseList] calls to execute
+/// with amortized O(1) map lookup time, avoiding repetitive linear scans.
+///
+/// Takes an immutable snapshot of [values] at construction time, isolating
+/// the index from external mutations to the source collection.
 ///
 /// ```dart
 /// static final statusIndex = EnumIndex(Status.values, mode: EnumParserMode.loose);
@@ -541,26 +576,38 @@ abstract final class EnumParser {
 /// ```
 final class EnumIndex<T extends Enum> {
   /// Creates an [EnumIndex] over [values] for the specified [mode].
-  EnumIndex(this.values, {this.mode = EnumParserMode.loose})
-      : _nameMap = switch (mode) {
-          EnumParserMode.strict => {for (final e in values) e.name: e},
-          EnumParserMode.simple => {
-              for (final e in values) e.name.toLowerCase(): e,
-            },
-          EnumParserMode.loose => {
-              for (final e in values) EnumParser._normalize(e.name): e,
-            },
-        };
+  EnumIndex(Iterable<T> values, {this.mode = EnumParserMode.loose})
+      : values = List<T>.unmodifiable(values),
+        _nameMap = _buildNameMap(values, mode);
 
-  /// The enum values indexed by this instance.
-  final Iterable<T> values;
+  /// The immutable snapshot of enum values indexed by this instance.
+  final List<T> values;
 
   /// The parsing mode used for string normalization and lookup.
   final EnumParserMode mode;
 
   final Map<String, T> _nameMap;
 
+  static Map<String, T> _buildNameMap<T extends Enum>(
+    Iterable<T> values,
+    EnumParserMode mode,
+  ) {
+    final map = <String, T>{};
+    for (final e in values) {
+      final key = switch (mode) {
+        EnumParserMode.strict => e.name,
+        EnumParserMode.simple => e.name.toLowerCase(),
+        EnumParserMode.loose => EnumParser._normalize(e.name),
+      };
+      if (key.isNotEmpty) {
+        map.putIfAbsent(key, () => e);
+      }
+    }
+    return map;
+  }
+
   /// Parses and returns an enum of type [T] from [src] using this pre-indexed lookup in O(1) time.
+  @pragma('vm:prefer-inline')
   T? parse(
     Object? src, {
     T? Function(Object src, Iterable<T> values)? converter,
@@ -569,25 +616,29 @@ final class EnumIndex<T extends Enum> {
     if (src is T) return src;
     if (src == null || values.isEmpty) return fallback;
 
-    final resolved = switch (src) {
-      final String s => switch (mode) {
-          EnumParserMode.strict => s,
-          EnumParserMode.simple => () {
-              final trimmed = s.trim();
-              return trimmed.isEmpty ? null : trimmed.toLowerCase();
-            }(),
-          EnumParserMode.loose => () {
-              final trimmed = s.trim();
-              return trimmed.isEmpty ? null : EnumParser._normalize(trimmed);
-            }(),
-        },
-      final Enum e => switch (mode) {
-          EnumParserMode.strict => e.name,
-          EnumParserMode.simple => e.name.toLowerCase(),
-          EnumParserMode.loose => EnumParser._normalize(e.name),
-        },
-      _ => null,
-    };
+    final String? resolved;
+    if (src is String) {
+      if (mode == EnumParserMode.strict) {
+        resolved = src;
+      } else if (mode == EnumParserMode.simple) {
+        final trimmed = src.trim();
+        resolved = trimmed.isEmpty ? null : trimmed.toLowerCase();
+      } else {
+        final n = EnumParser._normalize(src);
+        resolved = n.isEmpty ? null : n;
+      }
+    } else if (src is Enum) {
+      if (mode == EnumParserMode.strict) {
+        resolved = src.name;
+      } else if (mode == EnumParserMode.simple) {
+        resolved = src.name.toLowerCase();
+      } else {
+        final n = EnumParser._normalize(src.name);
+        resolved = n.isEmpty ? null : n;
+      }
+    } else {
+      resolved = null;
+    }
 
     final match = resolved != null ? _nameMap[resolved] : null;
 
@@ -612,6 +663,15 @@ final class EnumIndex<T extends Enum> {
 
     final List<Object?> items;
     if (src is String) {
+      final sepIdx = src.indexOf(separator);
+      if (sepIdx == -1) {
+        final item = mode == EnumParserMode.strict ? src : src.trim();
+        if (item.isEmpty) return fallback;
+        final parsed = parse(item, converter: converter);
+        return parsed != null
+            ? List<T>.filled(1, parsed, growable: false)
+            : fallback;
+      }
       items = EnumParser._extractItemsFromString(
         src,
         separator,

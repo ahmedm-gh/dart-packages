@@ -425,6 +425,207 @@ void main() {
       );
     });
   });
+
+  group('Normalization Collisions & Deterministic Resolution', () {
+    test(
+        'linear scan, EnumIndex, and parseList deterministically pick first match',
+        () {
+      // 1. Linear scalar parse
+      final linearMatch = EnumParser.parseLoose(
+        'foo-bar',
+        values: CollidingEnum.values,
+      );
+      expect(linearMatch, equals(CollidingEnum.fooBar));
+
+      // 2. EnumIndex pre-indexed lookup
+      final index =
+          CollidingEnum.values.toEnumIndex(mode: EnumParserMode.loose);
+      expect(index.parse('foo-bar'), equals(CollidingEnum.fooBar));
+
+      // 3. parseList small batch (<= 4 items)
+      final smallBatch = EnumParser.parseList(
+        ['foo-bar', 'other'],
+        values: CollidingEnum.values,
+      );
+      expect(smallBatch.first, equals(CollidingEnum.fooBar));
+
+      // 4. parseList large batch (> 4 items)
+      final largeBatch = EnumParser.parseList(
+        ['foo-bar', 'other', 'other', 'other', 'other'],
+        values: CollidingEnum.values,
+      );
+      expect(largeBatch.first, equals(CollidingEnum.fooBar));
+    });
+  });
+
+  group('EnumIndex Immutability & Snapshots', () {
+    test('isolates index from mutations to original source list', () {
+      final mutableSource = [Status.pendingPayment, Status.inProgress];
+      final index = EnumIndex(mutableSource, mode: EnumParserMode.loose);
+
+      // Mutate the original source
+      mutableSource.clear();
+
+      // Index values must remain intact as an unmodifiable snapshot
+      expect(index.values.length, equals(2));
+      expect(index.values, equals([Status.pendingPayment, Status.inProgress]));
+      expect(index.parse('in-progress'), equals(Status.inProgress));
+
+      // Attempting to mutate index.values must throw
+      expect(
+        () => (index.values as dynamic).add(Status.completed),
+        throwsUnsupportedError,
+      );
+    });
+  });
+
+  group('Delimiter-Only and Boundary Inputs', () {
+    test('delimiter-only inputs return fallback and do not match enums', () {
+      for (final delimiter in ['-', '_', '--', '__', '...', '   ', '\u00A0']) {
+        expect(
+          EnumParser.parseLoose(delimiter, values: Status.values),
+          isNull,
+          reason: 'Delimiter "$delimiter" should not resolve to an enum',
+        );
+        expect(
+          Status.values.toEnumIndex().parse(delimiter),
+          isNull,
+          reason: 'Delimiter "$delimiter" should not resolve in EnumIndex',
+        );
+      }
+    });
+
+    test('supports multi-character separators', () {
+      final parsed = EnumParser.parseList(
+        'pending_payment::in-progress::completed',
+        values: Status.values,
+        separator: '::',
+      );
+      expect(
+        parsed,
+        equals([Status.pendingPayment, Status.inProgress, Status.completed]),
+      );
+    });
+
+    test(
+        'returns ungrowable list consistently across 1 item and multi-item paths',
+        () {
+      final one =
+          EnumParser.parseList('pending_payment', values: Status.values);
+      final multi = EnumParser.parseList(
+        'pending_payment, in_progress',
+        values: Status.values,
+      );
+      final large = EnumParser.parseList(
+        'pending_payment, in_progress, completed, failed, pending_payment',
+        values: Status.values,
+      );
+
+      expect(() => one.add(Status.failed), throwsUnsupportedError);
+      expect(() => multi.add(Status.failed), throwsUnsupportedError);
+      expect(() => large.add(Status.failed), throwsUnsupportedError);
+    });
+  });
+
+  group('Unicode & Non-ASCII Delimiter Edge Cases', () {
+    test('matches diverse Unicode whitespace and delimiters properly', () {
+      expect(
+        EnumParser.parseLoose('pending\u2000payment', values: Status.values),
+        equals(Status.pendingPayment),
+      );
+      expect(
+        EnumParser.parseLoose('in\u2003progress', values: Status.values),
+        equals(Status.inProgress),
+      );
+      expect(
+        EnumParser.parseLoose('completed\u3000', values: Status.values),
+        equals(Status.completed),
+      );
+      expect(
+        Status.values.toEnumIndex().parse('pending\u202Fpayment'),
+        equals(Status.pendingPayment),
+      );
+    });
+
+    test(
+        'direct and indexed parsing yield identical results for unicode delimiter inputs',
+        () {
+      final inputs = [
+        'pending\u00A0payment',
+        'in\u2000progress',
+        'in\u2003progress',
+        'completed\u3000',
+        'failed\uFEFF',
+        'unknown\u205Fitem',
+      ];
+      final index = Status.values.toEnumIndex();
+
+      for (final input in inputs) {
+        final direct = EnumParser.parseLoose(input, values: Status.values);
+        final indexed = index.parse(input);
+        expect(direct, equals(indexed),
+            reason: 'Mismatch between direct and indexed parsing on "$input"');
+      }
+    });
+  });
+
+  group('Equivalence Between Direct and Indexed Parsing', () {
+    test('all modes return equivalent results across diverse queries', () {
+      final queries = [
+        'pendingPayment',
+        'pending_payment',
+        'PENDING PAYMENT',
+        'Status.completed',
+        'failed',
+        'unknown_item',
+        '',
+        '   ',
+        '---',
+      ];
+
+      for (final mode in EnumParserMode.values) {
+        final index = Status.values.toEnumIndex(mode: mode);
+        for (final q in queries) {
+          final direct = EnumParser.parse(q, values: Status.values, mode: mode);
+          final indexed = index.parse(q);
+          expect(direct, equals(indexed),
+              reason: 'Mode $mode mismatch for query "$q"');
+        }
+      }
+    });
+
+    test('parseList returns identical results between linear and indexed paths',
+        () {
+      // Test lists spanning <= 16 and > 16 items
+      final batch10 = [
+        'pending_payment',
+        'in-progress',
+        'completed',
+        'failed',
+        'unknown',
+        'Status.pendingPayment',
+        'IN_PROGRESS',
+        'completed',
+        'failed',
+        'missing',
+      ];
+      final batch20 = [...batch10, ...batch10];
+
+      final linear10 = EnumParser.parseList(batch10, values: Status.values);
+      final indexed10 = Status.values.toEnumIndex().parseList(batch10);
+      expect(linear10, equals(indexed10));
+
+      final linear20 = EnumParser.parseList(batch20, values: Status.values);
+      final indexed20 = Status.values.toEnumIndex().parseList(batch20);
+      expect(linear20, equals(indexed20));
+    });
+  });
+}
+
+enum CollidingEnum {
+  fooBar,
+  foo_bar,
+  other,
 }
 
 enum SourceStatus {

@@ -15,6 +15,8 @@
    - ASCII lowercase conversions avoid intermediate string allocations where possible.
    - `EnumIndex` pre-computes lookup tables once to allow $O(1)$ resolutions during high-frequency parsing.
    - `parseList` employs tiered optimization:
-     - 1 item: Direct scalar lookup without map allocations.
-     - 2–4 items: Direct array iterations avoiding map instantiation overhead.
-     - 5+ items: Single-pass pre-indexed map creation for amortized $O(V + N)$ execution.
+     - Single-item or separator-free input: Direct scalar parsing when applicable, avoiding tokenization and collection allocations.
+     - Up to 16 input items: Linear parsing avoiding map and index instantiation overhead.
+     - More than 16 input items: `EnumIndex` delegation for amortized $\mathcal{O}(V + N)$ execution.
+     *(Note: The 16-item cutoff is a benchmark-informed heuristic designed to balance ephemeral map allocation overhead against collection scaling for typical enum cardinalities, rather than a universal performance optimum).*
+
