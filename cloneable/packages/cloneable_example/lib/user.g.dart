@@ -2,10 +2,6 @@
 
 part of 'user.dart';
 
-// **************************************************************************
-// CloneableGenerator
-// **************************************************************************
-
 /// Strongly-typed copyWith function signature for [User].
 typedef $UserCopyWith = User Function({
   String name,

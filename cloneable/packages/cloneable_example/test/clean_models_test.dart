@@ -51,5 +51,12 @@ void main() {
       expect(product.tags, equals(['electronics', 'gadgets']));
       expect(cloned.tags, equals(['electronics', 'gadgets', 'new']));
     });
+
+    test('AliasedUserModel works with @UseCopyWith typedef alias', () {
+      const user = AliasedUserModel(name: 'Ahmed', age: 25);
+      final updated = user.copyWith(name: 'Ali', age: 26);
+      expect(updated.name, equals('Ali'));
+      expect(updated.age, equals(26));
+    });
   });
 }

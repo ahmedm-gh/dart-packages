@@ -9,4 +9,5 @@
 - Generated abstract `$ClassNameCopyWith` callable interface enforcing non-nullable compile safety.
 - Generated mixin `_$ClassNameCloneable` with zero-allocation `copyWith` getter.
 - Full support for generic classes, bounds, enums, collections, and custom constructors.
+- Added `InlineGenerator` and `cloneable_generator:inline` CLI for generating `copyWith` directly inside source files with delimiter comments.
 - AST-level validation and clear diagnostics for invalid models.

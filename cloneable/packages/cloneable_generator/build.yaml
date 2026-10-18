@@ -15,3 +15,17 @@ builders:
     auto_apply: dependents
     build_to: cache
     applies_builders: ["source_gen|combining_builder"]
+
+  cloneable_part_builder:
+    import: "package:cloneable_generator/builder.dart"
+    builder_factories: ["cloneablePartBuilder"]
+    build_extensions: {".dart": ["_cloneable.g.dart"]}
+    auto_apply: none
+    build_to: source
+
+  cloneable_standalone_builder:
+    import: "package:cloneable_generator/builder.dart"
+    builder_factories: ["cloneableStandaloneBuilder"]
+    build_extensions: {".dart": ["_cloneable.dart"]}
+    auto_apply: none
+    build_to: source

@@ -61,3 +61,52 @@ extension $CleanProductCloneableExtension on CleanProduct {
     );
   }
 }
+
+/// Strongly-typed copyWith function signature for [ExtensionUser].
+typedef $ExtensionUserCopyWith = ExtensionUser Function({
+  String name,
+  int age,
+  String? nickname,
+});
+
+/// Generated cloneable extension for [ExtensionUser].
+extension $ExtensionUserCloneableExtension on ExtensionUser {
+  $ExtensionUserCopyWith get copyWith => _copyWith;
+
+  ExtensionUser _copyWith({
+    Object? name = cloneableUndefined,
+    Object? age = cloneableUndefined,
+    Object? nickname = cloneableUndefined,
+  }) {
+    final self = this;
+    return ExtensionUser(
+      name: identical(name, cloneableUndefined) ? self.name : name as String,
+      age: identical(age, cloneableUndefined) ? self.age : age as int,
+      nickname: identical(nickname, cloneableUndefined)
+          ? self.nickname
+          : nickname as String?,
+    );
+  }
+}
+
+/// Strongly-typed copyWith function signature for [AliasedUserModel].
+typedef $AliasedUserModelCopyWith = AliasedUserModel Function({
+  String name,
+  int age,
+});
+
+/// Generated cloneable extension for [AliasedUserModel].
+extension $AliasedUserModelCloneableExtension on AliasedUserModel {
+  $AliasedUserModelCopyWith get copyWith => _copyWith;
+
+  AliasedUserModel _copyWith({
+    Object? name = cloneableUndefined,
+    Object? age = cloneableUndefined,
+  }) {
+    final self = this;
+    return AliasedUserModel(
+      name: identical(name, cloneableUndefined) ? self.name : name as String,
+      age: identical(age, cloneableUndefined) ? self.age : age as int,
+    );
+  }
+}

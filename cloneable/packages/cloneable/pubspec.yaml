@@ -1,8 +1,20 @@
 name: cloneable
-description: Standalone Dart annotations and runtime utilities for generating strongly-typed copyWith methods.
+description: High-performance, strongly typed copyWith generator for Dart classes with explicit null support
 version: 1.0.0
-homepage: https://github.com/ahmedm-gh/dart-packages/tree/main/cloneable/packages/cloneable
-repository: https://github.com/ahmedm-gh/dart-packages
+repository: https://github.com/ahmedm-gh/dart-packages/tree/main/cloneable/packages/cloneable
+issue_tracker: https://github.com/ahmedm-gh/dart-packages/issues
+documentation: https://github.com/ahmedm-gh/dart-packages/tree/main/cloneable/packages/cloneable
+
+funding:
+  - https://github.com/sponsors/ahmedm-gh
+  - https://buymeacoffee.com/ahmeds1
+
+topics:
+  - copywith
+  - clone
+  - code-generation
+  - data-class
+  - immutability
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
@@ -10,5 +22,5 @@ environment:
 resolution: workspace
 
 dev_dependencies:
-  test: ^1.24.0
-  lints: ^3.0.0
+  lints: ^6.0.0
+  test: ^1.25.6

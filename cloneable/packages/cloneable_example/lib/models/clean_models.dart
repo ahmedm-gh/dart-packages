@@ -31,3 +31,32 @@ class CleanProduct {
     required this.tags,
   });
 }
+
+/// Model with identical fields to [User] to benchmark Extension vs Mixin directly.
+@Cloneable(strategy: CloneableStrategy.extension)
+class ExtensionUser {
+  final String name;
+  final int age;
+  final String? nickname;
+
+  const ExtensionUser({
+    required this.name,
+    required this.age,
+    this.nickname,
+  });
+}
+
+/// Example of defining a project-wide type alias for [Cloneable].
+typedef UseCopyWith = Cloneable;
+
+/// Model annotated with the custom [UseCopyWith] type alias.
+@UseCopyWith()
+class AliasedUserModel {
+  final String name;
+  final int age;
+
+  const AliasedUserModel({
+    required this.name,
+    required this.age,
+  });
+}

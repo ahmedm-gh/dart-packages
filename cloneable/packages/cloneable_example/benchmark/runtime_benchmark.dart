@@ -1,4 +1,5 @@
 import 'package:cloneable_example/models/benchmark_models.dart';
+import 'package:cloneable_example/models/clean_models.dart';
 import 'package:cloneable_example/models/generic_models.dart';
 import 'package:cloneable_example/user.dart';
 import 'models_handwritten.dart';
@@ -83,6 +84,7 @@ void main() {
 
   // 1. Small Model - Preserved (Omitted argument)
   const cloneableUser = User(name: 'Ahmed', age: 25, nickname: 'Dev');
+  const extensionUser = ExtensionUser(name: 'Ahmed', age: 25, nickname: 'Dev');
   const handwrittenUser =
       HandwrittenUser(name: 'Ahmed', age: 25, nickname: 'Dev');
   const freezedUser = FreezedStyleUser(name: 'Ahmed', age: 25, nickname: 'Dev');
@@ -90,56 +92,76 @@ void main() {
 
   Object? sink;
 
-  // A. Cloneable (Generated) - Preserved
-  results.add(measure('Cloneable (Generated)', 'Small: Preserved', () {
+  // A. Cloneable (Mixin) - Preserved
+  final rMixinPreserved = measure('Cloneable (Mixin)', 'Small: Preserved', () {
     sink = cloneableUser.copyWith(name: 'Mohamed');
-  }));
+  });
+  results.add(rMixinPreserved);
+  print(rMixinPreserved);
 
-  // B. Handwritten - Preserved
-  results.add(measure('Handwritten Sentinel', 'Small: Preserved', () {
+  // B. Cloneable (Extension) - Preserved
+  final rExtPreserved =
+      measure('Cloneable (Extension)', 'Small: Preserved', () {
+    sink = extensionUser.copyWith(name: 'Mohamed');
+  });
+  results.add(rExtPreserved);
+  print(rExtPreserved);
+
+  // C. Handwritten - Preserved
+  final rHandwrittenPreserved =
+      measure('Handwritten Sentinel', 'Small: Preserved', () {
     sink = handwrittenUser.copyWith(name: 'Mohamed');
-  }));
+  });
+  results.add(rHandwrittenPreserved);
+  print(rHandwrittenPreserved);
 
-  // C. Freezed-Style (Wrapper) - Preserved
-  results.add(measure('Freezed-Style (Alloc)', 'Small: Preserved', () {
+  // D. Freezed-Style (Wrapper) - Preserved
+  final rFreezedPreserved =
+      measure('Freezed-Style (Alloc)', 'Small: Preserved', () {
     sink = freezedUser.copyWith(name: 'Mohamed');
-  }));
+  });
+  results.add(rFreezedPreserved);
+  print(rFreezedPreserved);
 
-  // D. Map-Based - Preserved
-  results.add(measure('Map-Based (Dynamic)', 'Small: Preserved', () {
+  // E. Map-Based - Preserved
+  final rMapPreserved = measure('Map-Based (Dynamic)', 'Small: Preserved', () {
     sink = mapUser.copyWith({'name': 'Mohamed'});
-  }));
-
-  print(results[0]);
-  print(results[1]);
-  print(results[2]);
-  print(results[3]);
+  });
+  results.add(rMapPreserved);
+  print(rMapPreserved);
   print(
       '----------------------------------------------------------------------------------------');
 
   // 2. Small Model - Explicit Null
-  // A. Cloneable - Explicit Null
-  final rNull1 = measure('Cloneable (Generated)', 'Small: Explicit Null', () {
+  // A. Cloneable (Mixin) - Explicit Null
+  final rNull1 = measure('Cloneable (Mixin)', 'Small: Explicit Null', () {
     sink = cloneableUser.copyWith(nickname: null);
   });
   results.add(rNull1);
   print(rNull1);
 
-  // B. Handwritten - Explicit Null
+  // B. Cloneable (Extension) - Explicit Null
+  final rNullExt = measure('Cloneable (Extension)', 'Small: Explicit Null', () {
+    sink = extensionUser.copyWith(nickname: null);
+  });
+  results.add(rNullExt);
+  print(rNullExt);
+
+  // C. Handwritten - Explicit Null
   final rNull2 = measure('Handwritten Sentinel', 'Small: Explicit Null', () {
     sink = handwrittenUser.copyWith(nickname: null);
   });
   results.add(rNull2);
   print(rNull2);
 
-  // C. Freezed-Style - Explicit Null
+  // D. Freezed-Style - Explicit Null
   final rNull3 = measure('Freezed-Style (Alloc)', 'Small: Explicit Null', () {
     sink = freezedUser.copyWith(nickname: null);
   });
   results.add(rNull3);
   print(rNull3);
 
-  // D. Map-Based - Explicit Null
+  // E. Map-Based - Explicit Null
   final rNull4 = measure('Map-Based (Dynamic)', 'Small: Explicit Null', () {
     sink = mapUser.copyWith({'nickname': null});
   });

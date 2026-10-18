@@ -11,7 +11,7 @@ A modern, production-grade Dart multi-package workspace providing strongly-typed
 
 | Package | Description | Pub Status |
 | :--- | :--- | :--- |
-| [`packages/cloneable`](packages/cloneable) | Runtime annotations (`@Cloneable`, `@CloneableField`) and sentinel. **Zero dependencies**. | Ready for pub.dev |
+| [`packages/cloneable`](packages/cloneable) | Runtime annotations (`@Cloneable`, `@CloneableField`, `CloneableSentinel`) and sentinel. **Zero dependencies**. | Ready for pub.dev |
 | [`packages/cloneable_generator`](packages/cloneable_generator) | The code generator companion powered by `source_gen` and `build_runner`. | Ready for pub.dev |
 | [`packages/cloneable_example`](packages/cloneable_example) | Real-world example models, automated test suites, and performance benchmarks. | Example / Internal |
 
