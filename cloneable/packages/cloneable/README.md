@@ -6,43 +6,132 @@
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/ahmedm-gh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
-A lightweight, highly customizable, production-grade Dart package that generates **strongly typed** `copyWith` methods for ordinary Dart classes, with first-class support for explicitly setting nullable fields to `null`.
+A lightweight, zero-dependency, production-grade Dart package that provides annotations, sentinels, and configuration contracts for generating **strongly typed, compile-safe `copyWith` implementations** for ordinary Dart classes — with first-class support for explicitly setting nullable fields to `null`, deep copying collections, and zero runtime heap allocations.
+
+Pairs directly with [`cloneable_generator`](https://pub.dev/packages/cloneable_generator) to deliver instant (~1s) standalone code generation or automated `build_runner` workflows.
+
+---
+
+## Table of Contents
+
+- [The Dilemma: Why `cloneable`?](#the-dilemma-why-cloneable)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+  - [1. Define Your Model](#1-define-your-model)
+  - [2. Generate Code](#2-generate-code)
+  - [3. Use `copyWith`](#3-use-copywith)
+- [Detailed Invocation Semantics](#detailed-invocation-semantics)
+- [Output Strategies (`CloneableOutput`)](#output-strategies-cloneableoutput)
+  - [1. Clean Extension (Part File)](#1-clean-extension-part-file)
+  - [2. In-Class Mode (`@Cloneable.inClass()`)](#2-in-class-mode-cloneableinclass)
+  - [3. In-Library Mode (`@Cloneable.inLibrary()`)](#3-in-library-mode-cloneableinlibrary)
+  - [4. Standalone Mode (`@Cloneable.standalone()`)](#4-standalone-mode-cloneablestandalone)
+  - [5. Zero-Allocation Mixin](#5-zero-allocation-mixin)
+- [Post-Generation Cleanup (`CloneableCleanup`)](#post-generation-cleanup-cloneablecleanup)
+  - [Zero Residual Footprint (`CloneableCleanup.remove`)](#zero-residual-footprint-cloneablecleanupremove)
+- [Central Multi-Model Manifests (`@Cloneables`)](#central-multi-model-manifests-cloneables)
+- [Deep Copying for Collections & Typed Data](#deep-copying-for-collections--typed-data)
+  - [1. Class-Level Deep Copying](#1-class-level-deep-copying)
+  - [2. Field-Level Deep Copying](#2-field-level-deep-copying)
+  - [3. Custom Cloner Functions (`@CloneableField(cloner: ...)`)](#3-custom-cloner-functions-cloneablefieldcloner-)
+- [Field Whitelisting & Ignoring](#field-whitelisting--ignoring)
+  - [1. Excluding Fields (`@CloneableField(ignore: true)`)](#1-excluding-fields-cloneablefieldignore-true)
+  - [2. Whitelisting Fields via Annotation (`@Cloneable(fields: [...])`)](#2-whitelisting-fields-via-annotation-cloneablefields-)
+  - [3. Whitelisting Fields via In-Class Getter (`cloneableFields`)](#3-whitelisting-fields-via-in-class-getter-cloneablefields)
+  - [4. Conflict Resolution (`fieldsConflict`)](#4-conflict-resolution-fieldsconflict)
+- [Ignoring Null Values (`ignoreNull: true`)](#ignoring-null-values-ignorenull-true)
+- [Custom Constructors & Positional Parameters](#custom-constructors--positional-parameters)
+  - [Named Constructors (`constructor: 'create'`)](#named-constructors-constructor-create)
+  - [Positional Constructor Parameters](#positional-constructor-parameters)
+- [Generics & Type Bounds](#generics--type-bounds)
+- [Single Source of Truth (SSOT) Project Defaults](#single-source-of-truth-ssot-project-defaults)
+  - [1. Built-In Defaults Reference](#1-built-in-defaults-reference)
+  - [2. Modern Dart 3+ Configuration Idioms](#2-modern-dart-3-configuration-idioms)
+  - [3. Cascading Precedence](#3-cascading-precedence)
+- [Custom Symbol & File Affixes (`CloneableNaming`)](#custom-symbol--file-affixes-cloneablenaming)
+- [Smart Sentinel Resolution (`CloneableSentinel`)](#smart-sentinel-resolution-cloneablesentinel)
+- [Type Aliases (`typedef UseCopyWith = Cloneable;`)](#type-aliases-typedef-usecopywith--cloneable)
+- [Performance Benchmarks](#performance-benchmarks)
+- [Comparison with Existing Packages](#comparison-with-existing-packages)
+- [Supporting & Contributing](#supporting--contributing)
+- [Author & Maintainer](#author--maintainer)
+- [License](#license)
+
+---
+
+## The Dilemma: Why `cloneable`?
+
+In Dart, creating immutable data models requires a `copyWith` method. However, traditional handwritten `copyWith` implementations suffer from a critical flaw: **distinguishing between omitting a parameter (keeping current value) and explicitly passing `null` (clearing a nullable field)**.
+
+```dart
+// Traditional handwritten copyWith:
+User copyWith({String? name, String? nickname}) {
+  return User(
+    name: name ?? this.name,
+    nickname: nickname ?? this.nickname, // If you pass nickname: null, it is IGNORED!
+  );
+}
+```
+
+Other packages attempt to solve this with compromises:
+- Requiring extra boolean flags (`user.copyWithNull(nickname: true)`).
+- Allocating intermediate wrapper objects (`user.copyWith(nickname: Value(null))`).
+- Generating heavy data classes with complex metaprogramming (`freezed`).
+
+### The `cloneable` Solution
+
+`cloneable` solves this elegantly using a **zero-cost sentinel pattern combined with strongly-typed parameter signatures**:
+
+1. **Explicit `null` Works Naturally**: `user.copyWith(nickname: null)` explicitly clears the nullable field.
+2. **Compile-Time Type Safety**: `user.copyWith(name: null)` on a non-nullable `String name` is rejected by the Dart compiler at build time.
+3. **Zero Extra Allocations**: Mixin pattern dispatches directly via `this` (zero intermediate object wrappers).
+4. **Zero Runtime Dependencies**: Pure Dart code that compiles everywhere (VM, Flutter, Web, WASM, Server).
 
 ---
 
 ## Features
 
-- **Intuitive Developer Experience**: Annotate ordinary Dart classes with `@Cloneable()` (clean extensions with zero boilerplate, or as mixin `with _$UserCloneable`).
-- **First-Class Explicit `null`**: Distinguishes between omitting an argument (retaining existing value) and passing `null` (clearing a nullable field).
-- **Compile-Time Type Safety**: Statically prevents passing `null` to non-nullable fields (`user.copyWith(name: null)` is an analyzer compile error).
-- **Zero Runtime Allocations**: Unlike other generators that instantiate intermediate wrapper objects on each `copyWith` invocation, `cloneable` uses a zero-allocation mixin pattern (`get copyWith => this;`).
-- **Universal Dart & Flutter Support**: 100% compatible with Flutter, Dart VM, Web, Server, WASM, and AOT compilation.
-- **Pure Runtime Footprint**: Zero third-party runtime dependencies.
+- **Clean Ordinary Classes**: Annotate standard Dart classes with `@Cloneable()`. No complex abstract classes, factory constructors, or boilerplate.
+- **First-Class Explicit `null`**: Distinguishes between omitting an argument and passing `null`.
+- **Compile-Time Type Safety**: Statically prevents passing `null` to non-nullable fields.
+- **Dual Speed Code Generation**: Run via lightning-fast standalone CLI (`dart run cloneable_generator` in ~1.5s) or standard `build_runner`.
+- **Flexible Output Destinations**:
+  - `CloneableOutput.part`: Separate `.g.dart` or `.cloneable.g.dart` file.
+  - `CloneableOutput.inClass`: Injected directly into the class body (zero extra files!).
+  - `CloneableOutput.inLibrary`: Injected at the top-level of the source file.
+  - `CloneableOutput.standalone`: Independent library file without `part of`.
+- **Deep Copying Built-In**: Deep copies collections (`List`, `Set`, `Map`, `Queue`, `HashMap`, `SplayTreeMap`, etc.) and all `dart:typed_data` arrays (`Uint8List`, `Int32List`, `ByteData`, etc.).
+- **Custom Cloner Tear-Offs**: Pass custom clone functions via `@CloneableField(cloner: ...)`.
+- **Zero Residual Footprint Mode**: Eliminate annotations and imports after generation with `cleanup: CloneableCleanup.remove`.
+- **Universal Multi-Platform Support**: 100% compatible with Flutter, Dart VM, Web, Server, WASM, and AOT compilation.
 
 ---
 
 ## Installation
 
-Add `cloneable` to your `dependencies`, and `build_runner` and `cloneable_generator` to your `dev_dependencies`:
+Add `cloneable` to your runtime `dependencies` and `cloneable_generator` to your `dev_dependencies`:
 
 ```yaml
 dependencies:
   cloneable: ^1.0.0
 
 dev_dependencies:
-  build_runner: ^2.4.0
   cloneable_generator: ^1.0.0
+  # Optional: only if you prefer using build_runner instead of the standalone CLI
+  build_runner: ^2.4.0
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Define your model
+### 1. Define Your Model
 
-With `cloneable`, there is **no need to type `with _$UserCloneable`**! You can write a completely clean, ordinary Dart class:
+Annotate your class with `@Cloneable()` and declare a `part` file:
 
 ```dart
+// lib/models/user.dart
 import 'package:cloneable/cloneable.dart';
 
 part 'user.g.dart';
@@ -61,33 +150,29 @@ class User {
 }
 ```
 
-*(Note: If you prefer mixins for zero-allocation performance, you can still write `class User with _$UserCloneable` — `cloneable` auto-detects both!)*
+### 2. Generate Code
 
-### 2. Run the generator
-
-Run the standard build_runner command in your terminal:
-
+Using the standalone CLI (recommended, runs in ~1.5s):
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+dart run cloneable_generator
 ```
 
-Or for Flutter projects:
-
+Or using `build_runner`:
 ```bash
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build --delete-conflicting-outputs
 ```
 
 ### 3. Use `copyWith`
 
 ```dart
-final original = User(
+final user = User(
   name: 'Ahmed',
   age: 25,
   nickname: 'Dev',
 );
 
-// 1. Update specific fields (unmodified fields are preserved)
-final updated = original.copyWith(
+// 1. Update specific fields (unspecified fields are preserved)
+final updated = user.copyWith(
   name: 'Mohamed',
   age: 26,
 );
@@ -96,213 +181,226 @@ final updated = original.copyWith(
 // updated.nickname == 'Dev'
 
 // 2. Explicitly clear a nullable field to null
-final cleared = original.copyWith(
+final cleared = user.copyWith(
   nickname: null,
 );
 // cleared.name == 'Ahmed'
 // cleared.age == 25
 // cleared.nickname == null
 
-// 3. Statically caught errors at compile time:
-// original.copyWith(name: null); // Compile error: The argument type 'Null' can't be assigned to 'String'
+// 3. Static compile-time analyzer protection:
+// user.copyWith(name: null); // Compile error: The argument type 'Null' can't be assigned to 'String'
 ```
 
 ---
 
-## Detailed Semantics
+## Detailed Invocation Semantics
 
-| Invocation | `name` (non-nullable) | `nickname` (nullable) | Semantics |
+| Invocation | `name` (`String`) | `nickname` (`String?`) | Semantics |
 | :--- | :--- | :--- | :--- |
-| `original.copyWith()` | Preserved (`Ahmed`) | Preserved (`Dev`) | No-op clone |
-| `original.copyWith(name: 'Ali')` | Replaced (`Ali`) | Preserved (`Dev`) | Single field update |
-| `original.copyWith(nickname: null)` | Preserved (`Ahmed`) | **Cleared (`null`)** | Explicit `null` assignment |
-| `original.copyWith(name: null)` | **Compile Error** | N/A | Static analyzer rejects `null` |
+| `user.copyWith()` | Preserved (`Ahmed`) | Preserved (`Dev`) | No-op clone |
+| `user.copyWith(name: 'Ali')` | Replaced (`Ali`) | Preserved (`Dev`) | Single field update |
+| `user.copyWith(nickname: null)` | Preserved (`Ahmed`) | **Cleared (`null`)** | Explicit `null` assignment |
+| `user.copyWith(name: null)` | **Compile Error** | N/A | Static analyzer rejects `null` |
 
 ---
 
-## Supported Patterns
+## Output Strategies (`CloneableOutput`)
 
-### Generation Strategy: Extension vs Mixin (`CloneableStrategy`)
+Configure how and where generated code is emitted using `output: CloneableOutput`:
 
-`cloneable` supports generating `copyWith` as either a **Dart Extension** or a **Dart Mixin**:
+| Mode | Annotation Constructor | Location | Best For |
+| :--- | :--- | :--- | :--- |
+| **Part File** | `@Cloneable.part()` or `@Cloneable()` | Separate `*.g.dart` or `*.cloneable.g.dart` | Clean separation of generated files |
+| **In-Class** | `@Cloneable.inClass()` | Inside the class body | Zero extra files; self-contained classes |
+| **In-Library** | `@Cloneable.inLibrary()` | Top-level extension in source file | Single-file models; clean class bodies |
+| **Standalone** | `@Cloneable.standalone()` | Independent `*.cloneable.dart` library file | Clean architectures without `part` directives |
 
-```dart
-enum CloneableStrategy {
-  auto,      // Default: auto-detects based on presence of mixin
-  extension, // Generates an Extension (zero boilerplate on class)
-  mixin,     // Generates a Mixin (requires `with _$UserCloneable` or `with _$UserCopyWith`)
-}
-```
-
-- **`CloneableStrategy.auto` (Default)**:
-  - If your class omits any mixin, it automatically generates an **Extension**. Your class stays 100% clean with zero extra code.
-  - If your class mixes in one of the 2 supported conventions, it automatically generates only that **Mixin**:
-    - `with _$UserCloneable` (*Scoped style* — explicit, collision-proof)
-    - `with _$UserCopyWith` (*Capability style* — self-documenting)
-  - **Only the written mixin is generated** — no dead code, no duplicate mixins, and no IDE autocomplete pollution!
-- **`CloneableStrategy.extension`**: Forces extension generation.
-- **`CloneableStrategy.mixin`**: Forces mixin generation using whichever mixin name is written.
-
-### Custom Method / Getter Name (`naming: CloneableNaming(method: ...)`)
-
-By default, the generated method and getter is named `copyWith`. You can customize this name (e.g., to `clone`, `rebuild`, or `copy`) using the `method` parameter in `CloneableNaming`:
-
-```dart
-@Cloneable(naming: CloneableNaming(method: 'clone'))
-class Document with _$DocumentClone {
-  final String title;
-  const Document({required this.title});
-}
-
-final doc = Document(title: 'Specs');
-final cloned = doc.clone(title: 'New Specs');
-```
-
-### Customizable Symbol & File Naming (`CloneableNaming`)
-
-By default, generated symbols use standard affixes (such as `_$` prefix for mixins, `$` prefix for extensions and typedefs). You can customize these affixes across all output modes via `naming: CloneableNaming(...)`:
-
-```dart
-// 1. Part approach with custom mixin affix
-@Cloneable(
-  strategy: CloneableStrategy.mixin,
-  naming: CloneableNaming(
-    mixin: CloneableAffix(prefix: '_', suffix: 'Cloneable'),
-  ),
-)
-class User with _UserCloneable { ... }
-// Generates:
-// - typedef $UserCopyWithFn
-// - mixin _UserCloneable
-
-// 2. Standalone approach with custom extension affix
-@Cloneable(
-  strategy: CloneableStrategy.extension,
-  naming: CloneableNaming(
-    extension: CloneableAffix(prefix: 'Custom', suffix: 'Extension'),
-  ),
-)
-class Order { ... }
-// Generates (in order.cloneable.dart):
-// - typedef $OrderCopyWithFn
-// - extension CustomOrderExtension on Order
-
-// 3. In-library approach with custom typedef and extension affixes
-@Cloneable(
-  output: CloneableOutput.inLibrary,
-  naming: CloneableNaming(
-    extension: CloneableAffix(prefix: '', suffix: 'CloneableExt'),
-    typedef: CloneableAffix(prefix: '', suffix: 'CopySignature'),
-  ),
-)
-class Product { ... }
-// Generates (in-library between markers):
-// - typedef ProductCopySignature
-// - extension ProductCloneableExt on Product
-```
-
-### Selective Part File Naming & Standalone Files
-
-`cloneable` gives you complete flexibility in how generated code is integrated into your project:
-
-#### 1. Selective Part File Names
-
-You are not restricted to `part 'foo.g.dart';`. `cloneable` dynamically detects and accepts any of the following part directives:
-
-- `part 'foo.g.dart';` (*Shared part* — merges with other code generators like `json_serializable`)
-- `part 'foo_cloneable.g.dart';` or `part 'foo.cloneable.g.dart';` (*Dedicated scoped part*)
-- `part 'foo_copyWith.g.dart';` or `part 'foo.copyWith.g.dart';` (*Dedicated capability part*)
-- `part 'foo_<methodName>.g.dart';` (*Matching your custom method name, e.g. `foo_clone.g.dart`*)
-
-#### 2. Standalone Mode (No `part` or `part of` Required)
-
-If you omit `part` directives altogether, `cloneable` **does not enforce `part` or emit `part of`**. Instead, it generates a clean standalone file (e.g. `foo_cloneable.dart`) with its own imports (`import 'package:cloneable/cloneable.dart';` and `import 'foo.dart';`) providing the extension methods. You can simply import it wherever needed!
-
-### In-File Generation (`output: CloneableOutput.inLibrary` & `CloneableOutput.inClass`)
-
-Prefer keeping the generated `copyWith` implementation directly inside the same file without creating a `part` or separate `.g.dart` file?
-
-`cloneable` provides two dedicated in-file generation modes:
-
-#### 1. In-Library Mode (`output: CloneableOutput.inLibrary`)
-
-Generates the extension and copyWith signature typedef at the library top level:
+### 1. Clean Extension (Part File)
 
 ```dart
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(output: CloneableOutput.inLibrary)
+part 'user.g.dart';
+
+@Cloneable.part()
 class User {
   final String name;
-  final String? email;
-
-  const User({required this.name, this.email});
+  const User({required this.name});
 }
 ```
 
-#### 2. In-Class Mode (`output: CloneableOutput.inClass`)
-
-Generates `copyWith` and `_copyWith` directly inside the class body itself (with the typedef signature placed at library top level):
-
+Generated in `user.g.dart`:
 ```dart
-import 'package:cloneable/cloneable.dart';
+part of 'user.dart';
 
-@Cloneable(output: CloneableOutput.inClass)
-class User {
-  final String name;
-  final String? email;
-
-  const User({required this.name, this.email});
-}
-```
-
-Then run the code generator CLI:
-
-```bash
-dart run cloneable_generator
-# or
-dart run cloneable_generator:build
-```
-
-The generator will inject or update the implementation directly inside the file, delimited by identifiable scope comments:
-
-```dart
-// cloneable:start (User) - GENERATED CODE - DO NOT MODIFY BY HAND
-// (run: dart run cloneable_generator to regenerate)
-typedef $UserCopyWithFn = User Function({
-  String name,
-  String? email,
-});
+typedef $UserCopyWithFn = User Function({String name});
 
 extension $UserExtension on User {
   $UserCopyWithFn get copyWith => _copyWith;
+  User _copyWith({Object? name = $undefined}) =>
+      User(name: identical(name, $undefined) ? this.name : name as String);
+}
+```
 
-  User _copyWith({
-    Object? name = $undefined,
-    Object? email = $undefined,
+---
+
+### 2. In-Class Mode (`@Cloneable.inClass()`)
+
+Avoids creating any extra files by injecting `copyWith` directly inside the class:
+
+```dart
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable.inClass()
+class Product {
+  final String title;
+  final double price;
+
+  const Product({required this.title, required this.price});
+}
+```
+
+Run `dart run cloneable_generator`. The generator injects the typedef at the top of the file and `copyWith` inside the class body:
+
+```dart
+import 'package:cloneable/cloneable.dart';
+
+// cloneable:typedef:start (Product) - GENERATED CODE - DO NOT MODIFY BY HAND
+// (run: dart run cloneable_generator to regenerate)
+typedef $ProductCopyWithFn = Product Function({
+  String title,
+  double price,
+});
+// cloneable:typedef:end (Product)
+
+@Cloneable.inClass()
+class Product {
+  final String title;
+  final double price;
+
+  const Product({required this.title, required this.price});
+
+// cloneable:start (Product) - GENERATED CODE - DO NOT MODIFY BY HAND
+// (run: dart run cloneable_generator to regenerate)
+  static const _$undefined = Object();
+
+  $ProductCopyWithFn get copyWith => _copyWith;
+
+  Product _copyWith({
+    Object? title = _$undefined,
+    Object? price = _$undefined,
   }) {
     final self = this;
-    return User(
-      name: identical(name, $undefined) ? self.name : name as String,
-      email:
-          identical(email, $undefined) ? self.email : email as String?,
+    return Product(
+      title: identical(title, _$undefined) ? self.title : title as String,
+      price: identical(price, _$undefined) ? self.price : price as double,
+    );
+  }
+// cloneable:end (Product)
+}
+```
+
+---
+
+### 3. In-Library Mode (`@Cloneable.inLibrary()`)
+
+Places the generated extension directly inside the declaring file between managed comment markers:
+
+```dart
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable.inLibrary()
+class Account {
+  final String email;
+  const Account({required this.email});
+}
+```
+
+Generated in the same file:
+```dart
+// cloneable:start (Account) - GENERATED CODE - DO NOT MODIFY BY HAND
+// (run: dart run cloneable_generator to regenerate)
+typedef $AccountCopyWithFn = Account Function({String email});
+
+extension $AccountExtension on Account {
+  $AccountCopyWithFn get copyWith => _copyWith;
+  Account _copyWith({Object? email = $undefined}) {
+    final self = this;
+    return Account(
+      email: identical(email, $undefined) ? self.email : email as String,
     );
   }
 }
-// cloneable:end (User)
+// cloneable:end (Account)
 ```
 
-- **Scope-Protected**: The delimiters mark the exact boundary of the generated code. Any edits outside these comments remain intact.
-- **Auto-Cleanup**: Removing the annotation and re-running `dart run cloneable_generator` automatically removes obsolete marker blocks.
-- **Idempotent**: Re-running the command does not touch files that are already up to date.
-- **Target Specific Paths**: You can pass directories or individual files:
-  ```bash
-  dart run cloneable_generator lib/models/user.dart
-  ```
+---
 
-### Zero Residual Footprint: Clean Removal (`cleanup: CloneableCleanup.remove`)
+### 4. Standalone Mode (`@Cloneable.standalone()`)
 
-If you want code generated directly into your source code and wish to eliminate `package:cloneable` from your codebase, use `cleanup: CloneableCleanup.remove` in conjunction with `sentinel: CloneableSentinel.private`:
+Generates an independent file (e.g. `order.cloneable.dart`) with explicit imports and **without** `part of`:
+
+```dart
+// lib/order.dart
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable.standalone()
+class Order {
+  final String orderId;
+  const Order({required this.orderId});
+}
+```
+
+Generated in `order.cloneable.dart`:
+```dart
+import 'package:cloneable/cloneable.dart';
+import 'order.dart';
+
+typedef $OrderCopyWithFn = Order Function({String orderId});
+
+extension $OrderExtension on Order {
+  $OrderCopyWithFn get copyWith => _copyWith;
+  Order _copyWith({Object? orderId = $undefined}) =>
+      Order(orderId: identical(orderId, $undefined) ? this.orderId : orderId as String);
+}
+```
+
+---
+
+### 5. Zero-Allocation Mixin
+
+If your application demands absolute maximum throughput (>80 million ops/sec), mix in `_$ClassNameCloneable`:
+
+```dart
+import 'package:cloneable/cloneable.dart';
+
+part 'profile.g.dart';
+
+@Cloneable()
+class Profile with _$ProfileCloneable {
+  final String username;
+  const Profile({required this.username});
+}
+```
+
+`cloneable_generator` auto-detects the mixin and generates `mixin _$ProfileCloneable`, which implements `get copyWith => this;` for zero allocation overhead.
+
+---
+
+## Post-Generation Cleanup (`CloneableCleanup`)
+
+Controls what happens to source code annotations after generation:
+
+| Option | Behavior |
+| :--- | :--- |
+| `CloneableCleanup.none` | Retains all annotations and imports (default). |
+| `CloneableCleanup.deactivate` | Rewrites `@Cloneable(...)` to `@Cloneable(active: false, ...)` to skip future generation passes. |
+| `CloneableCleanup.remove` | Strips all `@Cloneable`, `@CloneableField`, and `package:cloneable` imports completely. |
+
+### Zero Residual Footprint (`CloneableCleanup.remove`)
+
+For one-off generation leaving zero trace of `package:cloneable` in your codebase:
 
 ```dart
 import 'package:cloneable/cloneable.dart';
@@ -312,127 +410,74 @@ import 'package:cloneable/cloneable.dart';
   sentinel: CloneableSentinel.private,
   cleanup: CloneableCleanup.remove,
 )
-class User {
+class CleanUser {
   final String name;
-  final String? email;
-
-  const User({required this.name, this.email});
+  const CleanUser({required this.name});
 }
 ```
 
-When you run `dart run cloneable_generator`:
-1. The generator emits 100% self-contained code (with a private `static const _$undefined = Object();`).
-2. It automatically removes `@Cloneable` and `@CloneableField` annotations from the source file.
-3. It automatically removes `import 'package:cloneable/cloneable.dart';` once all annotated classes in the file have been processed.
+Run `dart run cloneable_generator`:
+1. The self-contained method is injected inside `CleanUser`.
+2. `@Cloneable(...)` is removed.
+3. `import 'package:cloneable/cloneable.dart';` is stripped.
+4. Your file now compiles as 100% pure Dart with **zero external dependencies**.
 
-> [!NOTE]
-> Only recommended if the developer intends to perform a one-time generation and maintain or regenerate the code manually, leaving zero residual annotations and imports in the codebase.
+---
 
-### Generic Classes & Type Bounds
+## Central Multi-Model Manifests (`@Cloneables`)
 
-`cloneable` fully preserves generic type variables and bounds:
+Declare code generation configurations for multiple models in a single manifest file with **zero annotations** on the models themselves:
 
 ```dart
-@Cloneable()
-class Box<T> with _$BoxCloneable<T> {
-  final T value;
-  final T? optionalValue;
+// lib/cloneable_manifest.dart
+import 'package:cloneable/cloneable.dart';
+import 'package:my_app/models/user.dart';
+import 'package:my_app/models/order.dart';
 
-  const Box({required this.value, this.optionalValue});
-}
-
-@Cloneable()
-class BoundedContainer<T extends num> with _$BoundedContainerCloneable<T> {
-  final T score;
-
-  const BoundedContainer({required this.score});
-}
+@Cloneables({
+  User: Cloneable(),
+  Order: Cloneable(deepCopyCollections: true),
+})
+library;
 ```
 
-### Custom Constructors
+---
 
-By default, the generator uses the unnamed constructor. To target a named constructor, specify the `constructor` parameter:
+## Deep Copying for Collections & Typed Data
 
-```dart
-@Cloneable(constructor: 'create')
-class ServiceConfig with _$ServiceConfigCloneable {
-  final String host;
-  final int port;
+### 1. Class-Level Deep Copying
 
-  const ServiceConfig.create({required this.host, required this.port});
-}
-```
-
-### Positional Constructor Parameters
-
-Generative constructors with positional parameters are fully supported:
-
-```dart
-@Cloneable()
-class Coordinate with _$CoordinateCloneable {
-  final double x;
-  final double y;
-  final double? z;
-
-  const Coordinate(this.x, this.y, [this.z]);
-}
-
-final coord = Coordinate(10.0, 20.0, 30.0);
-final flat = coord.copyWith(z: null); // coord.x and coord.y preserved!
-```
-
-### Deep Copy for Collections & Custom Types
-
-By default, fields are shallow-copied (super fast, zero heap reallocation). If you need independent, mutable collection instances (so modifying `cloned.tags.add(...)` does not mutate `original.tags`), enable collection deep-copying:
-
-#### 1. Class-Level Deep Copying
-
-`cloneable` natively supports deep-copying across:
-- **Standard Collections**: `List`, `Set`, `Map`, `Iterable`
-- **Specialized Collections**: `Queue`, `ListQueue`, `HashMap`, `LinkedHashMap`, `SplayTreeMap`, `HashSet`, `LinkedHashSet`, `SplayTreeSet`
-- **Typed Data Arrays (`dart:typed_data`)**: `Uint8List`, `Int8List`, `Uint8ClampedList`, `Int16List`, `Uint16List`, `Int32List`, `Uint32List`, `Int64List`, `Uint64List`, `Float32List`, `Float64List`, `Float32x4List`, `Int32x4List`, `Float64x2List`, and `ByteData`
+Enable `deepCopyCollections: true` to create independent mutable collection copies:
 
 ```dart
 @Cloneable(deepCopyCollections: true)
-class Team with _$TeamCloneable {
+class Team {
   final List<String> members;
-  final Set<int> badgeIds;
+  final Set<int> ids;
   final Map<String, dynamic> metadata;
   final Uint8List payload;
-  final List<String>? optionalTags;
 
   const Team({
     required this.members,
-    required this.badgeIds,
+    required this.ids,
     required this.metadata,
     required this.payload,
-    this.optionalTags,
   });
 }
-
-final team = Team(
-  members: ['Alice', 'Bob'],
-  badgeIds: {1, 2},
-  metadata: {'lead': 'Alice'},
-  payload: Uint8List.fromList([1, 2, 3]),
-);
-
-final cloned = team.copyWith();
-cloned.members.add('Charlie');
-cloned.payload[0] = 99;
-
-// original is untouched!
-// team.members == ['Alice', 'Bob']
-// team.payload == [1, 2, 3]
 ```
 
-#### 2. Field-Level Deep Copying (or Overrides)
+Built-in deep copying covers:
+- **Standard Collections**: `List`, `Set`, `Map`, `Iterable`
+- **Specialized Collections**: `Queue`, `ListQueue`, `DoubleLinkedQueue`, `HashMap`, `LinkedHashMap`, `SplayTreeMap`, `HashSet`, `LinkedHashSet`, `SplayTreeSet`
+- **Typed Data Arrays (`dart:typed_data`)**: `Uint8List`, `Int8List`, `Uint8ClampedList`, `Int16List`, `Uint16List`, `Int32List`, `Uint32List`, `Int64List`, `Uint64List`, `Float32List`, `Float64List`, `Float32x4List`, `Int32x4List`, `Float64x2List`, and `ByteData`
 
-You can enable deep copying for specific fields or disable it for select fields:
+### 2. Field-Level Deep Copying
+
+Enable or disable deep copying per field using `@CloneableField`:
 
 ```dart
 @Cloneable()
-class Project with _$ProjectCloneable {
+class Project {
   final List<String> shallowTags; // shallow copy (default)
 
   @CloneableField(deepCopy: true)
@@ -442,22 +487,20 @@ class Project with _$ProjectCloneable {
 }
 ```
 
-#### 3. Custom Cloner Functions (`@CloneableField(cloner: ...)`)
+### 3. Custom Cloner Functions (`@CloneableField(cloner: ...)`)
 
-For custom domain models, specialized third-party immutable collections (`BuiltList`, `IList`), or custom clone logic, provide a `cloner` function reference. **The `cloner` method always has highest priority over built-in deep-copy logic**:
+Pass any function tear-off to deep-copy nested models or third-party collections (`BuiltList`, `IList`). Custom cloners always take priority over built-in collection copying:
 
 ```dart
 static Address _cloneAddress(Address a) => a.copyWith();
 
 @Cloneable()
-class UserProfile with _$UserProfileCloneable {
+class UserProfile {
   final String name;
 
-  // Uses custom cloner for deep domain model duplication:
   @CloneableField(cloner: _cloneAddress)
   final Address address;
 
-  // Uses Uint8List factory for defensive cloning:
   @CloneableField(cloner: Uint8List.fromList)
   final Uint8List rawBytes;
 
@@ -469,21 +512,15 @@ class UserProfile with _$UserProfileCloneable {
 }
 ```
 
-> [!TIP]
-> **Zero Unnecessary Imports**: When using standalone generation (`output: CloneableOutput.standalone`), `dart:typed_data` and `dart:collection` are **only imported if actually used and deepCopy is active**, keeping your generated files lean and minimal.
+---
 
-### IDE Hover & Parameter Autocompletion
+## Field Whitelisting & Ignoring
 
-`cloneable` generates strongly-typed typedef signatures for each class (e.g. `typedef $UserCopyWith = User Function({String name, int age, String? nickname})`).
-When hovering over `.copyWith` in your editor (VS Code, Android Studio, IntelliJ), the tooltip displays the full parameter list with exact nullability and types.
-
-### Excluding Fields
-
-Use `@CloneableField(ignore: true)` to exclude a field from `copyWith`:
+### 1. Excluding Fields (`@CloneableField(ignore: true)`)
 
 ```dart
 @Cloneable()
-class AuditedEntity with _$AuditedEntityCloneable {
+class AuditedEntity {
   final String id;
   final String title;
 
@@ -498,292 +535,130 @@ class AuditedEntity with _$AuditedEntityCloneable {
 }
 ```
 
-### Whitelisting Supported Fields (`fields`)
-
-Instead of blacklisting individual fields with `@CloneableField(ignore: true)`, you can specify an allowlist of fields supported by `copyWith`. This is conceptually similar to `props` in `Equatable`.
-
-You can configure the allowlist either via the `@Cloneable` annotation or directly inside the class:
-
-#### 1. Via Annotation (`@Cloneable(fields: [...])`)
+### 2. Whitelisting Fields via Annotation (`@Cloneable(fields: [...])`)
 
 ```dart
 @Cloneable(fields: ['name', 'age'])
-class User with _$UserCloneable {
+class User {
   final String id;
   final String name;
   final int age;
-  final DateTime createdAt;
 
-  const User({
-    required this.id,
-    required this.name,
-    required this.age,
-    required this.createdAt,
-  });
+  const User({required this.id, required this.name, required this.age});
 }
-
-// Only `name` and `age` are exposed in copyWith:
-final updated = user.copyWith(name: 'Ali');
-// user.copyWith(id: 'new_id'); // Compile-time analyzer error!
+// Only name and age are exposed in copyWith. id is preserved via self.id.
 ```
 
-#### 2. Via In-Class Getter (`cloneableFields` or `copyWithFields`)
-
-When defining the whitelist directly inside the class, use **`cloneableFields`** or **`copyWithFields`**. It is intentionally named this way (rather than `fields`) so it never collides with domain model properties on the class itself (e.g. `final List<Field> fields;`):
+### 3. Whitelisting Fields via In-Class Getter (`cloneableFields`)
 
 ```dart
 @Cloneable()
-class User with _$UserCloneable {
-  final String id;
-  final String name;
-  final int age;
-
-  const User({
-    required this.id,
-    required this.name,
-    required this.age,
-  });
-
-  // Whitelist supported fields:
-  List<Object?> get cloneableFields => [name, age];
-  // Alternatively: List<Object?> get copyWithFields => [name, age];
-}
-```
-
-#### 3. Custom In-Class Getter Name (`cloneableFieldsGetter`)
-
-By default, the generator checks `const ['cloneableFields', 'copyWithFields']`. If your project follows a different naming convention (e.g. `props`), you can specify a custom getter name using `cloneableFieldsGetter`:
-
-```dart
-@Cloneable(cloneableFieldsGetter: 'props')
-class User with _$UserCloneable {
+class User {
   final String id;
   final String name;
   final int age;
 
   const User({required this.id, required this.name, required this.age});
 
-  List<Object?> get props => [name, age];
+  List<Object?> get cloneableFields => [name, age];
+  // Or: List<Object?> get copyWithFields => [name, age];
 }
 ```
 
-> [!NOTE]
->
-> - **Explicitly Empty List (`[]`)**: If `fields` (or the in-class getter) is explicitly empty (e.g. `@Cloneable(fields: [])` or `get cloneableFields => []`), code generation for the class is completely ignored and skipped (identical to setting `active: false`).
-> - **Omitted fields are preserved**: Fields omitted from the whitelist (such as `id` or `createdAt`) are automatically passed into the constructor using their current instance values (`self.id`, `self.createdAt`).
-> - **Conflict Resolution (`fieldsConflict`)**: When allowed fields are specified in both `@Cloneable(fields: ...)` and an in-class getter (`cloneableFields` / `copyWithFields`), `fieldsConflict` controls how the conflict is resolved:
->   - `CloneableFieldsConflict.error` (default): Raises an informative compile-time build error.
->   - `CloneableFieldsConflict.merge`: Combines fields from both the annotation and the getter (union of allowed fields).
->   - `CloneableFieldsConflict.inClass`: Prefers and uses only the fields defined in the in-class getter.
->   - `CloneableFieldsConflict.inAnnotation`: Prefers and uses only the fields defined in the `@Cloneable(fields: ...)` annotation.
-> - **Compile-Time Validation**: If any name in the whitelist does not match a constructor parameter, `cloneable_generator` flags it with a clear compilation error.
+### 4. Conflict Resolution (`fieldsConflict`)
 
-### Ignoring Null Values (`ignoreNull: true`)
+When fields are declared in both `@Cloneable(fields: ...)` and an in-class getter, `fieldsConflict` controls resolution:
+- `CloneableFieldsConflict.error` (default): Raises a compile-time build error.
+- `CloneableFieldsConflict.merge`: Unites fields from both locations.
+- `CloneableFieldsConflict.inClass`: Uses fields from the getter.
+- `CloneableFieldsConflict.inAnnotation`: Uses fields from the annotation.
 
-By default, `cloneable` supports explicitly clearing nullable fields to `null` (`user.copyWith(nickname: null)` sets `nickname = null`).
+---
 
-If you want normal/traditional Dart behavior where passing `null` is **ignored** (keeping the existing value):
+## Ignoring Null Values (`ignoreNull: true`)
 
-#### 1. Field-Level (`@CloneableField(ignoreNull: true)`)
+If you want traditional Dart `copyWith` behavior where passing `null` is ignored (retaining the existing value):
+
+```dart
+// Field-level:
+@CloneableField(ignoreNull: true)
+final String? bio;
+
+// Class-level:
+@Cloneable(ignoreNull: true)
+class User { ... }
+```
+
+---
+
+## Custom Constructors & Positional Parameters
+
+### Named Constructors (`constructor: 'create'`)
+
+```dart
+@Cloneable(constructor: 'create')
+class ServiceConfig {
+  final String host;
+  final int port;
+
+  const ServiceConfig.create({required this.host, required this.port});
+}
+```
+
+### Positional Constructor Parameters
+
+Generative constructors with positional parameters are fully supported:
 
 ```dart
 @Cloneable()
-class Profile with _$ProfileCloneable {
-  final String username;
+class Coordinate {
+  final double x;
+  final double y;
+  final double? z;
 
-  @CloneableField(ignoreNull: true)
-  final String? bio;
-
-  const Profile({required this.username, this.bio});
+  const Coordinate(this.x, this.y, [this.z]);
 }
 
-final profile = Profile(username: 'Ahmed', bio: 'Developer');
-final updated = profile.copyWith(bio: null);
-// updated.bio remains 'Developer'! (null was ignored)
+final coord = Coordinate(10.0, 20.0, 30.0);
+final flat = coord.copyWith(z: null); // x and y preserved!
 ```
 
-#### 2. Class-Level (`@Cloneable(ignoreNull: true)`)
+---
+
+## Generics & Type Bounds
+
+`cloneable` fully preserves generic type variables and bounds:
 
 ```dart
-@Cloneable(ignoreNull: true)
-class User with _$UserCloneable {
-  final String name;
-  final String? bio;
-  final int? score;
-
-  const User({required this.name, this.bio, this.score});
+@Cloneable()
+class Box<T> {
+  final T value;
+  const Box({required this.value});
 }
-```
 
-### Sentinel Strategy & Import Prefix Support (`CloneableSentinel`)
-
-When generating `copyWith`, `cloneable` uses a sentinel value to distinguish between an omitted argument (retain current value) and an explicitly passed `null` (clear nullable field).
-
-By default, `cloneable` uses `CloneableSentinel.auto`, which automatically detects whether you imported `package:cloneable` with an import prefix (e.g. `import 'package:cloneable/cloneable.dart' as c;`) or directly without a prefix, emitting the appropriate sentinel seamlessly:
-
-```dart
-enum CloneableSentinel {
-  auto,    // Default: automatically detects import prefix or bare constant
-  private, // Generates a self-contained, scoped private sentinel (_$undefined)
-  package, // Strictly references the canonical package constant ($undefined)
+@Cloneable()
+class BoundedContainer<T extends num> {
+  final T score;
+  const BoundedContainer({required this.score});
 }
 ```
 
-- **`CloneableSentinel.auto` (Default)**:
-  - If imported with a prefix (`import ... as c;`), generates `c.$undefined`.
-  - If imported directly without a prefix, generates `$undefined`.
-  - Seamlessly handles test, standalone, and in-library environments.
-- **`CloneableSentinel.private`**:
-  - Injects a private sentinel (defaulting to `const _$undefined = Object();` deduplicated once at the file level, or `static const _$undefined = Object();` for `inClass` output).
-  - Customizable via `CloneableNaming.sentinel` (e.g., `naming: CloneableNaming(sentinel: r'_$unset')`).
-  - 100% self-contained: works even if `package:cloneable` is hidden, removed via `cleanup: CloneableCleanup.remove`, or not imported.
-- **`CloneableSentinel.package`**:
-  - Explicitly references the canonical `$undefined` from `package:cloneable`.
+---
 
-Example:
+## Single Source of Truth (SSOT) Project Defaults
 
-```dart
-@Cloneable(sentinel: CloneableSentinel.private)
-class IsolatedUser {
-  final String name;
-  const IsolatedUser({required this.name});
-}
-```
+Configure defaults across your entire project without repeating options on every class.
 
-### Disabling Code Generation (`active: false`)
-
-To disable code generation for an annotated class without removing the annotation, set `active: false`:
-
-```dart
-@Cloneable(active: false)
-class DraftModel {
-  final String title;
-  const DraftModel({required this.title});
-}
-```
-
-When `active: false`, the generator completely ignores the class, runs no validations, and emits no code. Defaults to `true`.
-
-### Type Alias / Custom Annotation Name (`typedef UseCopyWith = Cloneable`)
-
-If your project conventions or team preferences favor an alternative annotation name (such as `@UseCopyWith`, `@CopyWith`, or any other custom name instead of `@Cloneable`), you can define a simple `typedef` alias anywhere in your project:
-
-```dart
-import 'package:cloneable/cloneable.dart';
-
-/// Define your custom annotation alias:
-typedef UseCopyWith = Cloneable;
-// or: typedef CopyWith = Cloneable;
-// or any other custom name (e.g. typedef GenerateCopyWith = Cloneable;)
-```
-
-Then annotate your classes directly using your preferred alias:
-
-```dart
-@UseCopyWith()
-class User with _$UserCloneable {
-  final String name;
-  final int age;
-
-  const User({required this.name, required this.age});
-}
-```
-
-Because `cloneable_generator` inspects the underlying static type of the annotation, `typedef` aliases are fully recognized without any additional configuration or plugins.
-
-### Generation Output Strategy (`CloneableOutput`)
-
-Control how and where code generation is emitted for your class using `output: CloneableOutput`:
-
-```dart
-@Cloneable(output: CloneableOutput.part)
-class User with _$UserCloneable { ... }
-```
-
-- **`CloneableOutput.auto`** (default): Automatically detects output mode:
-  - If a matching `part '...';` directive exists, generates code into that part file.
-  - If no `part` directive is present, generates code as a clean standalone file.
-- **`CloneableOutput.part`**: Enforces generation into a separate `part of` file (e.g. `.g.dart` or `.cloneable.dart`).
-  - *Build Runner*: Throws an `InvalidGenerationSourceError` if the required `part` directive is missing.
-  - *CLI Runner*: Automatically injects the missing `part` directive into your source file!
-- **`CloneableOutput.standalone`**: Generates independent standalone files with explicit imports (no `part of` directive required).
-- **`CloneableOutput.inLibrary`**: Emits the extension and typedef directly inside your source file at the library top level between managed comment markers.
-- **`CloneableOutput.inClass`**: Emits the `copyWith` and `_copyWith` implementation directly inside the class body between managed comment markers (with typedef at library top level).
-
-> [!TIP]
-> **CLI Auto-Injection**: When running the CLI runner (`dart run cloneable_generator`), missing mixin declarations (e.g. `with _$UserCloneable`) and missing `part` directives are automatically injected directly into your source code AST! In contrast, `build_runner` strictly enforces compile-time safety by reporting informative errors with exact resolution steps.
-
-### Custom Prefix & Suffix Configuration (`CloneableNaming` & `CloneableAffix`)
-
-Customize generated symbol and file names globally or per class via `naming: CloneableNaming(...)` using the reusable `CloneableAffix(prefix: ..., suffix: ...)` structure:
-
-```dart
-@Cloneable(
-  naming: CloneableNaming(
-    method: 'copyWith',
-    mixin: CloneableAffix(prefix: r'_$', suffix: 'Cloneable'),
-    extension: CloneableAffix(prefix: 'Ext', suffix: 'Extension'),
-    typedef: CloneableAffix(prefix: 'Signature', suffix: 'Fn'),
-    file: CloneableAffix(prefix: '', suffix: '.cloneable'),
-  ),
-)
-class User {
-  final String name;
-  const User({required this.name});
-}
-```
-
-#### 1. Method Name
-
-- **`method`** (defaults to `'copyWith'`): sets the copy method and getter name (e.g. `method: 'clone'`).
-
-#### 2. Target Affixes (`CloneableAffix`)
-
-Symbol names follow the pattern `${prefix}${className}${suffix}`, where the raw core value in the middle is the annotated class name (`${className}`):
-
-| Target | Parameter | Default Affix | Default Symbol for `User` | Description |
-| --- | --- | --- | --- | --- |
-| **Mixin** | `mixin` | `CloneableAffix(prefix: r'_$', suffix: 'Cloneable')` | `mixin _$UserCloneable` | Generated mixin definition |
-| **Extension** | `extension` | `CloneableAffix(prefix: r'$', suffix: 'Extension')` | `extension $UserExtension on User` | Generated extension definition |
-| **Typedef** | `typedef` | `CloneableAffix(prefix: r'$', suffix: 'CopyWithFn')` | `typedef $UserCopyWithFn = User Function(...)` | Strongly-typed copy function signature |
-| **File** | `file` | `CloneableAffix(prefix: '', suffix: '.cloneable.g')` | `user.cloneable.g.dart` | Generated part / standalone file naming |
-
-#### 3. Granular Approach Overrides
-
-Apply specific affix overrides depending on the output approach:
-
-- **`part`**: `CloneableAffix` applied when generating in `part of` files.
-- **`standalone`**: `CloneableAffix` applied when generating standalone (non-part) files.
-- **`inLibrary`**: `CloneableAffix` applied when generating inside the library at top level.
-- **`inClass`**: `CloneableAffix` applied when generating inside the class body.
-
-```dart
-@Cloneable(
-  naming: CloneableNaming(
-    part: CloneableAffix(prefix: 'P', suffix: 'Part'),
-    standalone: CloneableAffix(prefix: 'Solo', suffix: 'Standalone'),
-    inLibrary: CloneableAffix(prefix: 'Lib', suffix: 'TopLevel'),
-    inClass: CloneableAffix(prefix: 'Internal', suffix: 'Member'),
-  ),
-)
-class ConfigModel { ... }
-```
-
-### Single Source of Truth (SSOT) & Project-Wide Defaults
-
-Instead of repeating configuration options across every class, `cloneable` provides a unified **Single Source of Truth (SSOT)** in-code configuration architecture with zero third-party dependencies.
-
-#### 1. The Full Built-In Defaults Set (`CloneableDefaults.instance`)
-
-When no custom defaults or class-level overrides are provided, `cloneable` uses the following built-in defaults:
+### 1. Built-In Defaults Reference
 
 | Property | Type | Default Value | Description |
 | :--- | :--- | :--- | :--- |
-| `output` | `CloneableOutput` | `CloneableOutput.auto` | Auto-detects part file, standalone, or inline output based on context and directives. |
+| `output` | `CloneableOutput` | `CloneableOutput.auto` | Auto-detects part file, standalone, or inline output based on context. |
 | `strategy` | `CloneableStrategy` | `CloneableStrategy.auto` | Auto-detects mixin vs extension based on whether class mixes in `_$Class...`. |
 | `sentinel` | `CloneableSentinel` | `CloneableSentinel.auto` | Auto-detects import prefix (`c.$undefined` vs `$undefined`). |
-| `deepCopyCollections` | `bool` | `false` | Shallow-copies collections for maximum speed and zero extra heap allocation. |
+| `deepCopyCollections` | `bool` | `false` | Shallow copies collections for optimal speed and zero heap allocation. |
 | `ignoreNull` | `bool` | `false` | Explicitly assigns `null` to nullable fields (supports clearing nullable fields). |
+| `active` | `bool` | `true` | Code generation active for annotated classes. |
 | `cleanup` | `CloneableCleanup` | `CloneableCleanup.none` | Controls post-generation cleanup: `none`, `deactivate`, or `remove`. |
 | `fieldsConflict` | `CloneableFieldsConflict` | `CloneableFieldsConflict.error` | Reports a compile error if fields are specified in both annotation and getter. |
 | `naming.method` | `String` | `'copyWith'` | The generated copy method and getter name. |
@@ -793,13 +668,9 @@ When no custom defaults or class-level overrides are provided, `cloneable` uses 
 | `naming.file` | `CloneableAffix` | `CloneableAffix(prefix: '', suffix: '.cloneable.g')` | Generated file naming pattern (`$className.cloneable.g.dart`). |
 | `naming.sentinel` | `String` | `r'_$undefined'` | Private sentinel identifier name (`_$undefined`). |
 
-#### 2. Clean Alternatives in Modern Dart (Dart 3+)
+### 2. Modern Dart 3+ Configuration Idioms
 
-In modern Dart, you can declare project or library defaults using any of the following clean idioms:
-
-##### Alternative A: Unnamed Library Directive (Recommended)
-
-Place `@Cloneable.defaults(...)` directly above an unnamed `library;` directive:
+#### Idiom A: Unnamed Library Directive (Recommended)
 
 ```dart
 @Cloneable.defaults(
@@ -813,9 +684,7 @@ library;
 import 'package:cloneable/cloneable.dart';
 ```
 
-##### Alternative B: Modern Abstract Final Config Class
-
-Create a dedicated, uninstantiable configuration class:
+#### Idiom B: Abstract Final Config Class
 
 ```dart
 import 'package:cloneable/cloneable.dart';
@@ -823,16 +692,11 @@ import 'package:cloneable/cloneable.dart';
 @Cloneable.defaults(
   strategy: CloneableStrategy.extension,
   deepCopyCollections: true,
-  naming: CloneableNaming(
-    mixin: CloneableAffix(prefix: 'M_'),
-  ),
 )
 abstract final class CloneableConfig {}
 ```
 
-##### Alternative C: Top-Level Constant
-
-Declare a top-level constant instance of `CloneableDefaults`:
+#### Idiom C: Top-Level Constant
 
 ```dart
 import 'package:cloneable/cloneable.dart';
@@ -843,56 +707,69 @@ const cloneableConfig = CloneableDefaults(
 );
 ```
 
-##### Alternative D: Shared Project Configuration
+#### Idiom D: Shared Project Configuration
 
-Place your defaults in a shared file (e.g. `lib/cloneable_defaults.dart`) and import it wherever models are declared. The generator automatically discovers defaults across imported libraries.
+Place your defaults in `lib/cloneable_defaults.dart` and import it into your model files. Defaults are automatically inherited across imported files.
 
-#### 3. Cascading Precedence
+### 3. Cascading Precedence
 
-Settings resolve with deterministic, layered precedence:
-1. **Class Annotation (`@Cloneable(...)`)**: Explicit per-class overrides take highest priority. Partial `CloneableAffix` overrides (e.g. specifying only `prefix`) preserve the underlying default suffix.
-2. **File / Library In-Code Defaults (`@Cloneable.defaults(...)`)**: Applied to all annotated classes in the file or library.
+1. **Class Annotation (`@Cloneable(...)`)**: Explicit per-class overrides take highest priority. Partial `CloneableAffix` overrides (e.g. specifying only `prefix`) preserve the default suffix.
+2. **File / Library In-Code Defaults (`@Cloneable.defaults(...)`)**: Applied to all models declared in the file.
 3. **Imported / Shared In-Code Defaults**: Discovered from imported config files.
 4. **Built-In Defaults (`CloneableDefaults.instance`)**: Standard fallbacks.
 
-#### 4. First-Class Named Constructors
+---
 
-To eliminate parameter contradictions and enhance readability, `Cloneable` provides dedicated named constructors tailored to each output mode:
+## Custom Symbol & File Affixes (`CloneableNaming`)
+
+Customize symbol prefixes and suffixes across all targets using `naming: CloneableNaming(...)`:
 
 ```dart
-// 1. In-class copyWith (no mixin or separate files needed)
-@Cloneable.inClass()
+@Cloneable(
+  naming: CloneableNaming(
+    method: 'copyWith',
+    mixin: CloneableAffix(prefix: r'_$', suffix: 'Cloneable'),
+    extension: CloneableAffix(prefix: 'Ext', suffix: 'Extension'),
+    typedef: CloneableAffix(prefix: 'Signature', suffix: 'Fn'),
+    file: CloneableAffix(prefix: '', suffix: '.cloneable'),
+  ),
+)
 class User { ... }
-
-// 2. In-library extension
-@Cloneable.inLibrary()
-class Product { ... }
-
-// 3. Enforced part file generation
-@Cloneable.part(strategy: CloneableStrategy.mixin)
-class Order with _$OrderCloneable { ... }
-
-// 4. Standalone file generation
-@Cloneable.standalone()
-class Invoice { ... }
 ```
 
-#### 5. Programmatic Runtime Setter
+---
 
-For unit testing or dynamic environments, you can adjust default values programmatically:
+## Smart Sentinel Resolution (`CloneableSentinel`)
+
+- **`CloneableSentinel.auto` (Default)**: Automatically detects if `package:cloneable` was imported with an alias (`import ... as c;` $\rightarrow$ `c.$undefined`) or directly (`$undefined`).
+- **`CloneableSentinel.private`**: Emits a private sentinel (`static const _$undefined = Object();` or `const _$undefined = Object();`). Self-contained, works with zero external imports.
+- **`CloneableSentinel.package`**: Explicitly references canonical `$undefined`.
+
+---
+
+## Type Aliases (`typedef UseCopyWith = Cloneable;`)
+
+If your team prefers an alternative annotation name (such as `@UseCopyWith` or `@CopyWith`), declare a simple `typedef`:
 
 ```dart
-Cloneable.setDefaults(
-  deepCopyCollections: true,
-  sentinel: CloneableSentinel.private,
-);
+import 'package:cloneable/cloneable.dart';
+
+typedef UseCopyWith = Cloneable;
+
+@UseCopyWith()
+class User {
+  final String name;
+  const User({required this.name});
+}
 ```
+
+Because `cloneable_generator` inspects static types, aliases work transparently without extra configuration.
 
 ---
 
 ## Performance Benchmarks
 
-Measured on Windows x64 with Dart SDK 3.13.4 (stable) across 5 rounds of 500,000 iterations:
+Measured on Windows x64 with Dart SDK 3.13.4 across 5 rounds of 500,000 iterations:
 
 | Implementation | Strategy | Operation | Median (ns/op) | Throughput (ops/sec) |
 | :--- | :--- | :--- | :--- | :--- |
@@ -910,14 +787,6 @@ Measured on Windows x64 with Dart SDK 3.13.4 (stable) across 5 rounds of 500,000
 | **Cloneable** | Mixin (25 fields) | Multi-field update | **52.48 ns** | **19,054,152 ops/s** |
 | **Cloneable** | Mixin (`Box<int>`) | Generic update | **18.34 ns** | **54,513,737 ops/s** |
 
-### Benchmark Insights: Extension vs Mixin
-
-- **Sub-2 Nanosecond Difference**: The Extension strategy runs within **~1.2 ns** of the Mixin strategy (~13.3 ns vs ~12.1 ns), achieving over **75 million operations per second**.
-- **The Trade-Off**:
-  - **Extension Strategy**: Maximum ergonomics. Leaves your class 100% clean (`class User { ... }`) without any `with _$UserCloneable` mixin declaration.
-  - **Mixin Strategy**: Maximum throughput. Avoids closure instantiation on the getter for zero-allocation dispatch.
-- **10x Faster than Dynamic Alternatives**: Both strategies outperform map-based or dynamic data models by more than **10x**.
-
 ---
 
 ## Comparison with Existing Packages
@@ -929,7 +798,9 @@ Measured on Windows x64 with Dart SDK 3.13.4 (stable) across 5 rounds of 500,000
 | **Compile-time non-null check** | Yes | Yes | Yes | Yes |
 | **Runtime allocations** | **0 extra wrappers** | 0 extra wrappers | Allocates `_CopyImpl` | Allocates builder |
 | **Runtime dependencies** | **0 dependencies** | 0 dependencies | Depends on annotations | Depends on built_value |
-| **Focused scope** | Copying only | Copying only | All-in-one data classes | All-in-one immutable |
+| **Dual execution (CLI + build_runner)** | Yes (~1.5s CLI) | build_runner only | build_runner only | build_runner only |
+| **In-class / in-file generation** | Yes (`inClass`, `inLibrary`) | No | No | No |
+| **Zero residual footprint cleanup** | Yes (`cleanup: remove`) | No | No | No |
 
 ---
 
