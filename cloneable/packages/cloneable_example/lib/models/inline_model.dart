@@ -5,7 +5,7 @@ import 'package:cloneable/cloneable.dart';
 /// Running `dart run cloneable_generator:inline` generates the copyWith
 /// implementation directly in this file between delimiter comments without
 /// requiring a separate part or file.
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class InlineUser {
   final String id;
   final String name;
@@ -18,33 +18,77 @@ class InlineUser {
   });
 }
 
+/// Example of an inline cloneable class with custom prefix.
+@Cloneable(
+  output: CloneableOutput.inLibrary,
+  naming: CloneableNaming(
+    extension: CloneableAffix(prefix: 'Custom'),
+    typedef: CloneableAffix(prefix: 'Custom'),
+  ),
+)
+class CustomInlineConfig {
+  final String key;
+  final String value;
+
+  const CustomInlineConfig({
+    required this.key,
+    required this.value,
+  });
+}
+
 // cloneable:start (InlineUser) - GENERATED CODE - DO NOT MODIFY BY HAND
 // (run: dart run cloneable_generator to regenerate)
 
 /// Strongly-typed copyWith function signature for [InlineUser].
-typedef $InlineUserCopyWith = InlineUser Function({
+typedef $InlineUserCopyWithFn = InlineUser Function({
   String id,
   String name,
   String? email,
 });
 
 /// Generated cloneable extension for [InlineUser].
-extension $InlineUserCloneableExtension on InlineUser {
-  $InlineUserCopyWith get copyWith => _copyWith;
+extension $InlineUserExtension on InlineUser {
+  $InlineUserCopyWithFn get copyWith => _copyWith;
 
   InlineUser _copyWith({
-    Object? id = cloneableUndefined,
-    Object? name = cloneableUndefined,
-    Object? email = cloneableUndefined,
+    Object? id = $undefined,
+    Object? name = $undefined,
+    Object? email = $undefined,
   }) {
     final self = this;
     return InlineUser(
-      id: identical(id, cloneableUndefined) ? self.id : id as String,
-      name: identical(name, cloneableUndefined) ? self.name : name as String,
-      email:
-          identical(email, cloneableUndefined) ? self.email : email as String?,
+      id: identical(id, $undefined) ? self.id : id as String,
+      name: identical(name, $undefined) ? self.name : name as String,
+      email: identical(email, $undefined) ? self.email : email as String?,
     );
   }
 }
 
 // cloneable:end (InlineUser)
+
+// cloneable:start (CustomInlineConfig) - GENERATED CODE - DO NOT MODIFY BY HAND
+// (run: dart run cloneable_generator to regenerate)
+
+/// Strongly-typed copyWith function signature for [CustomInlineConfig].
+typedef CustomCustomInlineConfigCopyWithFn = CustomInlineConfig Function({
+  String key,
+  String value,
+});
+
+/// Generated cloneable extension for [CustomInlineConfig].
+extension CustomCustomInlineConfigExtension on CustomInlineConfig {
+  CustomCustomInlineConfigCopyWithFn get copyWith => _copyWith;
+
+  CustomInlineConfig _copyWith({
+    Object? key = $undefined,
+    Object? value = $undefined,
+  }) {
+    final self = this;
+    return CustomInlineConfig(
+      key: identical(key, $undefined) ? self.key : key as String,
+      value: identical(value, $undefined) ? self.value : value as String,
+    );
+  }
+}
+
+// cloneable:end (CustomInlineConfig)

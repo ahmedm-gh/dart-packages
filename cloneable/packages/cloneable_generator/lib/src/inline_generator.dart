@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 
 import 'cloneable_generator.dart';
+import 'config_loader.dart';
 
 /// The result of executing [CloneableGeneratorRunner.run].
 final class CloneableResult {
@@ -29,11 +30,23 @@ final class CloneableResult {
   });
 }
 
+final class _FileEdit {
+  final int offset;
+  final int end;
+  final String text;
+
+  const _FileEdit({
+    required this.offset,
+    required this.end,
+    required this.text,
+  });
+}
+
 /// Comprehensive standalone code generator runner for `@Cloneable`.
 ///
 /// Can generate code both:
-/// - **Inline**: directly inside the model file between marker comments (`@Cloneable(inline: true)`).
-/// - **External / Part files**: directly into `*.g.dart` or `*.cloneable.dart` files (`@Cloneable()`).
+/// - **Inline**: directly inside the model file (in-library or in-class).
+/// - **External / Part files**: directly into `*.g.dart` or `*.cloneable.dart` files.
 ///
 /// Completely independent of `build_runner`.
 final class CloneableGeneratorRunner {
@@ -67,6 +80,7 @@ final class CloneableGeneratorRunner {
       final className = entry.key;
       final code = entry.value;
       final pattern = CloneableGenerator.markerPattern(className);
+      final typedefPattern = CloneableGenerator.typedefMarkerPattern(className);
 
       if (code != null && code.trim().isNotEmpty) {
         final wrapped = CloneableGenerator.wrapWithMarkers(className, code);
@@ -78,6 +92,9 @@ final class CloneableGeneratorRunner {
       } else {
         if (pattern.hasMatch(updated)) {
           updated = updated.replaceFirst(pattern, '');
+        }
+        if (typedefPattern.hasMatch(updated)) {
+          updated = updated.replaceFirst(typedefPattern, '');
         }
       }
     }
@@ -115,6 +132,12 @@ final class CloneableGeneratorRunner {
         existingMarkerClasses.add(name);
       }
     }
+    for (final match
+        in CloneableGenerator.allTypedefMarkersPattern.allMatches(content)) {
+      if (match.group(1)?.trim() case final name? when name.isNotEmpty) {
+        existingMarkerClasses.add(name);
+      }
+    }
 
     final inlineClassCodeMap = <String, String?>{};
     final partFileCodes = <String>[];
@@ -132,12 +155,193 @@ final class CloneableGeneratorRunner {
       }
     }
 
-    final targetPartFileName = matchedPartName ??
+    var hasPartDirective = matchedPartName != null;
+    var targetPartFileName = matchedPartName ??
         '${p.basenameWithoutExtension(filePath)}.cloneable.dart';
+
+    final edits = <_FileEdit>[];
+    var fileNeedsPartDirective = false;
+    String? desiredPartFileName;
+
+    final removedClasses = <String>{};
+    final activeAnnotatedClasses = <String>{};
+
+    for (final declaration in unitResult.unit.declarations) {
+      if (declaration is! ClassDeclaration) continue;
+      final element = declaration.declaredElement;
+      if (element == null) continue;
+
+      ConstantReader? annotationReader;
+      try {
+        if (typeChecker.firstAnnotationOf(element) case final obj?) {
+          annotationReader = ConstantReader(obj);
+        }
+      } catch (_) {}
+
+      if (annotationReader == null) {
+        for (final meta in element.metadata) {
+          try {
+            if (meta.computeConstantValue() case final val?
+                when val.type?.element?.name == 'Cloneable') {
+              annotationReader = ConstantReader(val);
+              break;
+            }
+          } catch (_) {}
+        }
+      }
+
+      if (annotationReader == null) continue;
+
+      final resolvedDefaults = ConfigLoader.resolveDefaults(
+        library: element.library,
+        classElement: element,
+        filePath: filePath,
+      );
+
+      final isActive =
+          annotationReader.peek('active')?.boolValue ?? resolvedDefaults.active;
+      if (!isActive) continue;
+
+      final className = element.name;
+      activeAnnotatedClasses.add(className);
+
+      final output = switch (annotationReader
+          .peek('output')
+          ?.objectValue
+          .getField('index')
+          ?.toIntValue()) {
+        final index? when index >= 0 && index < CloneableOutput.values.length =>
+          CloneableOutput.values[index],
+        _ => resolvedDefaults.output,
+      };
+
+      final strategy = switch (annotationReader
+          .peek('strategy')
+          ?.objectValue
+          .getField('index')
+          ?.toIntValue()) {
+        final index?
+            when index >= 0 && index < CloneableStrategy.values.length =>
+          CloneableStrategy.values[index],
+        _ => resolvedDefaults.strategy,
+      };
+
+      final isInline = output.isInline;
+
+      // Auto-inject missing mixin if strategy: CloneableStrategy.mixin
+      if (strategy == CloneableStrategy.mixin &&
+          output != CloneableOutput.inClass) {
+        var hasMixin = false;
+        if (declaration.withClause != null) {
+          for (final mixinType in declaration.withClause!.mixinTypes) {
+            final name = mixinType.name2.lexeme;
+            if (name.contains(element.name) || name.startsWith(r'_$')) {
+              hasMixin = true;
+              break;
+            }
+          }
+        }
+
+        if (!hasMixin) {
+          final namingReader = annotationReader.peek('naming');
+          final mixinAffix = namingReader?.peek('mixin');
+          final mixinPrefix = mixinAffix?.peek('prefix')?.stringValue ??
+              resolvedDefaults.mixin.prefix ??
+              CloneableNaming.defaultMixin.prefix ??
+              '';
+          final mixinSuffix = mixinAffix?.peek('suffix')?.stringValue ??
+              resolvedDefaults.mixin.suffix ??
+              CloneableNaming.defaultMixin.suffix ??
+              '';
+          final mixinName = mixinPrefix.startsWith('_')
+              ? '$mixinPrefix${element.name}$mixinSuffix'
+              : '${r'_$'}$mixinPrefix${element.name}$mixinSuffix';
+
+          if (declaration.withClause != null) {
+            edits.add(_FileEdit(
+              offset: declaration.withClause!.end,
+              end: declaration.withClause!.end,
+              text: ', $mixinName',
+            ));
+          } else if (declaration.implementsClause != null) {
+            edits.add(_FileEdit(
+              offset: declaration.implementsClause!.offset,
+              end: declaration.implementsClause!.offset,
+              text: 'with $mixinName ',
+            ));
+          } else {
+            edits.add(_FileEdit(
+              offset: declaration.leftBracket.offset,
+              end: declaration.leftBracket.offset,
+              text: 'with $mixinName ',
+            ));
+          }
+        }
+      }
+
+      // Check if file needs a part directive
+      if (!isInline && !hasPartDirective) {
+        if (output == CloneableOutput.part ||
+            strategy == CloneableStrategy.mixin) {
+          fileNeedsPartDirective = true;
+          final namingReader = annotationReader.peek('naming');
+          final directory = namingReader?.peek('directory')?.stringValue ??
+              resolvedDefaults.directory;
+          final fileAffix = namingReader?.peek('file');
+          final filePrefix = fileAffix?.peek('prefix')?.stringValue ??
+              resolvedDefaults.file.prefix ??
+              CloneableNaming.defaultFile.prefix ??
+              '';
+          final fileSuffix = fileAffix?.peek('suffix')?.stringValue ??
+              resolvedDefaults.file.suffix ??
+              CloneableNaming.defaultFile.suffix ??
+              '';
+          final cleanSuffix =
+              fileSuffix.endsWith('.dart') ? fileSuffix : '$fileSuffix.dart';
+          final cleanDir = (directory != null && directory.trim().isNotEmpty)
+              ? '${p.normalize(directory).replaceAll('\\', '/')}/'
+              : '';
+          desiredPartFileName =
+              '$cleanDir$filePrefix${p.basenameWithoutExtension(filePath)}$cleanSuffix';
+        }
+      }
+    }
+
+    if (fileNeedsPartDirective && desiredPartFileName != null) {
+      final partDirectiveStr = "part '$desiredPartFileName';";
+      var insertionOffset = 0;
+      var insertionText = '$partDirectiveStr\n\n';
+
+      final directives = unitResult.unit.directives;
+      ImportDirective? lastImport;
+      for (final dir in directives) {
+        if (dir is ImportDirective) {
+          lastImport = dir;
+        }
+      }
+
+      if (lastImport != null) {
+        insertionOffset = lastImport.end;
+        insertionText = '\n\n$partDirectiveStr';
+      } else if (directives.isNotEmpty) {
+        insertionOffset = directives.last.end;
+        insertionText = '\n\n$partDirectiveStr';
+      }
+
+      edits.add(_FileEdit(
+        offset: insertionOffset,
+        end: insertionOffset,
+        text: insertionText,
+      ));
+
+      hasPartDirective = true;
+      targetPartFileName = desiredPartFileName;
+    }
+
     final targetPartFilePath =
         p.normalize(p.join(p.dirname(filePath), targetPartFileName));
-    final hasPartDirective = matchedPartName != null;
 
+    // Process each class declaration for code generation and auto-removal
     for (final declaration in unitResult.unit.declarations) {
       if (declaration is! ClassDeclaration) continue;
 
@@ -167,52 +371,483 @@ final class CloneableGeneratorRunner {
       }
 
       if (annotationReader != null) {
-        final isActive = annotationReader.peek('active')?.boolValue ?? true;
-        final isInline = annotationReader.peek('inline')?.boolValue ?? false;
+        final resolvedDefaults = ConfigLoader.resolveDefaults(
+          library: element.library,
+          classElement: element,
+          filePath: filePath,
+        );
+
+        final isActive = annotationReader.peek('active')?.boolValue ??
+            resolvedDefaults.active;
+        final output = switch (annotationReader
+            .peek('output')
+            ?.objectValue
+            .getField('index')
+            ?.toIntValue()) {
+          final index?
+              when index >= 0 && index < CloneableOutput.values.length =>
+            CloneableOutput.values[index],
+          _ => resolvedDefaults.output,
+        };
+        final isInline = output.isInline;
+
+        final sentinel = switch (annotationReader
+            .peek('sentinel')
+            ?.objectValue
+            .getField('index')
+            ?.toIntValue()) {
+          final index?
+              when index >= 0 && index < CloneableSentinel.values.length =>
+            CloneableSentinel.values[index],
+          _ => resolvedDefaults.sentinel,
+        };
+
+        final cleanup = switch (annotationReader
+            .peek('cleanup')
+            ?.objectValue
+            .getField('index')
+            ?.toIntValue()) {
+          final index?
+              when index >= 0 && index < CloneableCleanup.values.length =>
+            CloneableCleanup.values[index],
+          _ => resolvedDefaults.cleanup,
+        };
+        final shouldRemove = cleanup == CloneableCleanup.remove &&
+            sentinel == CloneableSentinel.private;
+        final shouldDeactivate = cleanup == CloneableCleanup.deactivate;
+
+        void deactivateAnnotation() {
+          for (final meta in declaration.metadata) {
+            if (meta.name.name == 'Cloneable' ||
+                meta.name.name.startsWith('Cloneable.')) {
+              if (meta.arguments == null) {
+                edits.add(_FileEdit(
+                  offset: meta.end,
+                  end: meta.end,
+                  text: '(active: false)',
+                ));
+              } else {
+                final args = meta.arguments!;
+                NamedExpression? activeArg;
+                for (final arg in args.arguments) {
+                  if (arg is NamedExpression &&
+                      arg.name.label.name == 'active') {
+                    activeArg = arg;
+                    break;
+                  }
+                }
+                if (activeArg != null) {
+                  edits.add(_FileEdit(
+                    offset: activeArg.expression.offset,
+                    end: activeArg.expression.end,
+                    text: 'false',
+                  ));
+                } else if (args.arguments.isEmpty) {
+                  edits.add(_FileEdit(
+                    offset: args.leftParenthesis.end,
+                    end: args.rightParenthesis.offset,
+                    text: 'active: false',
+                  ));
+                } else {
+                  edits.add(_FileEdit(
+                    offset: args.leftParenthesis.end,
+                    end: args.leftParenthesis.end,
+                    text: 'active: false, ',
+                  ));
+                }
+              }
+            }
+          }
+        }
+
+        void cleanInClassMembers() {
+          var removedMarker = false;
+          for (final m in CloneableGenerator.markerPattern(className)
+              .allMatches(content)) {
+            if (m.start >= declaration.leftBracket.offset &&
+                m.end <= declaration.rightBracket.offset) {
+              edits.add(_FileEdit(offset: m.start, end: m.end, text: ''));
+              removedMarker = true;
+            }
+          }
+          for (final m in CloneableGenerator.typedefMarkerPattern(className)
+              .allMatches(content)) {
+            edits.add(_FileEdit(offset: m.start, end: m.end, text: ''));
+          }
+          if (!removedMarker) {
+            for (final member in declaration.members) {
+              if (member is FieldDeclaration &&
+                  member.fields.variables.any((v) =>
+                      v.name.lexeme == r'_$undefined' ||
+                      v.name.lexeme == r'$undefined')) {
+                var memberEnd = member.end;
+                while (memberEnd < content.length &&
+                    (content[memberEnd] == ' ' ||
+                        content[memberEnd] == '\t' ||
+                        content[memberEnd] == '\r' ||
+                        content[memberEnd] == '\n')) {
+                  final isNewline = content[memberEnd] == '\n';
+                  memberEnd++;
+                  if (isNewline) break;
+                }
+                edits.add(_FileEdit(
+                  offset: member.offset,
+                  end: memberEnd,
+                  text: '',
+                ));
+              }
+              if (member is MethodDeclaration) {
+                final name = member.name.lexeme;
+                final isGeneratedMethod = name == '_copyWith' ||
+                    name == '_${resolvedDefaults.method}';
+                final isGeneratedGetter = member.isGetter &&
+                    (name == 'copyWith' || name == resolvedDefaults.method) &&
+                    member.toSource().contains('_copyWith');
+                if (isGeneratedMethod || isGeneratedGetter) {
+                  var memberEnd = member.end;
+                  while (memberEnd < content.length &&
+                      (content[memberEnd] == ' ' ||
+                          content[memberEnd] == '\t' ||
+                          content[memberEnd] == '\r' ||
+                          content[memberEnd] == '\n')) {
+                    final isNewline = content[memberEnd] == '\n';
+                    memberEnd++;
+                    if (isNewline) break;
+                  }
+                  edits.add(_FileEdit(
+                    offset: member.offset,
+                    end: memberEnd,
+                    text: '',
+                  ));
+                }
+              }
+            }
+          }
+        }
+
+        void cleanOutsideMarkers() {
+          for (final m in CloneableGenerator.markerPattern(className)
+              .allMatches(content)) {
+            if (m.start < declaration.offset ||
+                m.end > declaration.rightBracket.offset) {
+              edits.add(_FileEdit(offset: m.start, end: m.end, text: ''));
+            }
+          }
+        }
 
         if (isActive) {
           if (isInline) {
             if (!partFilesOnly) {
-              final code = _generator.generateForClass(
-                element: element,
-                annotation: annotationReader,
-                inputFileName: p.basename(filePath),
-                inputFilePath: filePath,
-                isInline: true,
-                parsedLibResult:
-                    element.session?.getParsedLibraryByElement(element.library),
-              );
+              SomeParsedLibraryResult? parsedLibResult;
+              try {
+                parsedLibResult =
+                    element.session?.getParsedLibraryByElement(element.library);
+              } catch (_) {}
 
-              if (code.trim().isEmpty) {
-                if (existingMarkerClasses.contains(className)) {
-                  inlineClassCodeMap[className] = null;
+              if (output == CloneableOutput.inClass) {
+                cleanOutsideMarkers();
+                final parts = _generator.generateInClassParts(
+                  element: element,
+                  annotation: annotationReader,
+                  inputFileName: p.basename(filePath),
+                  inputFilePath: filePath,
+                  sourceCode: content,
+                  parsedLibResult: parsedLibResult,
+                );
+
+                if (parts.memberCode.isNotEmpty) {
+                  if (shouldRemove) {
+                    removedClasses.add(className);
+
+                    // Insert member code inside class before right bracket
+                    edits.add(_FileEdit(
+                      offset: declaration.rightBracket.offset,
+                      end: declaration.rightBracket.offset,
+                      text: '\n${parts.memberCode}\n',
+                    ));
+
+                    // Auto-remove @Cloneable annotation on class and replace with typedef if present
+                    var replacedCloneable = false;
+                    for (final meta in declaration.metadata) {
+                      if (meta.name.name == 'Cloneable' ||
+                          meta.name.name.startsWith('Cloneable.')) {
+                        var metaEnd = meta.end;
+                        while (metaEnd < content.length &&
+                            (content[metaEnd] == ' ' ||
+                                content[metaEnd] == '\t' ||
+                                content[metaEnd] == '\r' ||
+                                content[metaEnd] == '\n')) {
+                          final isNewline = content[metaEnd] == '\n';
+                          metaEnd++;
+                          if (isNewline) break;
+                        }
+
+                        final replacement =
+                            (!replacedCloneable && parts.typedefCode.isNotEmpty)
+                                ? '${parts.typedefCode}\n\n'
+                                : '';
+                        replacedCloneable = true;
+
+                        edits.add(_FileEdit(
+                          offset: meta.offset,
+                          end: metaEnd,
+                          text: replacement,
+                        ));
+                      }
+                    }
+
+                    if (!replacedCloneable && parts.typedefCode.isNotEmpty) {
+                      edits.add(_FileEdit(
+                        offset: declaration.offset,
+                        end: declaration.offset,
+                        text: '${parts.typedefCode}\n\n',
+                      ));
+                    }
+
+                    // Remove @CloneableField annotations on members and params
+                    for (final member in declaration.members) {
+                      for (final meta in member.metadata) {
+                        if (meta.name.name == 'CloneableField' ||
+                            meta.name.name.startsWith('CloneableField.')) {
+                          var metaEnd = meta.end;
+                          while (metaEnd < content.length &&
+                              (content[metaEnd] == ' ' ||
+                                  content[metaEnd] == '\t' ||
+                                  content[metaEnd] == '\r' ||
+                                  content[metaEnd] == '\n')) {
+                            final isNewline = content[metaEnd] == '\n';
+                            metaEnd++;
+                            if (isNewline) break;
+                          }
+                          edits.add(_FileEdit(
+                            offset: meta.offset,
+                            end: metaEnd,
+                            text: '',
+                          ));
+                        }
+                      }
+                      if (member is ConstructorDeclaration) {
+                        for (final param in member.parameters.parameters) {
+                          for (final meta in param.metadata) {
+                            if (meta.name.name == 'CloneableField' ||
+                                meta.name.name.startsWith('CloneableField.')) {
+                              var metaEnd = meta.end;
+                              while (metaEnd < content.length &&
+                                  (content[metaEnd] == ' ' ||
+                                      content[metaEnd] == '\t' ||
+                                      content[metaEnd] == '\r' ||
+                                      content[metaEnd] == '\n')) {
+                                final isNewline = content[metaEnd] == '\n';
+                                metaEnd++;
+                                if (isNewline) break;
+                              }
+                              edits.add(_FileEdit(
+                                offset: meta.offset,
+                                end: metaEnd,
+                                text: '',
+                              ));
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    // Remove any existing marker blocks if present
+                    if (CloneableGenerator.markerPattern(className)
+                            .firstMatch(content)
+                        case final m?) {
+                      edits.add(_FileEdit(
+                        offset: m.start,
+                        end: m.end,
+                        text: '',
+                      ));
+                    }
+                    if (CloneableGenerator.typedefMarkerPattern(className)
+                            .firstMatch(content)
+                        case final m?) {
+                      edits.add(_FileEdit(
+                        offset: m.start,
+                        end: m.end,
+                        text: '',
+                      ));
+                    }
+                  } else {
+                    // Normal inClass with markers (or deactivate)
+                    Match? insideMarker;
+                    for (final m in CloneableGenerator.markerPattern(className)
+                        .allMatches(content)) {
+                      if (m.start >= declaration.leftBracket.offset &&
+                          m.end <= declaration.rightBracket.offset) {
+                        insideMarker = m;
+                        break;
+                      }
+                    }
+
+                    if (insideMarker != null) {
+                      edits.add(_FileEdit(
+                        offset: insideMarker.start,
+                        end: insideMarker.end,
+                        text: CloneableGenerator.wrapWithMarkers(
+                            className, parts.memberCode),
+                      ));
+                    } else {
+                      edits.add(_FileEdit(
+                        offset: declaration.rightBracket.offset,
+                        end: declaration.rightBracket.offset,
+                        text:
+                            '\n${CloneableGenerator.wrapWithMarkers(className, parts.memberCode)}\n',
+                      ));
+                    }
+
+                    if (parts.typedefCode.isNotEmpty) {
+                      if (CloneableGenerator.typedefMarkerPattern(className)
+                              .firstMatch(content)
+                          case final m?) {
+                        edits.add(_FileEdit(
+                          offset: m.start,
+                          end: m.end,
+                          text: CloneableGenerator.wrapWithTypedefMarkers(
+                              className, parts.typedefCode),
+                        ));
+                      } else {
+                        edits.add(_FileEdit(
+                          offset: declaration.offset,
+                          end: declaration.offset,
+                          text:
+                              '${CloneableGenerator.wrapWithTypedefMarkers(className, parts.typedefCode)}\n',
+                        ));
+                      }
+                    }
+
+                    if (shouldDeactivate) {
+                      deactivateAnnotation();
+                    }
+                  }
                 }
+                existingMarkerClasses.remove(className);
+                continue;
               } else {
-                inlineClassCodeMap[className] = code;
+                // output == CloneableOutput.inLibrary
+                cleanInClassMembers();
+                final code = _generator.generateForClass(
+                  element: element,
+                  annotation: annotationReader,
+                  inputFileName: p.basename(filePath),
+                  inputFilePath: filePath,
+                  sourceCode: content,
+                  isInline: true,
+                  parsedLibResult: parsedLibResult,
+                );
+
+                if (shouldRemove) {
+                  removedClasses.add(className);
+
+                  if (code.trim().isNotEmpty) {
+                    edits.add(_FileEdit(
+                      offset: content.length,
+                      end: content.length,
+                      text: '\n$code\n',
+                    ));
+                  }
+
+                  // Remove @Cloneable annotation on class
+                  for (final meta in declaration.metadata) {
+                    if (meta.name.name == 'Cloneable' ||
+                        meta.name.name.startsWith('Cloneable.')) {
+                      edits.add(_FileEdit(
+                        offset: meta.offset,
+                        end: meta.end,
+                        text: '',
+                      ));
+                    }
+                  }
+
+                  // Remove @CloneableField annotations
+                  for (final member in declaration.members) {
+                    for (final meta in member.metadata) {
+                      if (meta.name.name == 'CloneableField' ||
+                          meta.name.name.startsWith('CloneableField.')) {
+                        edits.add(_FileEdit(
+                          offset: meta.offset,
+                          end: meta.end,
+                          text: '',
+                        ));
+                      }
+                    }
+                    if (member is ConstructorDeclaration) {
+                      for (final param in member.parameters.parameters) {
+                        for (final meta in param.metadata) {
+                          if (meta.name.name == 'CloneableField' ||
+                              meta.name.name.startsWith('CloneableField.')) {
+                            edits.add(_FileEdit(
+                              offset: meta.offset,
+                              end: meta.end,
+                              text: '',
+                            ));
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  if (CloneableGenerator.markerPattern(className)
+                          .firstMatch(content)
+                      case final m?) {
+                    edits.add(_FileEdit(
+                      offset: m.start,
+                      end: m.end,
+                      text: '',
+                    ));
+                  }
+                } else {
+                  if (code.trim().isEmpty) {
+                    if (existingMarkerClasses.contains(className)) {
+                      inlineClassCodeMap[className] = null;
+                    }
+                  } else {
+                    inlineClassCodeMap[className] = code;
+                  }
+
+                  if (shouldDeactivate) {
+                    deactivateAnnotation();
+                  }
+                }
               }
             }
             existingMarkerClasses.remove(className);
             continue;
           } else {
-            // Non-inline: clean up inline marker if present from a previous run
+            // Non-inline: clean up in-class members and inline marker if present from a previous run
+            cleanInClassMembers();
             if (existingMarkerClasses.contains(className)) {
               inlineClassCodeMap[className] = null;
               existingMarkerClasses.remove(className);
             }
 
             if (!inlineOnly) {
+              SomeParsedLibraryResult? parsedLibResult;
+              try {
+                parsedLibResult =
+                    element.session?.getParsedLibraryByElement(element.library);
+              } catch (_) {}
+
               final code = _generator.generateForClass(
                 element: element,
                 annotation: annotationReader,
                 inputFileName: p.basename(filePath),
                 inputFilePath: filePath,
+                sourceCode: content,
                 isInline: false,
-                parsedLibResult:
-                    element.session?.getParsedLibraryByElement(element.library),
+                includeHeader: false,
+                parsedLibResult: parsedLibResult,
               );
 
               if (code.trim().isNotEmpty) {
                 partFileCodes.add(code.trim());
+              }
+
+              if (shouldDeactivate) {
+                deactivateAnnotation();
               }
             }
             continue;
@@ -220,9 +855,14 @@ final class CloneableGeneratorRunner {
         }
       }
 
-      // If class is present but either not annotated or inactive:
-      if (existingMarkerClasses.contains(className)) {
-        inlineClassCodeMap[className] = null;
+      // If class is present but not annotated at all (removed annotation):
+      if (annotationReader == null) {
+        if (existingMarkerClasses.contains(className)) {
+          inlineClassCodeMap[className] = null;
+          existingMarkerClasses.remove(className);
+        }
+      } else {
+        // Class is annotated with @Cloneable but inactive: preserve its existing code
         existingMarkerClasses.remove(className);
       }
     }
@@ -232,16 +872,166 @@ final class CloneableGeneratorRunner {
       inlineClassCodeMap[orphan] = null;
     }
 
-    // 1. Process inline code updates
-    if (!partFilesOnly && inlineClassCodeMap.isNotEmpty) {
-      final newContent = updateContent(
-        content: content,
-        classCodeMap: inlineClassCodeMap,
-      );
+    // If cleanup remove occurred, check if import line can be safely removed
+    if (removedClasses.isNotEmpty) {
+      final remainingActive = activeAnnotatedClasses.difference(removedClasses);
+      if (remainingActive.isEmpty) {
+        for (final directive in unitResult.unit.directives) {
+          if (directive is ImportDirective) {
+            final uri = directive.uri.stringValue;
+            if (uri == 'package:cloneable/cloneable.dart' ||
+                uri == 'package:cloneable/src/annotations.dart') {
+              var importEnd = directive.end;
+              while (importEnd < content.length &&
+                  (content[importEnd] == ' ' ||
+                      content[importEnd] == '\t' ||
+                      content[importEnd] == '\r' ||
+                      content[importEnd] == '\n')) {
+                final isNewline = content[importEnd] == '\n';
+                importEnd++;
+                if (isNewline) break;
+              }
+              edits.add(_FileEdit(
+                offset: directive.offset,
+                end: importEnd,
+                text: '',
+              ));
+            }
+          }
+        }
+      }
+    }
 
-      if (newContent != content) {
-        await File(filePath).writeAsString(newContent);
-        updated.add(filePath);
+    // If no part file codes were generated, remove obsolete cloneable part directives
+    if (partFileCodes.isEmpty) {
+      for (final directive in unitResult.unit.directives) {
+        if (directive is PartDirective && directive.uri.stringValue != null) {
+          final uriStr = directive.uri.stringValue!;
+          final partFilePath = p.normalize(p.join(p.dirname(filePath), uriStr));
+          final partFile = File(partFilePath);
+          final isCloneablePart = uriStr.contains('cloneable') ||
+              (partFile.existsSync() &&
+                  partFile
+                      .readAsStringSync()
+                      .contains('// GENERATED CODE - DO NOT MODIFY BY HAND'));
+          if (isCloneablePart) {
+            var partEnd = directive.end;
+            while (partEnd < content.length &&
+                (content[partEnd] == ' ' ||
+                    content[partEnd] == '\t' ||
+                    content[partEnd] == '\r' ||
+                    content[partEnd] == '\n')) {
+              final isNewline = content[partEnd] == '\n';
+              partEnd++;
+              if (isNewline) break;
+            }
+            edits.add(_FileEdit(
+              offset: directive.offset,
+              end: partEnd,
+              text: '',
+            ));
+            if (partFile.existsSync()) {
+              partFile.deleteSync();
+              deleted.add(partFile.path);
+            }
+          }
+        }
+      }
+    }
+
+    // Apply inlineClassCodeMap updates via edits
+    if (!partFilesOnly && inlineClassCodeMap.isNotEmpty) {
+      for (final entry in inlineClassCodeMap.entries) {
+        final className = entry.key;
+        final code = entry.value;
+        final pattern = CloneableGenerator.markerPattern(className);
+        final typedefPattern =
+            CloneableGenerator.typedefMarkerPattern(className);
+
+        Match? topLevelMarker;
+        for (final m in pattern.allMatches(content)) {
+          var isInsideClass = false;
+          for (final decl in unitResult.unit.declarations) {
+            if (decl is ClassDeclaration &&
+                m.start >= decl.leftBracket.offset &&
+                m.end <= decl.rightBracket.offset) {
+              isInsideClass = true;
+              break;
+            }
+          }
+          if (!isInsideClass) {
+            topLevelMarker = m;
+            break;
+          }
+        }
+
+        if (code != null && code.trim().isNotEmpty) {
+          final wrapped = CloneableGenerator.wrapWithMarkers(className, code);
+          if (topLevelMarker != null) {
+            edits.add(_FileEdit(
+              offset: topLevelMarker.start,
+              end: topLevelMarker.end,
+              text: wrapped,
+            ));
+          } else {
+            edits.add(_FileEdit(
+              offset: content.length,
+              end: content.length,
+              text: '\n$wrapped\n',
+            ));
+          }
+        } else {
+          if (topLevelMarker != null) {
+            edits.add(_FileEdit(
+              offset: topLevelMarker.start,
+              end: topLevelMarker.end,
+              text: '',
+            ));
+          }
+          for (final m in typedefPattern.allMatches(content)) {
+            edits.add(_FileEdit(
+              offset: m.start,
+              end: m.end,
+              text: '',
+            ));
+          }
+        }
+      }
+    }
+
+    // Apply all edits in descending order of offset
+    var updatedContent = content;
+    if (edits.isNotEmpty) {
+      edits.sort((a, b) {
+        final cmp = b.offset.compareTo(a.offset);
+        if (cmp != 0) return cmp;
+        return b.end.compareTo(a.end);
+      });
+      final nonOverlappingEdits = <_FileEdit>[];
+      var lastOffset = 1 << 62;
+      for (final edit in edits) {
+        if (edit.end <= lastOffset) {
+          nonOverlappingEdits.add(edit);
+          lastOffset = edit.offset;
+        }
+      }
+      for (final edit in nonOverlappingEdits) {
+        updatedContent = updatedContent.substring(0, edit.offset) +
+            edit.text +
+            updatedContent.substring(edit.end);
+      }
+
+      try {
+        updatedContent = _formatter.format(updatedContent);
+      } catch (_) {
+        // Fallback to unformatted if formatting fails
+      }
+
+      if (updatedContent != content) {
+        await File(filePath).writeAsString(updatedContent);
+        if (!updated.contains(filePath)) {
+          updated.add(filePath);
+        }
       }
     }
 
@@ -254,7 +1044,20 @@ final class CloneableGeneratorRunner {
           buffer.writeln("part of '${p.basename(filePath)}';\n");
         } else {
           buffer.writeln("import 'package:cloneable/cloneable.dart';");
-          buffer.writeln("import '${p.basename(filePath)}';\n");
+          buffer.writeln("import '${p.basename(filePath)}';");
+          for (final directive in unitResult.unit.directives) {
+            if (directive is ImportDirective) {
+              final uri = directive.uri.stringValue;
+              if (uri != null &&
+                  uri != 'package:cloneable/cloneable.dart' &&
+                  uri != 'package:cloneable/src/annotations.dart' &&
+                  uri != p.basename(filePath) &&
+                  !uri.endsWith('/${p.basename(filePath)}')) {
+                buffer.writeln(directive.toSource());
+              }
+            }
+          }
+          buffer.writeln();
         }
         buffer.writeln(partFileCodes.join('\n\n'));
 
@@ -266,6 +1069,9 @@ final class CloneableGeneratorRunner {
         }
 
         final partFile = File(targetPartFilePath);
+        if (!partFile.parent.existsSync()) {
+          partFile.parent.createSync(recursive: true);
+        }
         final existingPartContent =
             partFile.existsSync() ? partFile.readAsStringSync() : null;
 
@@ -274,16 +1080,22 @@ final class CloneableGeneratorRunner {
           updated.add(targetPartFilePath);
         }
       } else {
-        // If no non-inline classes exist, clean up dedicated .cloneable.dart if present
-        final defaultPartFile = File(p.join(
-          p.dirname(filePath),
-          '${p.basenameWithoutExtension(filePath)}.cloneable.dart',
-        ));
-        if (defaultPartFile.existsSync()) {
-          final existing = defaultPartFile.readAsStringSync();
-          if (existing.contains('// GENERATED CODE - DO NOT MODIFY BY HAND')) {
-            defaultPartFile.deleteSync();
-            deleted.add(defaultPartFile.path);
+        // If no non-inline classes exist, clean up dedicated part files if present
+        for (final candidatePath in [
+          targetPartFilePath,
+          p.join(
+            p.dirname(filePath),
+            '${p.basenameWithoutExtension(filePath)}.cloneable.dart',
+          ),
+        ]) {
+          final candidateFile = File(candidatePath);
+          if (candidateFile.existsSync()) {
+            final existing = candidateFile.readAsStringSync();
+            if (existing
+                .contains('// GENERATED CODE - DO NOT MODIFY BY HAND')) {
+              candidateFile.deleteSync();
+              deleted.add(candidateFile.path);
+            }
           }
         }
       }
@@ -416,16 +1228,36 @@ final class CloneableGeneratorRunner {
   }
 }
 
-/// Backwards-compatible alias for [CloneableGeneratorRunner].
-typedef InlineGenerator = CloneableGeneratorRunner;
-
 /// Shared CLI handler for `cloneable_generator` executables.
 Future<void> runCloneableCli(
   List<String> args, {
   bool inlineOnly = false,
   bool partFilesOnly = false,
 }) async {
-  final targetPaths = args.where((a) => !a.startsWith('-')).toList();
+  String? cliPrefix;
+  String? cliSuffix;
+  final flagValues = <int>{};
+  for (var i = 0; i < args.length; i++) {
+    final arg = args[i];
+    if (arg.startsWith('--prefix=')) {
+      cliPrefix = arg.substring('--prefix='.length);
+    } else if (arg == '--prefix' && i + 1 < args.length) {
+      cliPrefix = args[i + 1];
+      flagValues.add(i + 1);
+    } else if (arg.startsWith('--suffix=')) {
+      cliSuffix = arg.substring('--suffix='.length);
+    } else if (arg == '--suffix' && i + 1 < args.length) {
+      cliSuffix = args[i + 1];
+      flagValues.add(i + 1);
+    }
+  }
+
+  final targetPaths = <String>[];
+  for (var i = 0; i < args.length; i++) {
+    if (!args[i].startsWith('-') && !flagValues.contains(i)) {
+      targetPaths.add(args[i]);
+    }
+  }
   final verbose = args.contains('-v') || args.contains('--verbose');
   final isInlineOnly = inlineOnly || args.contains('--inline-only');
   final isPartFilesOnly = partFilesOnly || args.contains('--part-only');
@@ -436,7 +1268,11 @@ Future<void> runCloneableCli(
     'Scanning for @Cloneable classes in: ${paths.join(', ')}...',
   );
 
-  final runner = CloneableGeneratorRunner();
+  final generator = CloneableGenerator(
+    defaultPrefix: cliPrefix,
+    defaultSuffix: cliSuffix,
+  );
+  final runner = CloneableGeneratorRunner(generator: generator);
   final stopwatch = Stopwatch()..start();
   final result = await runner.run(
     paths: paths,

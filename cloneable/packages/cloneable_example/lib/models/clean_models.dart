@@ -60,3 +60,36 @@ class AliasedUserModel {
     required this.age,
   });
 }
+
+/// Model with custom prefix ('Custom') using extension in a part-file approach.
+@Cloneable(
+  naming: CloneableNaming(
+    extension: CloneableAffix(prefix: 'Custom'),
+  ),
+)
+class CustomPrefixUser {
+  final String name;
+  final String email;
+
+  const CustomPrefixUser({
+    required this.name,
+    required this.email,
+  });
+}
+
+/// Model with custom prefix ('_') using mixin in a part-file approach.
+@Cloneable(
+  strategy: CloneableStrategy.mixin,
+  naming: CloneableNaming(
+    mixin: CloneableAffix(prefix: '_'),
+  ),
+)
+class CustomMixinUser with _CustomMixinUserCloneable {
+  final String name;
+  final String email;
+
+  const CustomMixinUser({
+    required this.name,
+    required this.email,
+  });
+}

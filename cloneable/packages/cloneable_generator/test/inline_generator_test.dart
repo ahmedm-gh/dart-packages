@@ -12,7 +12,7 @@ void main() {
       const original = '''
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class User {
   final String name;
   const User({required this.name});
@@ -42,7 +42,7 @@ extension \$UserCloneableExtension on User {
       const original = '''
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class User {
   final String name;
   const User({required this.name});
@@ -75,7 +75,7 @@ extension \$UserCloneableExtension on User {
       const original = '''
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class User {
   final String name;
   const User({required this.name});
@@ -145,13 +145,13 @@ void afterHelper() {}
       const original = '''
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class User {
   final String name;
   const User({required this.name});
 }
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class Address {
   final String city;
   const Address({required this.city});
@@ -184,7 +184,7 @@ class Address {
       const original = '''
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class User {
   final String name;
   const User({required this.name});
@@ -262,7 +262,7 @@ environment:
       modelFile.writeAsStringSync('''
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class User {
   final String name;
   final int? age;
@@ -286,11 +286,10 @@ class User {
           contains(
               '// cloneable:start (User) - GENERATED CODE - DO NOT MODIFY BY HAND\n// (run: dart run cloneable_generator to regenerate)'));
       expect(updatedContent1, contains('// cloneable:end (User)'));
-      expect(updatedContent1, contains('typedef \$UserCopyWith'));
+      expect(updatedContent1, contains('typedef \$UserCopyWithFn'));
+      expect(updatedContent1, contains('extension \$UserExtension on User'));
       expect(updatedContent1,
-          contains('extension \$UserCloneableExtension on User'));
-      expect(updatedContent1,
-          contains('\$UserCopyWith get copyWith => _copyWith;'));
+          contains('\$UserCopyWithFn get copyWith => _copyWith;'));
 
       // 2. Second execution -> idempotent, 0 updated files
       final result2 = await generator.run(paths: [libDir.path]);
@@ -312,7 +311,7 @@ class User {
 
 // cloneable:start (User) - GENERATED CODE - DO NOT MODIFY BY HAND
 // (run: dart run cloneable_generator to regenerate)
-typedef \$UserCopyWith = User Function({String? name, int? age});
+typedef \$UserCopyWithFn = User Function({String? name, int? age});
 // cloneable:end (User)
 ''');
 
@@ -337,7 +336,7 @@ environment:
       modelFile.writeAsStringSync('''
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class Profile with _\$ProfileCloneable {
   final String bio;
 
@@ -406,7 +405,7 @@ class Item with _\$ItemCloneable {
       expect(partContent, isNot(contains('***')));
       expect(partContent, isNot(contains('CloneableGenerator\n// ***')));
       expect(partContent, contains('mixin _\$ItemCloneable {'));
-      expect(partContent, contains('typedef \$ItemCopyWith'));
+      expect(partContent, contains('typedef \$ItemCopyWithFn'));
 
       // 2. Re-run is idempotent
       final result2 = await runner.run(paths: [libDir.path]);
@@ -429,7 +428,7 @@ environment:
       inlineFile.writeAsStringSync('''
 import 'package:cloneable/cloneable.dart';
 
-@Cloneable(inline: true)
+@Cloneable(output: CloneableOutput.inLibrary)
 class InlineUser {
   final String name;
   const InlineUser({required this.name});
@@ -467,6 +466,406 @@ class ExternalUser with _\$ExternalUserCloneable {
       final externalPartContent = externalPartFile.readAsStringSync();
       expect(externalPartContent, isNot(contains('***')));
       expect(externalPartContent, contains('mixin _\$ExternalUserCloneable {'));
+    });
+
+    test('supports inline generation with custom prefix', () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'custom_inline.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(
+  output: CloneableOutput.inLibrary,
+  naming: CloneableNaming(inLibrary: CloneableAffix(prefix: 'Custom')),
+)
+class CustomInlineUser {
+  final String name;
+  const CustomInlineUser({required this.name});
+}
+''');
+
+      final runner = CloneableGeneratorRunner();
+      final result = await runner.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(1));
+
+      final updatedContent = modelFile.readAsStringSync();
+      expect(updatedContent, contains('cloneable:start (CustomInlineUser)'));
+      expect(updatedContent, contains('cloneable:end (CustomInlineUser)'));
+      expect(
+          updatedContent,
+          contains(
+              'typedef CustomCustomInlineUserCopyWithFn = CustomInlineUser Function({'));
+      expect(
+          updatedContent,
+          contains(
+              'extension CustomCustomInlineUserExtension on CustomInlineUser {'));
+      expect(
+          updatedContent,
+          contains(
+              'CustomCustomInlineUserCopyWithFn get copyWith => _copyWith;'));
+    });
+
+    test(
+        'supports inClass generation with copyWith inside class body and typedef at top-level',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'in_class_model.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(output: CloneableOutput.inClass)
+class InClassUser {
+  final String name;
+  final int age;
+
+  const InClassUser({
+    required this.name,
+    required this.age,
+  });
+}
+''');
+
+      final runner = CloneableGeneratorRunner();
+      final result = await runner.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(1));
+
+      final updatedContent = modelFile.readAsStringSync();
+      // Typedef should be at top-level before the class
+      expect(updatedContent,
+          contains('typedef \$InClassUserCopyWithFn = InClassUser Function({'));
+      // In-class markers and methods should be inside the class body
+      expect(updatedContent, contains(r'static const _$undefined = Object();'));
+      expect(updatedContent,
+          contains('\$InClassUserCopyWithFn get copyWith => _copyWith;'));
+      expect(updatedContent, contains('InClassUser _copyWith({'));
+      expect(updatedContent, contains('// cloneable:start (InClassUser)'));
+      expect(
+          updatedContent, contains('// cloneable:typedef:start (InClassUser)'));
+      expect(
+          updatedContent, contains('// cloneable:typedef:end (InClassUser)'));
+    });
+
+    test(
+        'supports CloneableCleanup.remove eliminating @Cloneable, @CloneableField, and import when sentinel is private',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'clean_target.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(
+  output: CloneableOutput.inClass,
+  sentinel: CloneableSentinel.private,
+  cleanup: CloneableCleanup.remove,
+)
+class CleanTarget {
+  @CloneableField()
+  final String name;
+
+  const CleanTarget({
+    required this.name,
+  });
+}
+''');
+
+      final runner = CloneableGeneratorRunner();
+      final result = await runner.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(1));
+
+      final updatedContent = modelFile.readAsStringSync();
+      // Generated in-class copyWith is present
+      expect(updatedContent, contains('get copyWith => _copyWith;'));
+      expect(updatedContent, contains('CleanTarget _copyWith({'));
+      // Annotations and import should be cleanly stripped
+      expect(updatedContent, isNot(contains('@Cloneable')));
+      expect(updatedContent, isNot(contains('@CloneableField')));
+      expect(
+          updatedContent, isNot(contains("package:cloneable/cloneable.dart")));
+    });
+
+    test('does not remove when sentinel is package even if cleanup is remove',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'package_sentinel.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(
+  output: CloneableOutput.inClass,
+  sentinel: CloneableSentinel.package,
+  cleanup: CloneableCleanup.remove,
+)
+class PackageTarget {
+  final String name;
+
+  const PackageTarget({
+    required this.name,
+  });
+}
+''');
+
+      final runner = CloneableGeneratorRunner();
+      final result = await runner.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(1));
+
+      final updatedContent = modelFile.readAsStringSync();
+      // Annotations and import should NOT be removed because sentinel is package
+      expect(updatedContent, contains('@Cloneable'));
+      expect(updatedContent, contains("package:cloneable/cloneable.dart"));
+    });
+
+    test(
+        'supports CloneableCleanup.deactivate setting active: false in place while preserving fields and import',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'deactivate_target.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(
+  output: CloneableOutput.inClass,
+  cleanup: CloneableCleanup.deactivate,
+)
+class DeactivateTarget {
+  @CloneableField()
+  final String title;
+
+  const DeactivateTarget({
+    required this.title,
+  });
+}
+''');
+
+      final runner = CloneableGeneratorRunner();
+      final result = await runner.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(1));
+
+      final updatedContent = modelFile.readAsStringSync();
+      // Member code is generated
+      expect(updatedContent, contains('get copyWith => _copyWith;'));
+      expect(updatedContent, contains('DeactivateTarget _copyWith({'));
+      // @Cloneable annotation is rewritten to active: false
+      expect(updatedContent, contains('active: false'));
+      // Annotations on fields and package import are preserved
+      expect(updatedContent, contains('@CloneableField()'));
+      expect(updatedContent, contains("package:cloneable/cloneable.dart"));
+
+      // Second run should skip this class because active is false
+      final secondResult = await runner.run(paths: [libDir.path]);
+      expect(secondResult.updatedFiles, isEmpty);
+    });
+
+    test(
+        'transition: switching from inClass to inLibrary removes in-class markers and members and generates top-level extension',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'transition_target.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable.inClass()
+class TransitionTarget {
+  final String name;
+
+  const TransitionTarget({
+    required this.name,
+  });
+}
+''');
+
+      final runner = CloneableGeneratorRunner();
+      // First pass: generate in-class
+      final r1 = await runner.run(paths: [libDir.path]);
+      expect(r1.updatedFiles, hasLength(1));
+
+      var content = modelFile.readAsStringSync();
+      expect(content, contains('// cloneable:start (TransitionTarget)'));
+      expect(content, contains('TransitionTarget _copyWith({'));
+
+      // Switch mode to inLibrary
+      content = content.replaceAll(
+        '@Cloneable.inClass()',
+        '@Cloneable.inLibrary()',
+      );
+      modelFile.writeAsStringSync(content);
+
+      // Second pass: regenerate
+      final r2 = await runner.run(paths: [libDir.path]);
+      expect(r2.updatedFiles, hasLength(1));
+
+      final r2Content = modelFile.readAsStringSync();
+      final classOpenIdx = r2Content.indexOf('class TransitionTarget');
+      final classCloseIdx = r2Content.indexOf('}', classOpenIdx);
+      final classBody = r2Content.substring(classOpenIdx, classCloseIdx + 1);
+      // Old in-class members must be gone from the class body
+      expect(classBody, isNot(contains('_copyWith')));
+      expect(classBody, isNot(contains('// cloneable:start')));
+      // Top-level extension must be generated
+      expect(
+          r2Content,
+          contains(
+              'extension \$TransitionTargetExtension on TransitionTarget'));
+      expect(r2Content,
+          contains('\$TransitionTargetCopyWithFn get copyWith => _copyWith;'));
+    });
+
+    test(
+        'transition: switching from inLibrary to inClass removes top-level markers and injects in-class members',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'library_to_class.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable.inLibrary()
+class LibToClassTarget {
+  final int count;
+
+  const LibToClassTarget({
+    required this.count,
+  });
+}
+''');
+
+      final runner = CloneableGeneratorRunner();
+      // First pass: generate inLibrary
+      final r1 = await runner.run(paths: [libDir.path]);
+      expect(r1.updatedFiles, hasLength(1));
+
+      var content = modelFile.readAsStringSync();
+      expect(
+          content,
+          contains(
+              'extension \$LibToClassTargetExtension on LibToClassTarget'));
+
+      // Switch mode to inClass
+      content = content.replaceAll(
+        '@Cloneable.inLibrary()',
+        '@Cloneable.inClass()',
+      );
+      modelFile.writeAsStringSync(content);
+
+      // Second pass: regenerate
+      final r2 = await runner.run(paths: [libDir.path]);
+      expect(r2.updatedFiles, hasLength(1));
+
+      final r2Content = modelFile.readAsStringSync();
+      // Top-level extension must be removed
+      expect(
+          r2Content, isNot(contains('extension \$LibToClassTargetExtension')));
+      // In-class member must be present
+      expect(r2Content, contains('get copyWith => _copyWith;'));
+      expect(r2Content, contains('LibToClassTarget _copyWith({'));
+    });
+
+    test(
+        'transition: switching from part to inClass removes part directive, deletes part file, and generates in-class code',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'part_to_class.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+part 'part_to_class.cloneable.dart';
+
+@Cloneable.part()
+class PartToClassTarget {
+  final String label;
+
+  const PartToClassTarget({
+    required this.label,
+  });
+}
+''');
+
+      final runner = CloneableGeneratorRunner();
+      // First pass: generate part file
+      final r1 = await runner.run(paths: [libDir.path]);
+      final partFile =
+          File(p.join(libDir.path, 'part_to_class.cloneable.dart'));
+      expect(partFile.existsSync(), isTrue);
+      expect(r1.updatedFiles, contains(partFile.path));
+
+      var content = modelFile.readAsStringSync();
+      expect(content, contains("part 'part_to_class.cloneable.dart';"));
+
+      // Switch mode to inClass
+      content = content.replaceAll(
+        '@Cloneable.part()',
+        '@Cloneable.inClass()',
+      );
+      modelFile.writeAsStringSync(content);
+
+      // Second pass: regenerate
+      final r2 = await runner.run(paths: [libDir.path]);
+      expect(r2.updatedFiles, contains(modelFile.path));
+      expect(r2.deletedFiles, contains(partFile.path));
+
+      // Part file is deleted
+      expect(partFile.existsSync(), isFalse);
+
+      final r2Content = modelFile.readAsStringSync();
+      // Part directive is removed from modelFile
+      expect(r2Content, isNot(contains('part ')));
+      // In-class code is generated
+      expect(r2Content, contains('get copyWith => _copyWith;'));
+      expect(r2Content, contains('PartToClassTarget _copyWith({'));
     });
   });
 }

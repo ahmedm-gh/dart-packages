@@ -2,12 +2,8 @@
 
 part of 'constructor_models.dart';
 
-// **************************************************************************
-// CloneableGenerator
-// **************************************************************************
-
 /// Strongly-typed copyWith function signature for [Coordinate].
-typedef $CoordinateCopyWith = Coordinate Function({
+typedef $CoordinateCopyWithFn = Coordinate Function({
   double x,
   double y,
   double? z,
@@ -15,24 +11,24 @@ typedef $CoordinateCopyWith = Coordinate Function({
 
 /// Generated cloneable mixin for [Coordinate].
 mixin _$CoordinateCloneable {
-  $CoordinateCopyWith get copyWith => _copyWith;
+  $CoordinateCopyWithFn get copyWith => _copyWith;
 
   Coordinate _copyWith({
-    Object? x = cloneableUndefined,
-    Object? y = cloneableUndefined,
-    Object? z = cloneableUndefined,
+    Object? x = $undefined,
+    Object? y = $undefined,
+    Object? z = $undefined,
   }) {
     final self = this as Coordinate;
     return Coordinate(
-      identical(x, cloneableUndefined) ? self.x : x as double,
-      identical(y, cloneableUndefined) ? self.y : y as double,
-      identical(z, cloneableUndefined) ? self.z : z as double?,
+      identical(x, $undefined) ? self.x : x as double,
+      identical(y, $undefined) ? self.y : y as double,
+      identical(z, $undefined) ? self.z : z as double?,
     );
   }
 }
 
 /// Strongly-typed copyWith function signature for [ServiceConfig].
-typedef $ServiceConfigCopyWith = ServiceConfig Function({
+typedef $ServiceConfigCopyWithFn = ServiceConfig Function({
   String host,
   int port,
   bool? enableSsl,
@@ -40,18 +36,18 @@ typedef $ServiceConfigCopyWith = ServiceConfig Function({
 
 /// Generated cloneable mixin for [ServiceConfig].
 mixin _$ServiceConfigCloneable {
-  $ServiceConfigCopyWith get copyWith => _copyWith;
+  $ServiceConfigCopyWithFn get copyWith => _copyWith;
 
   ServiceConfig _copyWith({
-    Object? host = cloneableUndefined,
-    Object? port = cloneableUndefined,
-    Object? enableSsl = cloneableUndefined,
+    Object? host = $undefined,
+    Object? port = $undefined,
+    Object? enableSsl = $undefined,
   }) {
     final self = this as ServiceConfig;
     return ServiceConfig.create(
-      host: identical(host, cloneableUndefined) ? self.host : host as String,
-      port: identical(port, cloneableUndefined) ? self.port : port as int,
-      enableSsl: identical(enableSsl, cloneableUndefined)
+      host: identical(host, $undefined) ? self.host : host as String,
+      port: identical(port, $undefined) ? self.port : port as int,
+      enableSsl: identical(enableSsl, $undefined)
           ? self.enableSsl
           : enableSsl as bool?,
     );
@@ -59,24 +55,23 @@ mixin _$ServiceConfigCloneable {
 }
 
 /// Strongly-typed copyWith function signature for [AuditedEntity].
-typedef $AuditedEntityCopyWith = AuditedEntity Function({
+typedef $AuditedEntityCopyWithFn = AuditedEntity Function({
   String id,
   String title,
 });
 
 /// Generated cloneable mixin for [AuditedEntity].
 mixin _$AuditedEntityCloneable {
-  $AuditedEntityCopyWith get copyWith => _copyWith;
+  $AuditedEntityCopyWithFn get copyWith => _copyWith;
 
   AuditedEntity _copyWith({
-    Object? id = cloneableUndefined,
-    Object? title = cloneableUndefined,
+    Object? id = $undefined,
+    Object? title = $undefined,
   }) {
     final self = this as AuditedEntity;
     return AuditedEntity(
-      id: identical(id, cloneableUndefined) ? self.id : id as String,
-      title:
-          identical(title, cloneableUndefined) ? self.title : title as String,
+      id: identical(id, $undefined) ? self.id : id as String,
+      title: identical(title, $undefined) ? self.title : title as String,
       createdAt: self.createdAt,
     );
   }

@@ -33,6 +33,11 @@ description: A concise, compelling summary between 60 and 180 characters describ
 version: 1.0.0
 repository: https://github.com/ahmedm-gh/dart-packages/tree/main/<package_name>
 issue_tracker: https://github.com/ahmedm-gh/dart-packages/issues
+documentation: https://github.com/ahmedm-gh/dart-packages/tree/main/<package_name>
+
+funding:
+  - https://github.com/sponsors/ahmedm-gh
+  - https://buymeacoffee.com/ahmeds1
 
 topics:
   - primary-topic
@@ -52,10 +57,27 @@ dev_dependencies:
 - **`name`**: Lowercase with underscores (`[a-z0-9_]`).
 - **`description`**: Must be between **60 and 180 characters** without trailing punctuation or generic filler.
 - **`version`**: Follow strict semantic versioning (`MAJOR.MINOR.PATCH`).
-- **`repository`**: Point directly to the package's subdirectory within the monorepo (`.../tree/main/<package_name>`).
+- **`repository`**: Point directly to the package's subdirectory within the monorepo (`https://github.com/ahmedm-gh/dart-packages/tree/main/<package_name>`).
 - **`issue_tracker`**: Point to `https://github.com/ahmedm-gh/dart-packages/issues`.
+- **`documentation`**: Point directly to the package's GitHub repository or subdirectory within the monorepo (`https://github.com/ahmedm-gh/dart-packages/tree/main/<package_name>`).
+- **`funding`**: Must be a list containing the maintainer's funding URLs (`https://github.com/sponsors/ahmedm-gh` and `https://buymeacoffee.com/ahmeds1`) for all packages and subpackages.
 - **`topics`**: Provide 1 to 5 relevant topics (lowercase alphanumeric with hyphens) for search discovery on pub.dev.
 - **`environment.sdk`**: Explicitly specify the supported Dart SDK range.
+
+#### Subpackages & Workspace Packages Specification
+
+For subpackages located in nested directories or workspaces (e.g., `<parent_dir>/packages/<subpackage_name>`):
+- **`repository`**: Point directly to the specific subpackage folder:
+  `https://github.com/ahmedm-gh/dart-packages/tree/main/<parent_dir>/packages/<subpackage_name>`
+- **`documentation`**: Point directly to the specific subpackage folder on GitHub:
+  `https://github.com/ahmedm-gh/dart-packages/tree/main/<parent_dir>/packages/<subpackage_name>`
+- **`funding`**: Must include the maintainer's funding URLs:
+  ```yaml
+  funding:
+    - https://github.com/sponsors/ahmedm-gh
+    - https://buymeacoffee.com/ahmeds1
+  ```
+- **`issue_tracker`**: Point to `https://github.com/ahmedm-gh/dart-packages/issues`.
 
 ---
 
@@ -148,10 +170,18 @@ Before declaring any package ready or publishing, the following verification pip
 
 Every package's `README.md` must adhere to the following visual hierarchy and structure. Replace placeholders like `<package_name>`, `<package_title>`, and `<package_description>` with package-specific data:
 
+> [!TIP]
+> **GitHub Stars Badge**: Each package's `README.md` must include a GitHub star badge referencing the monorepo `https://github.com/ahmedm-gh/dart-packages`:
+> - **Markdown format**:
+>   `[![Star on GitHub](https://img.shields.io/badge/Star_on_GitHub-★-deeppink?style=flat&logo=github)](https://github.com/ahmedm-gh/dart-packages)`
+> - **HTML format**:
+>   `<a href="https://github.com/ahmedm-gh/dart-packages"><img src="https://img.shields.io/badge/Star_on_GitHub-★-deeppink?style=flat&logo=github" alt="Star on GitHub"></a>`
+
 ```markdown
 # <package_name>
 
 [![pub package](https://img.shields.io/pub/v/<package_name>.svg)](https://pub.dev/packages/<package_name>)
+[![Star on GitHub](https://img.shields.io/badge/Star_on_GitHub-★-deeppink?style=flat&logo=github)](https://github.com/ahmedm-gh/dart-packages)
 [![GitHub](https://img.shields.io/badge/GitHub-ahmedm--gh-blue?logo=github)](https://github.com/ahmedm-gh)
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/ahmedm-gh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
@@ -230,6 +260,7 @@ If you find `<package_name>` helpful, here are several ways you can support the 
 ### ☕ Sponsorship & Backing
 
 - **Sponsor on GitHub**: If this package brings value to your commercial apps, consider supporting its maintenance via [GitHub Sponsors](https://github.com/sponsors/ahmedm-gh).
+- **Buy Me a Coffee**: Support development with a one-time coffee or recurring donation via [Buy Me a Coffee](https://buymeacoffee.com/ahmeds1).
 
 ## Author & Maintainer
 
@@ -250,10 +281,11 @@ This package is licensed under the [MIT License](./LICENSE).
 
 Before completing a task or submitting changes for a package:
 
-- [ ] `pubspec.yaml` has `name`, `description`, `version`, `repository`, `issue_tracker`, and `topics`.
+- [ ] `pubspec.yaml` has `name`, `description`, `version`, `repository`, `issue_tracker`, `documentation`, `funding`, and `topics`.
+- [ ] Subpackages / nested workspace packages have `repository`, `documentation`, and `funding` properly configured to point to their relative folder and sponsor/funding URLs.
 - [ ] Documentation directory is named `doc/` (never `docs/`).
 - [ ] `example/<package_name>_example.dart` exists, compiles, and runs cleanly.
-- [ ] `README.md` includes the 4 standard badges, installation, usage, supporting & contributing, author & maintainer, and license sections.
+- [ ] `README.md` includes the 5 standard badges (pub package, Star on GitHub, GitHub profile, Sponsor, License), installation, usage, supporting & contributing, author & maintainer, and license sections.
 - [ ] `CHANGELOG.md` documents the changes for the version specified in `pubspec.yaml`.
 - [ ] `LICENSE` is present with the current year and author name (`AHMED M.`).
 - [ ] `dart analyze` reports **0 issues**.

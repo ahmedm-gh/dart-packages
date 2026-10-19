@@ -25,5 +25,5 @@ void main() {
   );
 
   print('Original user: ${user.name}, age ${user.age}, nick: ${user.nickname}');
-  print('Sentinel for explicit null support: $cloneableUndefined');
+  print('Sentinel for explicit null support: ${$undefined}');
 }

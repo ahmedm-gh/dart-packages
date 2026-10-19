@@ -58,5 +58,19 @@ void main() {
       expect(updated.name, equals('Ali'));
       expect(updated.age, equals(26));
     });
+
+    test('CustomPrefixUser works with custom prefix in part file', () {
+      const user = CustomPrefixUser(name: 'Ahmed', email: 'ahmed@test.com');
+      final updated = user.copyWith(email: 'new@test.com');
+      expect(updated.name, equals('Ahmed'));
+      expect(updated.email, equals('new@test.com'));
+    });
+
+    test('CustomMixinUser works with custom prefix in mixin part file', () {
+      const user = CustomMixinUser(name: 'Ahmed', email: 'ahmed@test.com');
+      final updated = user.copyWith(name: 'Mohamed');
+      expect(updated.name, equals('Mohamed'));
+      expect(updated.email, equals('ahmed@test.com'));
+    });
   });
 }

@@ -1,4 +1,4 @@
-const Object _handwrittenUndefined = Object();
+const _handwrittenUndefined = Object();
 
 /// 1. Hand-written sentinel-based User with direct method
 class HandwrittenUser {

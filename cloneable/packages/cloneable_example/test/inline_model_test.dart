@@ -20,5 +20,12 @@ void main() {
       expect(withoutEmail.name, equals('Alice'));
       expect(withoutEmail.email, isNull);
     });
+
+    test('CustomInlineConfig works with custom prefix in inline approach', () {
+      const config = CustomInlineConfig(key: 'mode', value: 'dark');
+      final updated = config.copyWith(value: 'light');
+      expect(updated.key, equals('mode'));
+      expect(updated.value, equals('light'));
+    });
   });
 }

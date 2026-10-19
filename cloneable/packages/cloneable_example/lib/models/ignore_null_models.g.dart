@@ -2,39 +2,35 @@
 
 part of 'ignore_null_models.dart';
 
-// **************************************************************************
-// CloneableGenerator
-// **************************************************************************
-
 /// Strongly-typed copyWith function signature for [IgnoreNullModel].
-typedef $IgnoreNullModelCopyWith = IgnoreNullModel Function({
+typedef $IgnoreNullModelCopyWithFn = IgnoreNullModel Function({
   String normalField,
   String? ignoredNullField,
 });
 
 /// Generated cloneable mixin for [IgnoreNullModel].
 mixin _$IgnoreNullModelCloneable {
-  $IgnoreNullModelCopyWith get copyWith => _copyWith;
+  $IgnoreNullModelCopyWithFn get copyWith => _copyWith;
 
   IgnoreNullModel _copyWith({
-    Object? normalField = cloneableUndefined,
-    Object? ignoredNullField = cloneableUndefined,
+    Object? normalField = $undefined,
+    Object? ignoredNullField = $undefined,
   }) {
     final self = this as IgnoreNullModel;
     return IgnoreNullModel(
-      normalField: identical(normalField, cloneableUndefined)
+      normalField: identical(normalField, $undefined)
           ? self.normalField
           : normalField as String,
-      ignoredNullField: identical(ignoredNullField, cloneableUndefined) ||
-              ignoredNullField == null
-          ? self.ignoredNullField
-          : ignoredNullField as String?,
+      ignoredNullField:
+          identical(ignoredNullField, $undefined) || ignoredNullField == null
+              ? self.ignoredNullField
+              : ignoredNullField as String?,
     );
   }
 }
 
 /// Strongly-typed copyWith function signature for [ClassLevelIgnoreNullModel].
-typedef $ClassLevelIgnoreNullModelCopyWith = ClassLevelIgnoreNullModel
+typedef $ClassLevelIgnoreNullModelCopyWithFn = ClassLevelIgnoreNullModel
     Function({
   String? name,
   String? bio,
@@ -43,22 +39,21 @@ typedef $ClassLevelIgnoreNullModelCopyWith = ClassLevelIgnoreNullModel
 
 /// Generated cloneable mixin for [ClassLevelIgnoreNullModel].
 mixin _$ClassLevelIgnoreNullModelCloneable {
-  $ClassLevelIgnoreNullModelCopyWith get copyWith => _copyWith;
+  $ClassLevelIgnoreNullModelCopyWithFn get copyWith => _copyWith;
 
   ClassLevelIgnoreNullModel _copyWith({
-    Object? name = cloneableUndefined,
-    Object? bio = cloneableUndefined,
-    Object? score = cloneableUndefined,
+    Object? name = $undefined,
+    Object? bio = $undefined,
+    Object? score = $undefined,
   }) {
     final self = this as ClassLevelIgnoreNullModel;
     return ClassLevelIgnoreNullModel(
-      name: identical(name, cloneableUndefined) || name == null
+      name: identical(name, $undefined) || name == null
           ? self.name
           : name as String,
-      bio: identical(bio, cloneableUndefined) || bio == null
-          ? self.bio
-          : bio as String?,
-      score: identical(score, cloneableUndefined) || score == null
+      bio:
+          identical(bio, $undefined) || bio == null ? self.bio : bio as String?,
+      score: identical(score, $undefined) || score == null
           ? self.score
           : score as int?,
     );

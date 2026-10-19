@@ -2,12 +2,8 @@
 
 part of 'collection_models.dart';
 
-// **************************************************************************
-// CloneableGenerator
-// **************************************************************************
-
 /// Strongly-typed copyWith function signature for [DeepCopyModel].
-typedef $DeepCopyModelCopyWith = DeepCopyModel Function({
+typedef $DeepCopyModelCopyWithFn = DeepCopyModel Function({
   List<String> tags,
   Set<int> ids,
   Map<String, dynamic> metadata,
@@ -18,38 +14,38 @@ typedef $DeepCopyModelCopyWith = DeepCopyModel Function({
 
 /// Generated cloneable mixin for [DeepCopyModel].
 mixin _$DeepCopyModelCloneable {
-  $DeepCopyModelCopyWith get copyWith => _copyWith;
+  $DeepCopyModelCopyWithFn get copyWith => _copyWith;
 
   DeepCopyModel _copyWith({
-    Object? tags = cloneableUndefined,
-    Object? ids = cloneableUndefined,
-    Object? metadata = cloneableUndefined,
-    Object? optionalTags = cloneableUndefined,
-    Object? optionalScores = cloneableUndefined,
-    Object? shallowList = cloneableUndefined,
+    Object? tags = $undefined,
+    Object? ids = $undefined,
+    Object? metadata = $undefined,
+    Object? optionalTags = $undefined,
+    Object? optionalScores = $undefined,
+    Object? shallowList = $undefined,
   }) {
     final self = this as DeepCopyModel;
     return DeepCopyModel(
-      tags: identical(tags, cloneableUndefined)
+      tags: identical(tags, $undefined)
           ? List.of(self.tags)
           : List.of(tags as List<String>),
-      ids: identical(ids, cloneableUndefined)
+      ids: identical(ids, $undefined)
           ? Set.of(self.ids)
           : Set.of(ids as Set<int>),
-      metadata: identical(metadata, cloneableUndefined)
+      metadata: identical(metadata, $undefined)
           ? Map.of(self.metadata)
           : Map.of(metadata as Map<String, dynamic>),
-      optionalTags: identical(optionalTags, cloneableUndefined)
+      optionalTags: identical(optionalTags, $undefined)
           ? (self.optionalTags == null ? null : List.of(self.optionalTags!))
           : (optionalTags == null
               ? null
               : List.of(optionalTags as List<String>)),
-      optionalScores: identical(optionalScores, cloneableUndefined)
+      optionalScores: identical(optionalScores, $undefined)
           ? (self.optionalScores == null ? null : Map.of(self.optionalScores!))
           : (optionalScores == null
               ? null
               : Map.of(optionalScores as Map<String, int>)),
-      shallowList: identical(shallowList, cloneableUndefined)
+      shallowList: identical(shallowList, $undefined)
           ? self.shallowList
           : shallowList as List<String>,
     );
@@ -57,7 +53,7 @@ mixin _$DeepCopyModelCloneable {
 }
 
 /// Strongly-typed copyWith function signature for [SelectiveDeepCopyModel].
-typedef $SelectiveDeepCopyModelCopyWith = SelectiveDeepCopyModel Function({
+typedef $SelectiveDeepCopyModelCopyWithFn = SelectiveDeepCopyModel Function({
   List<String> defaultTags,
   List<String> deepTags,
   Map<String, String>? deepMap,
@@ -65,22 +61,22 @@ typedef $SelectiveDeepCopyModelCopyWith = SelectiveDeepCopyModel Function({
 
 /// Generated cloneable mixin for [SelectiveDeepCopyModel].
 mixin _$SelectiveDeepCopyModelCloneable {
-  $SelectiveDeepCopyModelCopyWith get copyWith => _copyWith;
+  $SelectiveDeepCopyModelCopyWithFn get copyWith => _copyWith;
 
   SelectiveDeepCopyModel _copyWith({
-    Object? defaultTags = cloneableUndefined,
-    Object? deepTags = cloneableUndefined,
-    Object? deepMap = cloneableUndefined,
+    Object? defaultTags = $undefined,
+    Object? deepTags = $undefined,
+    Object? deepMap = $undefined,
   }) {
     final self = this as SelectiveDeepCopyModel;
     return SelectiveDeepCopyModel(
-      defaultTags: identical(defaultTags, cloneableUndefined)
+      defaultTags: identical(defaultTags, $undefined)
           ? self.defaultTags
           : defaultTags as List<String>,
-      deepTags: identical(deepTags, cloneableUndefined)
+      deepTags: identical(deepTags, $undefined)
           ? List.of(self.deepTags)
           : List.of(deepTags as List<String>),
-      deepMap: identical(deepMap, cloneableUndefined)
+      deepMap: identical(deepMap, $undefined)
           ? (self.deepMap == null ? null : Map.of(self.deepMap!))
           : (deepMap == null ? null : Map.of(deepMap as Map<String, String>)),
     );

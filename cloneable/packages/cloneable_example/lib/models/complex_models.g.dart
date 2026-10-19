@@ -2,12 +2,8 @@
 
 part of 'complex_models.dart';
 
-// **************************************************************************
-// CloneableGenerator
-// **************************************************************************
-
 /// Strongly-typed copyWith function signature for [Address].
-typedef $AddressCopyWith = Address Function({
+typedef $AddressCopyWithFn = Address Function({
   String street,
   String city,
   String? zipCode,
@@ -15,28 +11,25 @@ typedef $AddressCopyWith = Address Function({
 
 /// Generated cloneable mixin for [Address].
 mixin _$AddressCloneable {
-  $AddressCopyWith get copyWith => _copyWith;
+  $AddressCopyWithFn get copyWith => _copyWith;
 
   Address _copyWith({
-    Object? street = cloneableUndefined,
-    Object? city = cloneableUndefined,
-    Object? zipCode = cloneableUndefined,
+    Object? street = $undefined,
+    Object? city = $undefined,
+    Object? zipCode = $undefined,
   }) {
     final self = this as Address;
     return Address(
-      street: identical(street, cloneableUndefined)
-          ? self.street
-          : street as String,
-      city: identical(city, cloneableUndefined) ? self.city : city as String,
-      zipCode: identical(zipCode, cloneableUndefined)
-          ? self.zipCode
-          : zipCode as String?,
+      street: identical(street, $undefined) ? self.street : street as String,
+      city: identical(city, $undefined) ? self.city : city as String,
+      zipCode:
+          identical(zipCode, $undefined) ? self.zipCode : zipCode as String?,
     );
   }
 }
 
 /// Strongly-typed copyWith function signature for [Employee].
-typedef $EmployeeCopyWith = Employee Function({
+typedef $EmployeeCopyWithFn = Employee Function({
   String id,
   String name,
   Role role,
@@ -47,28 +40,25 @@ typedef $EmployeeCopyWith = Employee Function({
 
 /// Generated cloneable mixin for [Employee].
 mixin _$EmployeeCloneable {
-  $EmployeeCopyWith get copyWith => _copyWith;
+  $EmployeeCopyWithFn get copyWith => _copyWith;
 
   Employee _copyWith({
-    Object? id = cloneableUndefined,
-    Object? name = cloneableUndefined,
-    Object? role = cloneableUndefined,
-    Object? address = cloneableUndefined,
-    Object? tags = cloneableUndefined,
-    Object? metadata = cloneableUndefined,
+    Object? id = $undefined,
+    Object? name = $undefined,
+    Object? role = $undefined,
+    Object? address = $undefined,
+    Object? tags = $undefined,
+    Object? metadata = $undefined,
   }) {
     final self = this as Employee;
     return Employee(
-      id: identical(id, cloneableUndefined) ? self.id : id as String,
-      name: identical(name, cloneableUndefined) ? self.name : name as String,
-      role: identical(role, cloneableUndefined) ? self.role : role as Role,
-      address: identical(address, cloneableUndefined)
-          ? self.address
-          : address as Address?,
-      tags: identical(tags, cloneableUndefined)
-          ? self.tags
-          : tags as List<String>,
-      metadata: identical(metadata, cloneableUndefined)
+      id: identical(id, $undefined) ? self.id : id as String,
+      name: identical(name, $undefined) ? self.name : name as String,
+      role: identical(role, $undefined) ? self.role : role as Role,
+      address:
+          identical(address, $undefined) ? self.address : address as Address?,
+      tags: identical(tags, $undefined) ? self.tags : tags as List<String>,
+      metadata: identical(metadata, $undefined)
           ? self.metadata
           : metadata as Map<String, dynamic>?,
     );
