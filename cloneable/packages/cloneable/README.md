@@ -30,7 +30,7 @@ Pairs directly with [`cloneable_generator`](https://pub.dev/packages/cloneable_g
   - [5. Zero-Allocation Mixin](#5-zero-allocation-mixin)
 - [Post-Generation Cleanup (`CloneableCleanup`)](#post-generation-cleanup-cloneablecleanup)
   - [Zero Residual Footprint (`CloneableCleanup.remove`)](#zero-residual-footprint-cloneablecleanupremove)
-- [Central Multi-Model Manifests (`@Cloneables`)](#central-multi-model-manifests-cloneables)
+- [Multi-Model Container (`@Cloneables`)](#multi-model-container-cloneables)
 - [Deep Copying for Collections & Typed Data](#deep-copying-for-collections--typed-data)
   - [1. Class-Level Deep Copying](#1-class-level-deep-copying)
   - [2. Field-Level Deep Copying](#2-field-level-deep-copying)
@@ -238,8 +238,10 @@ typedef $UserCopyWithFn = User Function({String name});
 
 extension $UserExtension on User {
   $UserCopyWithFn get copyWith => _copyWith;
-  User _copyWith({Object? name = $undefined}) =>
-      User(name: identical(name, $undefined) ? this.name : name as String);
+  User _copyWith({Object? name = $undefined}) {
+    final self = this;
+    return User(name: identical(name, $undefined) ? self.name : name as String);
+  }
 }
 ```
 
@@ -361,8 +363,12 @@ typedef $OrderCopyWithFn = Order Function({String orderId});
 
 extension $OrderExtension on Order {
   $OrderCopyWithFn get copyWith => _copyWith;
-  Order _copyWith({Object? orderId = $undefined}) =>
-      Order(orderId: identical(orderId, $undefined) ? this.orderId : orderId as String);
+  Order _copyWith({Object? orderId = $undefined}) {
+    final self = this;
+    return Order(
+      orderId: identical(orderId, $undefined) ? self.orderId : orderId as String,
+    );
+  }
 }
 ```
 
@@ -424,22 +430,20 @@ Run `dart run cloneable_generator`:
 
 ---
 
-## Central Multi-Model Manifests (`@Cloneables`)
+## Multi-Model Container (`@Cloneables`)
 
-Declare code generation configurations for multiple models in a single manifest file with **zero annotations** on the models themselves:
+`package:cloneable` provides a declarative container annotation `@Cloneables` for grouping entity configurations in a single map:
 
 ```dart
-// lib/cloneable_manifest.dart
 import 'package:cloneable/cloneable.dart';
-import 'package:my_app/models/user.dart';
-import 'package:my_app/models/order.dart';
 
-@Cloneables({
+const modelConfigs = Cloneables({
   User: Cloneable(),
   Order: Cloneable(deepCopyCollections: true),
-})
-library;
+});
 ```
+
+This container is available for declarative entity mappings, reflection, or custom toolchain pipelines.
 
 ---
 
@@ -662,11 +666,12 @@ Configure defaults across your entire project without repeating options on every
 | `cleanup` | `CloneableCleanup` | `CloneableCleanup.none` | Controls post-generation cleanup: `none`, `deactivate`, or `remove`. |
 | `fieldsConflict` | `CloneableFieldsConflict` | `CloneableFieldsConflict.error` | Reports a compile error if fields are specified in both annotation and getter. |
 | `naming.method` | `String` | `'copyWith'` | The generated copy method and getter name. |
+| `naming.sentinel` | `String` | `r'_$undefined'` | Private sentinel identifier name (`_$undefined`). |
 | `naming.mixin` | `CloneableAffix` | `CloneableAffix(prefix: r'_$', suffix: 'Cloneable')` | Mixin naming pattern (`_$ClassNameCloneable`). |
 | `naming.extension` | `CloneableAffix` | `CloneableAffix(prefix: r'$', suffix: 'Extension')` | Extension naming pattern (`$ClassNameExtension`). |
 | `naming.typedef` | `CloneableAffix` | `CloneableAffix(prefix: r'$', suffix: 'CopyWithFn')` | Typedef function signature pattern (`$ClassNameCopyWithFn`). |
 | `naming.file` | `CloneableAffix` | `CloneableAffix(prefix: '', suffix: '.cloneable.g')` | Generated file naming pattern (`$className.cloneable.g.dart`). |
-| `naming.sentinel` | `String` | `r'_$undefined'` | Private sentinel identifier name (`_$undefined`). |
+| `naming.directory` | `String?` | `null` | Optional subfolder path for generated files (e.g. `'generated'`). |
 
 ### 2. Modern Dart 3+ Configuration Idioms
 
@@ -732,6 +737,7 @@ Customize symbol prefixes and suffixes across all targets using `naming: Cloneab
     extension: CloneableAffix(prefix: 'Ext', suffix: 'Extension'),
     typedef: CloneableAffix(prefix: 'Signature', suffix: 'Fn'),
     file: CloneableAffix(prefix: '', suffix: '.cloneable'),
+    directory: 'generated',
   ),
 )
 class User { ... }
@@ -741,7 +747,7 @@ class User { ... }
 
 ## Smart Sentinel Resolution (`CloneableSentinel`)
 
-- **`CloneableSentinel.auto` (Default)**: Automatically detects if `package:cloneable` was imported with an alias (`import ... as c;` $\rightarrow$ `c.$undefined`) or directly (`$undefined`).
+- **`CloneableSentinel.auto` (Default)**: Automatically detects if `package:cloneable` was imported with an alias (`import ... as c;` $\rightarrow$ `c.$undefined`) or directly (`$undefined`). In `inClass` mode, automatically injects a self-contained private sentinel.
 - **`CloneableSentinel.private`**: Emits a private sentinel (`static const _$undefined = Object();` or `const _$undefined = Object();`). Self-contained, works with zero external imports.
 - **`CloneableSentinel.package`**: Explicitly references canonical `$undefined`.
 
@@ -817,7 +823,7 @@ If you find `cloneable` helpful, here are several ways you can support the proje
 
 ### ☕ Sponsorship & Backing
 
-- **Sponsor on GitHub**: If this package brings value to your commercial apps, consider supporting its maintenance via [GitHub Sponsors](https://github.com/sponsors/ahmedm-gh).
+- **Sponsor on GitHub**: Support ongoing maintenance via [GitHub Sponsors](https://github.com/sponsors/ahmedm-gh).
 - **Buy Me a Coffee**: Support development with a one-time coffee or recurring donation via [Buy Me a Coffee](https://buymeacoffee.com/ahmeds1).
 
 ## Author & Maintainer

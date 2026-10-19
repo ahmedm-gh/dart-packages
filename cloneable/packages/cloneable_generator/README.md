@@ -25,14 +25,13 @@ The high-performance, developer-first code generator companion for [`cloneable`]
   - [Method B: `build_runner` Pipeline](#method-b-build_runner-pipeline)
 - [Output Modes (`CloneableOutput`)](#output-modes-cloneableoutput)
   - [1. Part File Mode (`CloneableOutput.part`)](#1-part-file-mode-cloneableoutputpart)
-  - [2. Standalone Mode (`CloneableOutput.standalone`)](#2-standalone-mode-cloneableoutputstandalone)
-  - [3. In-Library Mode (`CloneableOutput.inLibrary`)](#3-in-library-mode-cloneableoutputinlibrary)
-  - [4. In-Class Mode (`CloneableOutput.inClass`)](#4-in-class-mode-cloneableoutputinclass)
+  - [2. Standalone Mode (`CloneableOutput.standalone`)](#2-standalone-mode-cloneablestandalone)
+  - [3. In-Library Mode (`CloneableOutput.inLibrary`)](#3-in-library-mode-cloneableinlibrary)
+  - [4. In-Class Mode (`CloneableOutput.inClass`)](#4-in-class-mode-cloneableinclass)
 - [Post-Generation Cleanup (`CloneableCleanup`)](#post-generation-cleanup-cloneablecleanup)
   - [1. `CloneableCleanup.none` (Default)](#1-cloneablecleanupnone-default)
   - [2. `CloneableCleanup.deactivate`](#2-cloneablecleanupdeactivate)
   - [3. `CloneableCleanup.remove` (Zero Residual Footprint)](#3-cloneablecleanupremove-zero-residual-footprint)
-- [Central Multi-Model Manifests (`@Cloneables`)](#central-multi-model-manifests-cloneables)
 - [Project-Wide Defaults via In-Code SSOT (`@Cloneable.defaults`)](#project-wide-defaults-via-in-code-ssot-cloneabledefaults)
   - [1. Built-In Defaults Reference](#1-built-in-defaults-reference)
   - [2. Modern Dart 3+ Configuration Idioms](#2-modern-dart-3-configuration-idioms)
@@ -243,8 +242,11 @@ class Order with _$OrderCloneable {
 # Run on all files in lib/
 dart run cloneable_generator
 
-# Or use the build alias:
+# Build alias:
 dart run cloneable_generator:build
+
+# Inline-only alias (processes only inClass and inLibrary models):
+dart run cloneable_generator:inline
 ```
 
 #### Targeting Specific Paths
@@ -277,7 +279,7 @@ dart run cloneable_generator lib/models/ auth/ lib/domain/entity.dart
 
 When using the CLI runner:
 - If a class uses `output: CloneableOutput.part` but is missing a `part '...';` directive, the CLI automatically detects the target filename and **injects the missing `part` directive** into your source file.
-- If a class requests a mixin strategy but forgets `with _$ClassNameCloneable`, the CLI **injects the mixin clause** into the class header automatically.
+- If a class requests a mixin strategy (`CloneableStrategy.mixin`) but omits `with _$ClassNameCloneable`, the CLI **injects the mixin clause** into the class header automatically.
 
 ---
 
@@ -357,8 +359,10 @@ typedef $UserCopyWithFn = User Function({String name});
 
 extension $UserExtension on User {
   $UserCopyWithFn get copyWith => _copyWith;
-  User _copyWith({Object? name = $undefined}) =>
-      User(name: identical(name, $undefined) ? this.name : name as String);
+  User _copyWith({Object? name = $undefined}) {
+    final self = this;
+    return User(name: identical(name, $undefined) ? self.name : name as String);
+  }
 }
 ```
 
@@ -558,31 +562,6 @@ Result:
 
 ---
 
-## Central Multi-Model Manifests (`@Cloneables`)
-
-Need to generate `copyWith` methods for multiple models without polluting model files with annotations? Or generating copying for classes from external libraries or third-party packages?
-
-Declare a central manifest using `@Cloneables`:
-
-```dart
-// lib/cloneable_manifest.dart
-import 'package:cloneable/cloneable.dart';
-import 'package:my_app/models/user.dart';
-import 'package:my_app/models/order.dart';
-import 'package:my_app/models/product.dart';
-
-@Cloneables({
-  User: Cloneable(),
-  Order: Cloneable(deepCopyCollections: true),
-  Product: Cloneable.standalone(),
-})
-library;
-```
-
-Run `dart run cloneable_generator`. The generator reads the manifest and generates corresponding copy implementations for each class in the map!
-
----
-
 ## Project-Wide Defaults via In-Code SSOT (`@Cloneable.defaults`)
 
 Instead of repeating parameters on every model, define global defaults once using `cloneable`'s **Single Source of Truth (SSOT)** configuration architecture.
@@ -602,11 +581,12 @@ When no custom defaults are specified, `cloneable_generator` applies:
 | `cleanup` | `CloneableCleanup` | `CloneableCleanup.none` | Controls post-generation cleanup: `none`, `deactivate`, or `remove`. |
 | `fieldsConflict` | `CloneableFieldsConflict` | `CloneableFieldsConflict.error` | Reports a compile error if fields are specified in both annotation and getter. |
 | `naming.method` | `String` | `'copyWith'` | Name of the generated copy method and getter. |
+| `naming.sentinel` | `String` | `r'_$undefined'` | Private sentinel identifier name (`_$undefined`). |
 | `naming.mixin` | `CloneableAffix` | `CloneableAffix(prefix: r'_$', suffix: 'Cloneable')` | Mixin naming pattern (`_$ClassNameCloneable`). |
 | `naming.extension` | `CloneableAffix` | `CloneableAffix(prefix: r'$', suffix: 'Extension')` | Extension naming pattern (`$ClassNameExtension`). |
 | `naming.typedef` | `CloneableAffix` | `CloneableAffix(prefix: r'$', suffix: 'CopyWithFn')` | Typedef function signature pattern (`$ClassNameCopyWithFn`). |
 | `naming.file` | `CloneableAffix` | `CloneableAffix(prefix: '', suffix: '.cloneable.g')` | Generated file naming pattern (`$className.cloneable.g.dart`). |
-| `naming.sentinel` | `String` | `r'_$undefined'` | Private sentinel identifier name (`_$undefined`). |
+| `naming.directory` | `String?` | `null` | Optional subfolder path for generated files (e.g. `'generated'`). |
 
 ### 2. Modern Dart 3+ Configuration Idioms
 
@@ -863,6 +843,7 @@ Customize symbol generation patterns across all targets:
     extension: CloneableAffix(prefix: 'Ext', suffix: 'Methods'),
     typedef: CloneableAffix(prefix: 'Fn', suffix: 'Signature'),
     file: CloneableAffix(prefix: '', suffix: '.cloneable'),
+    directory: 'generated',
   ),
 )
 class Config { ... }
@@ -872,7 +853,7 @@ class Config { ... }
 
 ### Smart Sentinel Resolution (`CloneableSentinel`)
 
-- **`CloneableSentinel.auto` (Default)**: Automatically detects if `package:cloneable` was imported with a prefix (`import ... as c;` $\rightarrow$ `c.$undefined`) or bare (`$undefined`).
+- **`CloneableSentinel.auto` (Default)**: Automatically detects if `package:cloneable` was imported with a prefix (`import ... as c;` $\rightarrow$ `c.$undefined`) or bare (`$undefined`). In `inClass` mode, automatically injects a self-contained private sentinel.
 - **`CloneableSentinel.private`**: Emits a self-contained private sentinel `static const _$undefined = Object();` (or `const _$undefined = Object();`). Works with zero external imports.
 - **`CloneableSentinel.package`**: Always targets canonical `$undefined`.
 
