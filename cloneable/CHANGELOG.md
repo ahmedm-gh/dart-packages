@@ -5,6 +5,17 @@ All notable changes to the `cloneable` project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-10-20
+
+### Changed
+
+- Replaced copyWith typedef generation with strongly-typed inline signatures directly on getters.
+- Enforced strict, literal `$prefix$ClassName$suffix` affix resolution across generated code.
+
+### Added
+
+- Added `CloneableActiveness` with granular activation and kill-switch control.
+
 ## [1.0.0] - 2026-10-15
 
 ### Added

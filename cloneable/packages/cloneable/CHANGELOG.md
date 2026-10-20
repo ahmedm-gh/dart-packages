@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0] - 2026-10-20
+
+### Changed
+
+- Replaced generated copyWith typedef function signatures with direct, strongly-typed inline signatures.
+- Removed obsolete `typedef` property from `CloneableNaming`.
+
+### Added
+
+- Added `CloneableActiveness` enum (`active`, `inactive`, `forceActive`, `forceInactive`) for granular code generation precedence and kill-switch control.
+
 ## [1.0.0] - 2026-10-15
 
 ### Added

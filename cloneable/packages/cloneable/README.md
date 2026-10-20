@@ -114,10 +114,10 @@ Add `cloneable` to your runtime `dependencies` and `cloneable_generator` to your
 
 ```yaml
 dependencies:
-  cloneable: ^1.0.0
+  cloneable: ^1.1.0
 
 dev_dependencies:
-  cloneable_generator: ^1.0.0
+  cloneable_generator: ^1.1.0
   # Optional: only if you prefer using build_runner instead of the standalone CLI
   build_runner: ^2.4.0
 ```

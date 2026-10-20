@@ -1,6 +1,6 @@
 name: cloneable_generator
 description: Code generator for cloneable, creating strongly typed copyWith implementations with explicit null support
-version: 1.0.0
+version: 1.1.0
 repository: https://github.com/ahmedm-gh/dart-packages/tree/main/cloneable/packages/cloneable_generator
 issue_tracker: https://github.com/ahmedm-gh/dart-packages/issues
 documentation: https://github.com/ahmedm-gh/dart-packages/tree/main/cloneable/packages/cloneable_generator
@@ -31,7 +31,7 @@ resolution: workspace
 dependencies:
   analyzer: ^14.5.0
   build: ^5.0.0
-  cloneable: ^1.0.0
+  cloneable: ^1.1.0
   dart_style: '>=2.3.0 <4.0.0'
   path: ^1.9.0
   source_gen: ^4.3.1

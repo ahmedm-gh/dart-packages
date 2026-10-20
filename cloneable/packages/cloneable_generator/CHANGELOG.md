@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0] - 2026-10-20
+
+### Changed
+
+- Replaced generated copyWith typedefs with direct, strongly-typed inline function signatures on getters with zero typedef boilerplate.
+- Enforced strict, literal `$prefix$ClassName$suffix` across mixin and extension names without prepending synthetic prefixes like `_$`.
+
+### Added
+
+- Support for `CloneableActiveness` (`active`, `inactive`, `forceActive`, `forceInactive`) for granular code generation precedence and kill-switch control.
+- Seamless fallback matching in candidate mixin resolution for legacy and custom prefix definitions.
+
 ## [1.0.0] - 2026-10-15
 
 ### Added
