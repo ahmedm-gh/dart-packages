@@ -1896,6 +1896,138 @@ class PlainUser {
       });
     });
 
+    test(
+        'generateForClass respects empty prefix on mixin (prefix: "") without fallback',
+        () async {
+      const source = r'''
+library test_lib;
+
+part 'test_lib.g.dart';
+
+enum CloneableStrategy { auto, extension, mixin }
+
+class CloneableAffix {
+  final String prefix;
+  final String suffix;
+  const CloneableAffix({this.prefix = '', this.suffix = ''});
+}
+
+class CloneableNaming {
+  final CloneableAffix mixin;
+  const CloneableNaming({
+    this.mixin = const CloneableAffix(prefix: r'_$', suffix: 'Cloneable'),
+  });
+}
+
+class Cloneable {
+  final CloneableStrategy strategy;
+  final CloneableNaming naming;
+  const Cloneable({
+    this.strategy = CloneableStrategy.auto,
+    this.naming = const CloneableNaming(),
+  });
+}
+
+const cloneableUndefined = Object();
+
+@Cloneable(
+  strategy: CloneableStrategy.mixin,
+  naming: CloneableNaming(mixin: CloneableAffix(prefix: '', suffix: 'CloneableMixin')),
+)
+class PlainUser with PlainUserCloneableMixin {
+  final String id;
+  const PlainUser({required this.id});
+}
+''';
+
+      await resolveSource(source, (resolver) async {
+        final library = await resolver.findLibraryByName('test_lib');
+        final classElement = library!.getClass('PlainUser')!;
+        final annotation = classElement.metadata.first;
+
+        final output = generator.generateForClass(
+          element: classElement,
+          annotation: ConstantReader(annotation.computeConstantValue()),
+          inputFileName: 'test_lib.dart',
+        );
+
+        expect(output, contains('mixin PlainUserCloneableMixin {'));
+        expect(output, isNot(contains(r'_$PlainUserCloneableMixin')));
+        expect(output, isNot(contains('_PlainUserCloneableMixin')));
+        expect(output, contains('PlainUser Function({'));
+        expect(output, contains('get copyWith => _copyWith;'));
+      });
+    });
+
+    test(
+        'strategy mixin error message includes empty prefix recommendation without fallback',
+        () async {
+      const source = r'''
+library test_lib;
+
+part 'test_lib.g.dart';
+
+enum CloneableStrategy { auto, extension, mixin }
+
+class CloneableAffix {
+  final String prefix;
+  final String suffix;
+  const CloneableAffix({this.prefix = '', this.suffix = ''});
+}
+
+class CloneableNaming {
+  final CloneableAffix mixin;
+  const CloneableNaming({
+    this.mixin = const CloneableAffix(prefix: r'_$', suffix: 'Cloneable'),
+  });
+}
+
+class Cloneable {
+  final CloneableStrategy strategy;
+  final CloneableNaming naming;
+  const Cloneable({
+    this.strategy = CloneableStrategy.auto,
+    this.naming = const CloneableNaming(),
+  });
+}
+
+@Cloneable(
+  strategy: CloneableStrategy.mixin,
+  naming: CloneableNaming(mixin: CloneableAffix(prefix: '', suffix: 'CloneableMixin')),
+)
+class MissingMixinUser {
+  final String name;
+  const MissingMixinUser({required this.name});
+}
+''';
+
+      await resolveSource(source, (resolver) async {
+        final library = await resolver.findLibraryByName('test_lib');
+        final classElement = library!.getClass('MissingMixinUser')!;
+        final annotation = classElement.metadata.first;
+
+        expect(
+          () => generator.generateForClass(
+            element: classElement,
+            annotation: ConstantReader(annotation.computeConstantValue()),
+            inputFileName: 'test_lib.dart',
+          ),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains(
+                    'class MissingMixinUser with MissingMixinUserCloneableMixin { ... }'),
+                isNot(contains(r'_$MissingMixinUserCloneableMixin')),
+                isNot(contains('_MissingMixinUserCloneableMixin')),
+              ),
+            ),
+          ),
+        );
+      });
+    });
+
     test('generator defaultPrefix is used when prefix is not set in annotation',
         () async {
       const customPrefixGen = CloneableGenerator(defaultPrefix: 'Gen');

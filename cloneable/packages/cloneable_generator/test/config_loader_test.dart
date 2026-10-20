@@ -331,5 +331,78 @@ class Device {
         expect(output, contains('extension MyDeviceExtension on Device'));
       });
     });
+
+    test(
+        'SSOT defaults sentinel is respected when CloneableNaming without sentinel is used on class',
+        () async {
+      const source = r'''
+@Cloneable.defaults(
+  sentinel: CloneableSentinel.private,
+  strategy: CloneableStrategy.mixin,
+  naming: CloneableNaming(
+    file: CloneableAffix(prefix: '', suffix: '_c.g'),
+    mixin: CloneableAffix(prefix: '', suffix: 'CloneableMixin'),
+    extension: CloneableAffix(prefix: '', suffix: 'CloneableExtension'),
+    sentinel: r'_$',
+  ),
+)
+library test_lib;
+
+import 'package:cloneable/cloneable.dart';
+
+part 'test_lib.g.dart';
+
+@Cloneable(
+  naming: CloneableNaming(mixin: CloneableAffix(prefix: 'X')),
+)
+class User with _$XUserCloneableMixin {
+  final String name;
+  final int age;
+  User({required this.name, required this.age});
+}
+
+@Cloneable(
+  naming: CloneableNaming(mixin: CloneableAffix(prefix: '')),
+)
+class User2 with _$User2CloneableMixin {
+  final String name;
+  final int? age;
+  User2({required this.name, required this.age});
+}
+''';
+
+      await resolveSource(source, (resolver) async {
+        final library = await resolver.findLibraryByName('test_lib');
+        final defaults = ConfigLoader.resolveDefaults(library: library);
+
+        expect(defaults.sentinelName, r'_$');
+        expect(defaults.mixin.suffix, 'CloneableMixin');
+
+        final userElement = library!.getClass('User')!;
+        final userAnn = userElement.metadata.first;
+        final userOutput = generator.generateForClass(
+          element: userElement,
+          annotation: ConstantReader(userAnn.computeConstantValue()),
+          inputFileName: 'test_lib.dart',
+          resolvedDefaults: defaults,
+        );
+
+        expect(userOutput, contains(r'const _$ = Object();'));
+        expect(userOutput, contains(r'mixin _$XUserCloneableMixin {'));
+        expect(userOutput, contains(r'Object? name = _$'));
+
+        final user2Element = library.getClass('User2')!;
+        final user2Ann = user2Element.metadata.first;
+        final user2Output = generator.generateForClass(
+          element: user2Element,
+          annotation: ConstantReader(user2Ann.computeConstantValue()),
+          inputFileName: 'test_lib.dart',
+          resolvedDefaults: defaults,
+        );
+
+        expect(user2Output, contains(r'mixin _$User2CloneableMixin {'));
+        expect(user2Output, contains(r'Object? name = _$'));
+      });
+    });
   });
 }

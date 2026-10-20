@@ -175,8 +175,20 @@ final class CloneableGeneratorRunner {
     }
 
     var hasPartDirective = matchedPartName != null;
+    final projectDefaults = ConfigLoader.findProjectSsotDefaults(filePath);
+    final defaultFileAffix =
+        projectDefaults?.file ?? CloneableNaming.defaultFile;
+    final defaultFilePrefix = defaultFileAffix.prefix ?? '';
+    final defaultFileSuffix = defaultFileAffix.suffix ?? '.cloneable.g';
+    final cleanDefaultSuffix = defaultFileSuffix.endsWith('.dart')
+        ? defaultFileSuffix
+        : '$defaultFileSuffix.dart';
+    final defaultDir = projectDefaults?.directory;
+    final cleanDefaultDir = (defaultDir != null && defaultDir.trim().isNotEmpty)
+        ? '${p.normalize(defaultDir).replaceAll('\\', '/')}/'
+        : '';
     var targetPartFileName = matchedPartName ??
-        '${p.basenameWithoutExtension(filePath)}.cloneable.dart';
+        '$cleanDefaultDir$defaultFilePrefix${p.basenameWithoutExtension(filePath)}$cleanDefaultSuffix';
 
     final edits = <_FileEdit>[];
     var fileNeedsPartDirective = false;
@@ -324,17 +336,36 @@ final class CloneableGeneratorRunner {
           injectedMixins.add(className);
           final namingReader = annotationReader?.peek('naming');
           final mixinAffix = namingReader?.peek('mixin');
-          final mixinPrefix = mixinAffix?.peek('prefix')?.stringValue ??
-              astConfig?.mixin?.prefix ??
+          final rawMixinPrefix = mixinAffix?.peek('prefix')?.stringValue;
+          final rawMixinSuffix = mixinAffix?.peek('suffix')?.stringValue;
+          final defaultMixinPrefix = astConfig?.mixin?.prefix ??
               resolvedDefaults.mixin.prefix ??
               CloneableNaming.defaultMixin.prefix ??
               '';
-          final mixinSuffix = mixinAffix?.peek('suffix')?.stringValue ??
-              astConfig?.mixin?.suffix ??
+          final defaultMixinSuffix = astConfig?.mixin?.suffix ??
               resolvedDefaults.mixin.suffix ??
               CloneableNaming.defaultMixin.suffix ??
               '';
-          final mixinName = mixinPrefix.startsWith('_')
+
+          final isDefaultMixin = mixinAffix != null &&
+              rawMixinPrefix == CloneableNaming.defaultMixin.prefix &&
+              rawMixinSuffix == CloneableNaming.defaultMixin.suffix;
+
+          final mixinPrefix = isDefaultMixin
+              ? defaultMixinPrefix
+              : switch (rawMixinPrefix) {
+                  '' => '',
+                  final p? => p,
+                  _ => defaultMixinPrefix,
+                };
+          final mixinSuffix = isDefaultMixin
+              ? defaultMixinSuffix
+              : switch (rawMixinSuffix) {
+                  '' => '',
+                  final s? => s,
+                  _ => defaultMixinSuffix,
+                };
+          final mixinName = (mixinPrefix.startsWith('_') || mixinPrefix.isEmpty)
               ? '$mixinPrefix${element.name}$mixinSuffix'
               : '${r'_$'}$mixinPrefix${element.name}$mixinSuffix';
           final typeArgs = element.typeParameters.isEmpty
@@ -365,25 +396,36 @@ final class CloneableGeneratorRunner {
       }
 
       // Check if file needs a part directive
-      if (!isInline && !hasPartDirective) {
+      if (!isInline) {
         if (output == CloneableOutput.part ||
             strategy == CloneableStrategy.mixin) {
-          fileNeedsPartDirective = true;
           final namingReader = annotationReader?.peek('naming');
           final directory = namingReader?.peek('directory')?.stringValue ??
               astConfig?.directory ??
               resolvedDefaults.directory;
           final fileAffix = namingReader?.peek('file');
-          final filePrefix = fileAffix?.peek('prefix')?.stringValue ??
-              astConfig?.file?.prefix ??
+          final rawFilePrefix = fileAffix?.peek('prefix')?.stringValue;
+          final rawFileSuffix = fileAffix?.peek('suffix')?.stringValue;
+          final defaultFilePrefix = astConfig?.file?.prefix ??
               resolvedDefaults.file.prefix ??
               CloneableNaming.defaultFile.prefix ??
               '';
-          final fileSuffix = fileAffix?.peek('suffix')?.stringValue ??
-              astConfig?.file?.suffix ??
+          final defaultFileSuffix = astConfig?.file?.suffix ??
               resolvedDefaults.file.suffix ??
               CloneableNaming.defaultFile.suffix ??
               '';
+
+          final isDefaultFile = fileAffix != null &&
+              rawFilePrefix == CloneableNaming.defaultFile.prefix &&
+              rawFileSuffix == CloneableNaming.defaultFile.suffix;
+
+          final filePrefix = isDefaultFile
+              ? defaultFilePrefix
+              : (rawFilePrefix ?? defaultFilePrefix);
+          final fileSuffix = isDefaultFile
+              ? defaultFileSuffix
+              : (rawFileSuffix ?? defaultFileSuffix);
+
           final cleanSuffix =
               fileSuffix.endsWith('.dart') ? fileSuffix : '$fileSuffix.dart';
           final cleanDir = (directory != null && directory.trim().isNotEmpty)
@@ -391,6 +433,10 @@ final class CloneableGeneratorRunner {
               : '';
           desiredPartFileName =
               '$cleanDir$filePrefix${p.basenameWithoutExtension(filePath)}$cleanSuffix';
+
+          if (!hasPartDirective) {
+            fileNeedsPartDirective = true;
+          }
         }
       }
     }

@@ -481,11 +481,13 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
 
     // Resolve copy method name
     final namingReader = annotation.peek('naming');
-    final methodName = namingReader?.peek('method')?.stringValue ??
+    final rawMethod = namingReader?.peek('method')?.stringValue ??
         annotation.peek('method')?.stringValue ??
-        annotation.peek('methodName')?.stringValue ??
-        astConfig?.method ??
-        resolvedDefaults.method;
+        annotation.peek('methodName')?.stringValue;
+    final methodName =
+        (rawMethod != null && rawMethod != CloneableNaming.defaultMethod)
+            ? rawMethod
+            : (astConfig?.method ?? resolvedDefaults.method);
 
     final capitalizedMethod = switch (methodName) {
       '' => '',
@@ -495,14 +497,20 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     (String prefix, String suffix) readAffix(
       String fieldName, {
       required CloneableAffix defaultAffix,
+      CloneableAffix? constantDefaultAffix,
     }) {
       final affixReader = namingReader?.peek(fieldName);
-      final p = affixReader?.peek('prefix')?.stringValue;
-      final s = affixReader?.peek('suffix')?.stringValue;
-      return (
-        p ?? defaultAffix.prefix ?? '',
-        s ?? defaultAffix.suffix ?? '',
-      );
+      final rawP = affixReader?.peek('prefix')?.stringValue;
+      final rawS = affixReader?.peek('suffix')?.stringValue;
+      final isDefault = affixReader != null &&
+          constantDefaultAffix != null &&
+          rawP == constantDefaultAffix.prefix &&
+          rawS == constantDefaultAffix.suffix;
+      final p =
+          (rawP != null && !isDefault) ? rawP : (defaultAffix.prefix ?? '');
+      final s =
+          (rawS != null && !isDefault) ? rawS : (defaultAffix.suffix ?? '');
+      return (p, s);
     }
 
     final baseName = inputFileName.replaceAll(RegExp(r'\.dart$'), '');
@@ -510,6 +518,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     final (rawFilePrefix, rawFileSuffix) = readAffix(
       'file',
       defaultAffix: resolvedDefaults.file,
+      constantDefaultAffix: CloneableNaming.defaultFile,
     );
     final cleanFileSuffix =
         rawFileSuffix.endsWith('.dart') ? rawFileSuffix : '$rawFileSuffix.dart';
@@ -653,26 +662,35 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     final suffixQualifier = approachSuffix ?? cliSuffix;
 
     // Mixin:
-    final rawMixinPrefix =
-        namingReader?.peek('mixin')?.peek('prefix')?.stringValue;
-    final rawMixinSuffix =
-        namingReader?.peek('mixin')?.peek('suffix')?.stringValue;
+    final mixinReader = namingReader?.peek('mixin');
+    final rawMixinPrefix = mixinReader?.peek('prefix')?.stringValue;
+    final rawMixinSuffix = mixinReader?.peek('suffix')?.stringValue;
     final defaultMixinPrefix = defaultMixin.prefix ?? '';
     final defaultMixinSuffix = defaultMixin.suffix ?? '';
-    final effectiveMixinPrefix =
-        (rawMixinPrefix != null && rawMixinPrefix != defaultMixinPrefix)
-            ? rawMixinPrefix
-            : (prefixQualifier ?? rawMixinPrefix ?? defaultMixinPrefix);
-    final effectiveMixinSuffix =
-        (rawMixinSuffix != null && rawMixinSuffix != defaultMixinSuffix)
-            ? rawMixinSuffix
-            : (suffixQualifier ?? rawMixinSuffix ?? defaultMixinSuffix);
+
+    final isDefaultMixin = mixinReader != null &&
+        rawMixinPrefix == CloneableNaming.defaultMixin.prefix &&
+        rawMixinSuffix == CloneableNaming.defaultMixin.suffix;
+
+    final effectiveMixinPrefix = isDefaultMixin
+        ? (prefixQualifier ?? defaultMixinPrefix)
+        : switch (rawMixinPrefix) {
+            '' => '',
+            final p? => p,
+            _ => prefixQualifier ?? defaultMixinPrefix,
+          };
+    final effectiveMixinSuffix = isDefaultMixin
+        ? (suffixQualifier ?? defaultMixinSuffix)
+        : switch (rawMixinSuffix) {
+            '' => '',
+            final s? => s,
+            _ => suffixQualifier ?? defaultMixinSuffix,
+          };
 
     // Extension:
-    final rawExtensionPrefix =
-        namingReader?.peek('extension')?.peek('prefix')?.stringValue;
-    final rawExtensionSuffix =
-        namingReader?.peek('extension')?.peek('suffix')?.stringValue;
+    final extensionReader = namingReader?.peek('extension');
+    final rawExtensionPrefix = extensionReader?.peek('prefix')?.stringValue;
+    final rawExtensionSuffix = extensionReader?.peek('suffix')?.stringValue;
     final defaultExtensionPrefix = defaultExtension.prefix ?? '';
     final defaultExtensionSuffix = defaultExtension.suffix ?? '';
     final qualifiedExtensionSuffix = switch (suffixQualifier) {
@@ -680,38 +698,57 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         s.endsWith(defaultExtensionSuffix) ? s : '$s$defaultExtensionSuffix',
       _ => defaultExtensionSuffix,
     };
-    var effectiveExtensionPrefix = (rawExtensionPrefix != null &&
-            rawExtensionPrefix != defaultExtensionPrefix)
-        ? rawExtensionPrefix
-        : (prefixQualifier ?? rawExtensionPrefix ?? defaultExtensionPrefix);
-    final effectiveExtensionSuffix = (rawExtensionSuffix != null &&
-            rawExtensionSuffix != defaultExtensionSuffix)
-        ? rawExtensionSuffix
-        : (rawExtensionSuffix ?? qualifiedExtensionSuffix);
+
+    final isDefaultExtension = extensionReader != null &&
+        rawExtensionPrefix == CloneableNaming.defaultExtension.prefix &&
+        rawExtensionSuffix == CloneableNaming.defaultExtension.suffix;
+
+    var effectiveExtensionPrefix = isDefaultExtension
+        ? (prefixQualifier ?? defaultExtensionPrefix)
+        : switch (rawExtensionPrefix) {
+            '' => '',
+            final p? => p,
+            _ => prefixQualifier ?? defaultExtensionPrefix,
+          };
+    final effectiveExtensionSuffix = isDefaultExtension
+        ? (rawExtensionSuffix ?? qualifiedExtensionSuffix)
+        : switch (rawExtensionSuffix) {
+            '' => '',
+            final s? => s,
+            _ => qualifiedExtensionSuffix,
+          };
 
     // Verify mixin (candidate names excluding short _$ClassName)
     final defaultCapitalizedMethod =
         '${CloneableNaming.defaultMethod[0].toUpperCase()}${CloneableNaming.defaultMethod.substring(1)}';
 
-    final prefixScoped = effectiveMixinPrefix.startsWith('_')
-        ? '$effectiveMixinPrefix${element.name}$effectiveMixinSuffix'
-        : '_$effectiveMixinPrefix${element.name}$effectiveMixinSuffix';
-    final prefixCapability = effectiveMixinPrefix.startsWith('_')
-        ? '$effectiveMixinPrefix${element.name}$capitalizedMethod'
-        : '_$effectiveMixinPrefix${element.name}$capitalizedMethod';
-    final prefixDefaultCapability = effectiveMixinPrefix.startsWith('_')
-        ? '$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod'
-        : '_$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod';
+    final prefixScoped =
+        (effectiveMixinPrefix.startsWith('_') || effectiveMixinPrefix.isEmpty)
+            ? '$effectiveMixinPrefix${element.name}$effectiveMixinSuffix'
+            : '_$effectiveMixinPrefix${element.name}$effectiveMixinSuffix';
+    final prefixCapability =
+        (effectiveMixinPrefix.startsWith('_') || effectiveMixinPrefix.isEmpty)
+            ? '$effectiveMixinPrefix${element.name}$capitalizedMethod'
+            : '_$effectiveMixinPrefix${element.name}$capitalizedMethod';
+    final prefixDefaultCapability =
+        (effectiveMixinPrefix.startsWith('_') || effectiveMixinPrefix.isEmpty)
+            ? '$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod'
+            : '_$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod';
 
     final candidateMixinNames = <String>{
       prefixScoped,
       prefixCapability,
       if (methodName != CloneableNaming.defaultMethod) prefixDefaultCapability,
-      if (!effectiveMixinPrefix.startsWith('_')) ...[
+      if (effectiveMixinPrefix.isNotEmpty &&
+          !effectiveMixinPrefix.startsWith('_')) ...[
         '$effectiveMixinPrefix${element.name}$effectiveMixinSuffix',
         '$effectiveMixinPrefix${element.name}$capitalizedMethod',
         if (methodName != CloneableNaming.defaultMethod)
           '$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod',
+        '_\$$effectiveMixinPrefix${element.name}$effectiveMixinSuffix',
+        '_\$$effectiveMixinPrefix${element.name}$capitalizedMethod',
+        if (methodName != CloneableNaming.defaultMethod)
+          '_\$$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod',
       ],
       '_\$${element.name}$effectiveMixinSuffix',
       if (effectiveMixinSuffix.isEmpty) '_\$${element.name}',
@@ -719,6 +756,12 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       '_\$${element.name}$capitalizedMethod',
       if (methodName != CloneableNaming.defaultMethod)
         '_\$${element.name}$defaultCapitalizedMethod',
+      if (effectiveMixinPrefix == '') ...[
+        '${element.name}$effectiveMixinSuffix',
+        if (effectiveMixinSuffix.isEmpty) element.name!,
+        '${element.name}Cloneable',
+        '${element.name}$capitalizedMethod',
+      ],
     }.toList();
 
     String? detectedMixinName;
@@ -818,9 +861,11 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       _ => astConfig?.sentinel ?? resolvedDefaults.sentinel,
     };
 
-    final customSentinel = namingReader?.peek('sentinel')?.stringValue ??
-        astConfig?.sentinelName ??
-        resolvedDefaults.sentinelName;
+    final rawSentinel = namingReader?.peek('sentinel')?.stringValue;
+    final customSentinel =
+        (rawSentinel != null && rawSentinel != CloneableNaming.defaultSentinel)
+            ? rawSentinel
+            : (astConfig?.sentinelName ?? resolvedDefaults.sentinelName);
 
     final importPrefix = _findCloneableImportPrefix(element);
 

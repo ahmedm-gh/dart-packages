@@ -393,6 +393,47 @@ class Profile {
     });
 
     test(
+        'auto-injects mixin with empty prefix when strategy is CloneableStrategy.mixin and prefix is empty string',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'profile.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(
+  strategy: CloneableStrategy.mixin,
+  output: CloneableOutput.inLibrary,
+  naming: CloneableNaming(mixin: CloneableAffix(prefix: '', suffix: 'CloneableMixin')),
+)
+class Profile {
+  final String bio;
+
+  const Profile({
+    required this.bio,
+  });
+}
+''');
+
+      final generator = CloneableGeneratorRunner();
+      final result = await generator.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(1));
+
+      final updatedContent = modelFile.readAsStringSync();
+      expect(updatedContent,
+          contains('class Profile with ProfileCloneableMixin {'));
+      expect(updatedContent, isNot(contains(r'_$ProfileCloneableMixin')));
+      expect(updatedContent, isNot(contains('_ProfileCloneableMixin')));
+      expect(updatedContent, contains('mixin ProfileCloneableMixin {'));
+    });
+
+    test(
         'auto-injects generic mixin when strategy is CloneableStrategy.mixin on generic class',
         () async {
       final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
