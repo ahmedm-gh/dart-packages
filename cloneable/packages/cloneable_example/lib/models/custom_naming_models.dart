@@ -22,7 +22,6 @@ class CustomSuffixModel with _$CustomSuffixModelCopyable {
 @Cloneable(
   naming: CloneableNaming(
     extension: CloneableAffix(prefix: 'Ext', suffix: 'Extension'),
-    typedef: CloneableAffix(prefix: 'Signature', suffix: 'Fn'),
   ),
 )
 class CustomGranularModel {

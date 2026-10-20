@@ -10,6 +10,17 @@ import 'package:cloneable_generator/src/config_loader.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 
+extension _ClassDeclarationHelper on ClassDeclaration {
+  String get className => declaredFragment?.name ?? namePart.toSource();
+  BlockClassBody? get asBlockBody =>
+      body is BlockClassBody ? body as BlockClassBody : null;
+  List<ClassMember> get members => asBlockBody?.members ?? const [];
+}
+
+extension _NamedTypeHelper on NamedType {
+  String get typeName => name.lexeme;
+}
+
 enum _CollectionKind {
   none,
   list,
@@ -85,6 +96,11 @@ enum _CollectionKind {
 /// Code generator for creating strongly-typed `copyWith` methods with
 /// explicit-null handling.
 final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
+  static const _cloneableTypeChecker =
+      TypeChecker.fromUrl('package:cloneable/cloneable.dart#Cloneable');
+  static const _fieldAnnotationTypeChecker =
+      TypeChecker.fromUrl('package:cloneable/cloneable.dart#CloneableField');
+
   /// The fallback symbol prefix when not specified in [@Cloneable].
   final String? defaultPrefix;
 
@@ -111,23 +127,6 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     return '${startMarker(className)}\n'
         '$trimmed\n'
         '${endMarker(className)}';
-  }
-
-  /// Returns the start marker comment for typedef in [className].
-  static String typedefStartMarker(String className) =>
-      '\n// cloneable:typedef:start ($className) - GENERATED CODE - DO NOT MODIFY BY HAND\n'
-      '// (run: dart run cloneable_generator to regenerate)\n';
-
-  /// Returns the end marker comment for typedef in [className].
-  static String typedefEndMarker(String className) =>
-      '\n// cloneable:typedef:end ($className)\n';
-
-  /// Wraps [code] with the typedef start and end markers for [className].
-  static String wrapWithTypedefMarkers(String className, String code) {
-    final trimmed = code.trim();
-    return '${typedefStartMarker(className)}\n'
-        '$trimmed\n'
-        '${typedefEndMarker(className)}';
   }
 
   /// Returns a regex pattern that matches the inline generated block for [className].
@@ -166,11 +165,11 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
   /// Captures the class name in group 1.
   static final RegExp allMarkersPattern = RegExp(
     r'(?:\r?\n)?'
-    '(?://\\s*={5,}\\s*\\r?\\n)?'
+    r'(?://\s*={5,}\s*\r?\n)?'
     r'//\s*cloneable:\s*start\s*\(([^)]+)\)[^\r\n]*\r?\n'
-    '(?://\\s*={5,}\\s*\\r?\\n)?'
+    r'(?://\s*={5,}\s*\r?\n)?'
     r'[\s\S]*?'
-    '(?://\\s*={5,}\\s*\\r?\\n)?'
+    r'(?://\s*={5,}\s*\r?\n)?'
     r'//\s*cloneable:\s*end\s*\(\1\)[^\r\n]*'
     r'(?:\r?\n//\s*={5,}\s*)?',
     caseSensitive: false,
@@ -180,15 +179,57 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
   /// Captures the class name in group 1.
   static final RegExp allTypedefMarkersPattern = RegExp(
     r'(?:\r?\n)?'
-    '(?://\\s*={5,}\\s*\\r?\\n)?'
+    r'(?://\s*={5,}\s*\r?\n)?'
     r'//\s*cloneable:\s*typedef:\s*start\s*\(([^)]+)\)[^\r\n]*\r?\n'
-    '(?://\\s*={5,}\\s*\\r?\\n)?'
+    r'(?://\s*={5,}\s*\r?\n)?'
     r'[\s\S]*?'
-    '(?://\\s*={5,}\\s*\\r?\\n)?'
+    r'(?://\s*={5,}\s*\r?\n)?'
     r'//\s*cloneable:\s*typedef:\s*end\s*\(\1\)[^\r\n]*'
     r'(?:\r?\n//\s*={5,}\s*)?',
     caseSensitive: false,
   );
+
+  static RawCloneableConfig? _findClassCloneableAst(
+    ClassElement element,
+    SomeParsedLibraryResult? parsedLibResult,
+  ) {
+    try {
+      final unit = _findCompilationUnit(element, parsedLibResult);
+      if (unit == null) return null;
+      for (final decl in unit.declarations) {
+        if (decl is ClassDeclaration && decl.className == element.name) {
+          for (final meta in decl.metadata) {
+            final name = meta.name.toSource();
+            if (name == 'Cloneable' || name.startsWith('Cloneable.')) {
+              return AstConfigReader.parseFromAnnotationAst(meta);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static CompilationUnit? _findCompilationUnit(
+    ClassElement element,
+    SomeParsedLibraryResult? parsedLibResult,
+  ) {
+    if (parsedLibResult case ParsedLibraryResult parsedLib) {
+      for (final u in parsedLib.units) {
+        for (final decl in u.unit.declarations) {
+          if (decl is ClassDeclaration && decl.className == element.name) {
+            return u.unit;
+          }
+        }
+      }
+    }
+    try {
+      final content = element.library.firstFragment.source.contents.data;
+      final parsed = parseString(content: content, throwIfDiagnostics: false);
+      return parsed.unit;
+    } catch (_) {}
+    return null;
+  }
 
   @override
   String generateForAnnotatedElement(
@@ -196,12 +237,6 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
-    final isActive = annotation.peek('active')?.boolValue ?? true;
-
-    if (!isActive) {
-      return '';
-    }
-
     if (element is! ClassElement) {
       throw InvalidGenerationSourceError(
         'The @Cloneable() annotation can only be applied to classes.',
@@ -214,6 +249,43 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       searchDirectory: p.dirname(buildStep.inputId.path),
     );
 
+    final astConfig = _findClassCloneableAst(element, null);
+
+    final rawActiveness = annotation.peek('activeness') != null
+        ? switch (annotation
+            .peek('activeness')!
+            .objectValue
+            .getField('index')
+            ?.toIntValue()) {
+            final index?
+                when index >= 0 && index < CloneableActiveness.values.length =>
+              CloneableActiveness.values[index],
+            _ => null,
+          }
+        : astConfig?.activeness;
+
+    final rawActive = annotation.peek('active')?.boolValue ?? astConfig?.active;
+
+    final bool isActive;
+    if (rawActiveness == CloneableActiveness.forceActive) {
+      isActive = true;
+    } else if (rawActiveness == CloneableActiveness.forceInactive) {
+      isActive = false;
+    } else if (resolvedDefaults.activeness ==
+        CloneableActiveness.forceInactive) {
+      isActive = false;
+    } else if (rawActiveness != null) {
+      isActive = rawActiveness.isActive;
+    } else if (rawActive != null) {
+      isActive = rawActive;
+    } else {
+      isActive = resolvedDefaults.active;
+    }
+
+    if (!isActive) {
+      return '';
+    }
+
     final output = switch (annotation
         .peek('output')
         ?.objectValue
@@ -221,13 +293,13 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         ?.toIntValue()) {
       final index? when index >= 0 && index < CloneableOutput.values.length =>
         CloneableOutput.values[index],
-      _ => resolvedDefaults.output,
+      _ => astConfig?.output ?? resolvedDefaults.output,
     };
 
     if (output.isInline) {
       log.info(
         "@Cloneable(output: CloneableOutput.${output.name}) detected on '${element.name}'. "
-        'Run "dart run cloneable_generator" to generate inline code.',
+        'Run "dart run cloneable" to generate inline code.',
       );
       return '';
     }
@@ -251,24 +323,23 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       parsedLibResult: parsedLibResult,
       defaultPrefix: defaultPrefix,
       defaultSuffix: defaultSuffix,
+      resolvedDefaults: resolvedDefaults,
     );
   }
 
   bool _isFirstActiveCloneableClass(ClassElement element) {
-    const typeChecker = TypeChecker.fromRuntime(Cloneable);
     final resolvedDefaults = ConfigLoader.resolveDefaults(
       library: element.library,
     );
-    for (final topCls in element.library.topLevelElements) {
-      if (topCls is! ClassElement) continue;
+    for (final topCls in element.library.classes) {
       if (topCls == element) {
         return true;
       }
       ConstantReader? annotation;
-      if (typeChecker.firstAnnotationOf(topCls) case final obj?) {
+      if (_cloneableTypeChecker.firstAnnotationOf(topCls) case final obj?) {
         annotation = ConstantReader(obj);
       } else {
-        for (final meta in topCls.metadata) {
+        for (final meta in topCls.metadata.annotations) {
           if (meta.computeConstantValue() case final val?
               when val.type?.element?.name == 'Cloneable') {
             annotation = ConstantReader(val);
@@ -277,8 +348,38 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         }
       }
       if (annotation != null) {
-        final isActive =
-            annotation.peek('active')?.boolValue ?? resolvedDefaults.active;
+        final astConfig = _findClassCloneableAst(topCls, null);
+        final rawActiveness = annotation.peek('activeness') != null
+            ? switch (annotation
+                .peek('activeness')!
+                .objectValue
+                .getField('index')
+                ?.toIntValue()) {
+                final index?
+                    when index >= 0 &&
+                        index < CloneableActiveness.values.length =>
+                  CloneableActiveness.values[index],
+                _ => null,
+              }
+            : astConfig?.activeness;
+        final rawActive =
+            annotation.peek('active')?.boolValue ?? astConfig?.active;
+        final bool isActive;
+        if (rawActiveness == CloneableActiveness.forceActive) {
+          isActive = true;
+        } else if (rawActiveness == CloneableActiveness.forceInactive) {
+          isActive = false;
+        } else if (resolvedDefaults.activeness ==
+            CloneableActiveness.forceInactive) {
+          isActive = false;
+        } else if (rawActiveness != null) {
+          isActive = rawActiveness.isActive;
+        } else if (rawActive != null) {
+          isActive = rawActive;
+        } else {
+          isActive = resolvedDefaults.active;
+        }
+
         final output = switch (annotation
             .peek('output')
             ?.objectValue
@@ -287,7 +388,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
           final index?
               when index >= 0 && index < CloneableOutput.values.length =>
             CloneableOutput.values[index],
-          _ => resolvedDefaults.output,
+          _ => astConfig?.output ?? resolvedDefaults.output,
         };
         if (isActive && !output.isInline) {
           return false;
@@ -300,7 +401,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
   /// Generates the cloneable code for a single annotated class element.
   ///
   /// Can be used by both [CloneableGenerator] (during build_runner) and
-  /// `InlineGenerator` (during standalone in-file code generation).
+  /// `CloneableGeneratorRunner` (during standalone in-file code generation).
   String generateForClass({
     required ClassElement element,
     required ConstantReader annotation,
@@ -313,14 +414,48 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     String? defaultPrefix,
     String? defaultSuffix,
     ResolvedCloneableConfig? resolvedDefaults,
+    bool hasPartDirectiveOverride = false,
+    bool hasMixinOverride = false,
+    Set<String>? declaredSentinels,
   }) {
     resolvedDefaults ??= ConfigLoader.resolveDefaults(
       library: element.library,
       searchDirectory: inputFilePath != null ? p.dirname(inputFilePath) : null,
     );
 
-    final isActive =
-        annotation.peek('active')?.boolValue ?? resolvedDefaults.active;
+    final astConfig = _findClassCloneableAst(element, parsedLibResult);
+
+    final rawActiveness = annotation.peek('activeness') != null
+        ? switch (annotation
+            .peek('activeness')!
+            .objectValue
+            .getField('index')
+            ?.toIntValue()) {
+            final index?
+                when index >= 0 && index < CloneableActiveness.values.length =>
+              CloneableActiveness.values[index],
+            _ => null,
+          }
+        : astConfig?.activeness;
+
+    final rawActive = annotation.peek('active')?.boolValue ?? astConfig?.active;
+
+    final bool isActive;
+    if (rawActiveness == CloneableActiveness.forceActive) {
+      isActive = true;
+    } else if (rawActiveness == CloneableActiveness.forceInactive) {
+      isActive = false;
+    } else if (resolvedDefaults.activeness ==
+        CloneableActiveness.forceInactive) {
+      isActive = false;
+    } else if (rawActiveness != null) {
+      isActive = rawActiveness.isActive;
+    } else if (rawActive != null) {
+      isActive = rawActive;
+    } else {
+      isActive = resolvedDefaults.active;
+    }
+
     if (!isActive) {
       return '';
     }
@@ -332,7 +467,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         ?.toIntValue()) {
       final index? when index >= 0 && index < CloneableOutput.values.length =>
         CloneableOutput.values[index],
-      _ => resolvedDefaults.output,
+      _ => astConfig?.output ?? resolvedDefaults.output,
     };
 
     final effectiveIsInline = isInline || output.isInline;
@@ -349,6 +484,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     final methodName = namingReader?.peek('method')?.stringValue ??
         annotation.peek('method')?.stringValue ??
         annotation.peek('methodName')?.stringValue ??
+        astConfig?.method ??
         resolvedDefaults.method;
 
     final capitalizedMethod = switch (methodName) {
@@ -379,6 +515,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         rawFileSuffix.endsWith('.dart') ? rawFileSuffix : '$rawFileSuffix.dart';
     final customTargetFileName = '$rawFilePrefix$baseName$cleanFileSuffix';
     final customDir = namingReader?.peek('directory')?.stringValue ??
+        astConfig?.directory ??
         resolvedDefaults.directory;
     final customDirClean =
         customDir?.replaceAll('\\', '/').replaceAll(RegExp(r'^/|/$'), '');
@@ -407,8 +544,8 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     String? matchedPartDirective;
     if (!effectiveIsInline) {
       final library = element.library;
-      for (final part in library.parts) {
-        final partStr = part.toString();
+      for (final part in library.firstFragment.partIncludes) {
+        final partStr = part.uri.toString();
         for (final candidate in candidatePartNames) {
           if (partStr.endsWith(candidate) || partStr.contains(candidate)) {
             matchedPartDirective = candidate;
@@ -419,8 +556,8 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       }
 
       if (matchedPartDirective == null) {
-        if (parsedLibResult case ParsedLibraryResult(:final units)) {
-          for (final unit in units) {
+        if (parsedLibResult case ParsedLibraryResult parsedLib) {
+          for (final unit in parsedLib.units) {
             for (final directive in unit.unit.directives) {
               if (directive case PartDirective(:final uri)
                   when uri.stringValue != null) {
@@ -440,7 +577,8 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       }
 
       if (matchedPartDirective == null) {
-        final source = sourceCode ?? element.source.contents.data;
+        final source =
+            sourceCode ?? element.library.firstFragment.source.contents.data;
         for (final candidate in candidatePartNames) {
           if (source.contains("part '$candidate';") ||
               source.contains('part "$candidate";')) {
@@ -451,7 +589,8 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       }
     }
 
-    final bool hasPartDirective = matchedPartDirective != null;
+    final bool hasPartDirective =
+        hasPartDirectiveOverride || matchedPartDirective != null;
 
     if (output == CloneableOutput.part &&
         !hasPartDirective &&
@@ -479,15 +618,17 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     };
 
     final defaultApproachAffix = switch (output) {
-      CloneableOutput.inLibrary => resolvedDefaults.inLibrary,
-      CloneableOutput.inClass => resolvedDefaults.inClass,
-      CloneableOutput.part => resolvedDefaults.part,
-      CloneableOutput.standalone => resolvedDefaults.standalone,
+      CloneableOutput.inLibrary =>
+        astConfig?.inLibrary ?? resolvedDefaults.inLibrary,
+      CloneableOutput.inClass => astConfig?.inClass ?? resolvedDefaults.inClass,
+      CloneableOutput.part => astConfig?.part ?? resolvedDefaults.part,
+      CloneableOutput.standalone =>
+        astConfig?.standalone ?? resolvedDefaults.standalone,
       CloneableOutput.auto => effectiveIsInline
-          ? resolvedDefaults.inLibrary
+          ? (astConfig?.inLibrary ?? resolvedDefaults.inLibrary)
           : (hasPartDirective
-              ? resolvedDefaults.part
-              : resolvedDefaults.standalone),
+              ? (astConfig?.part ?? resolvedDefaults.part)
+              : (astConfig?.standalone ?? resolvedDefaults.standalone)),
     };
 
     final approachPrefix = approachAffix?.peek('prefix')?.stringValue ??
@@ -498,9 +639,14 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     final cliPrefix = defaultPrefix ?? this.defaultPrefix;
     final cliSuffix = defaultSuffix ?? this.defaultSuffix;
 
-    final defaultMixin = resolvedDefaults.mixin;
-    final defaultExtension = resolvedDefaults.extension;
-    final defaultTypedef = resolvedDefaults.typedef;
+    final defaultMixin = ResolvedCloneableConfig.mergeAffix(
+      resolvedDefaults.mixin,
+      astConfig?.mixin,
+    );
+    final defaultExtension = ResolvedCloneableConfig.mergeAffix(
+      resolvedDefaults.extension,
+      astConfig?.extension,
+    );
 
     // Qualifiers from approach or CLI
     final prefixQualifier = approachPrefix ?? cliPrefix;
@@ -534,7 +680,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         s.endsWith(defaultExtensionSuffix) ? s : '$s$defaultExtensionSuffix',
       _ => defaultExtensionSuffix,
     };
-    final effectiveExtensionPrefix = (rawExtensionPrefix != null &&
+    var effectiveExtensionPrefix = (rawExtensionPrefix != null &&
             rawExtensionPrefix != defaultExtensionPrefix)
         ? rawExtensionPrefix
         : (prefixQualifier ?? rawExtensionPrefix ?? defaultExtensionPrefix);
@@ -542,27 +688,6 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
             rawExtensionSuffix != defaultExtensionSuffix)
         ? rawExtensionSuffix
         : (rawExtensionSuffix ?? qualifiedExtensionSuffix);
-
-    // Typedef:
-    final rawTypedefPrefix =
-        namingReader?.peek('typedef')?.peek('prefix')?.stringValue;
-    final rawTypedefSuffix =
-        namingReader?.peek('typedef')?.peek('suffix')?.stringValue;
-    final defaultTypedefPrefix = defaultTypedef.prefix ?? '';
-    final defaultTypedefSuffix =
-        defaultTypedef.suffix != CloneableNaming.defaultTypedef.suffix
-            ? (defaultTypedef.suffix ?? '')
-            : (methodName == CloneableNaming.defaultMethod
-                ? (defaultTypedef.suffix ?? '')
-                : '${capitalizedMethod}Fn');
-    final effectiveTypedefPrefix =
-        (rawTypedefPrefix != null && rawTypedefPrefix != defaultTypedefPrefix)
-            ? rawTypedefPrefix
-            : (prefixQualifier ?? rawTypedefPrefix ?? defaultTypedefPrefix);
-    final effectiveTypedefSuffix =
-        (rawTypedefSuffix != null && rawTypedefSuffix != defaultTypedefSuffix)
-            ? rawTypedefSuffix
-            : (rawTypedefSuffix ?? defaultTypedefSuffix);
 
     // Verify mixin (candidate names excluding short _$ClassName)
     final defaultCapitalizedMethod =
@@ -598,37 +723,38 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
 
     String? detectedMixinName;
 
-    // 1. Check AST node if available (direct from syntax tree of the class)
-    if (parsedLibResult case ParsedLibraryResult parsedLib) {
-      try {
-        if (parsedLib.getElementDeclaration(element)?.node
-            case ClassDeclaration(:final withClause?)) {
-          for (final mixinType in withClause.mixinTypes) {
-            final name = mixinType.name2.lexeme;
-            if (candidateMixinNames.contains(name)) {
-              detectedMixinName = name;
-              break;
-            }
-          }
+    // 1. Check AST node if available
+    final classDecl = _findClassDeclaration(
+      element: element,
+      parsedLibResult: parsedLibResult,
+    );
+
+    if (classDecl != null && classDecl.withClause != null) {
+      for (final mixinType in classDecl.withClause!.mixinTypes) {
+        final name = mixinType.typeName;
+        if (candidateMixinNames.contains(name)) {
+          detectedMixinName = name;
+          break;
         }
-      } catch (_) {}
+      }
     }
 
-    // 2. Check element.mixins (element model)
+    // 2. Check element.mixins
     if (detectedMixinName == null) {
       for (final candidate in candidateMixinNames) {
         if (element.mixins.any((m) =>
             m.element.name == candidate ||
-            m.getDisplayString(withNullability: false).startsWith(candidate))) {
+            m.getDisplayString().startsWith(candidate))) {
           detectedMixinName = candidate;
           break;
         }
       }
     }
 
-    // 3. Fallback to source inspection (useful in mock test environments or updated files)
+    // 3. Fallback to source inspection
     if (detectedMixinName == null) {
-      final source = sourceCode ?? element.source.contents.data;
+      final source =
+          sourceCode ?? element.library.firstFragment.source.contents.data;
       for (final candidate in candidateMixinNames) {
         final pattern =
             RegExp(r'\bwith\b[^;{]*\b' + RegExp.escape(candidate) + r'\b');
@@ -639,7 +765,10 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       }
     }
 
-    final bool hasMixin = detectedMixinName != null;
+    final bool hasMixin = hasMixinOverride || detectedMixinName != null;
+    if (detectedMixinName == null && hasMixinOverride) {
+      detectedMixinName = prefixScoped;
+    }
 
     // Strategy configuration
     final strategy = switch (annotation
@@ -649,7 +778,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         ?.toIntValue()) {
       final index? when index >= 0 && index < CloneableStrategy.values.length =>
         CloneableStrategy.values[index],
-      _ => resolvedDefaults.strategy,
+      _ => astConfig?.strategy ?? resolvedDefaults.strategy,
     };
 
     final useExtension = switch (strategy) {
@@ -686,31 +815,36 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         ?.toIntValue()) {
       final index? when index >= 0 && index < CloneableSentinel.values.length =>
         CloneableSentinel.values[index],
-      _ => resolvedDefaults.sentinel,
+      _ => astConfig?.sentinel ?? resolvedDefaults.sentinel,
     };
 
     final customSentinel = namingReader?.peek('sentinel')?.stringValue ??
+        astConfig?.sentinelName ??
         resolvedDefaults.sentinelName;
 
     final importPrefix = _findCloneableImportPrefix(element);
+
+    final shouldEmitTopLevelSentinel = output != CloneableOutput.inClass &&
+        (declaredSentinels == null ||
+            !declaredSentinels.contains(customSentinel));
+
     final (sentinelExpr, sentinelDeclaration) = switch (sentinelStrategy) {
       CloneableSentinel.private => (
           customSentinel,
           output == CloneableOutput.inClass
               ? '  static const $customSentinel = Object();\n\n'
-              : (includeHeader ? 'const $customSentinel = Object();\n\n' : ''),
+              : (shouldEmitTopLevelSentinel
+                  ? 'const $customSentinel = Object();\n\n'
+                  : ''),
         ),
       CloneableSentinel.package => () {
           if (importPrefix != null) {
             return ('$importPrefix.\$undefined', '');
           }
+          final sourceData = element.library.firstFragment.source.contents.data;
           final hasCloneableUndefined =
-              (element.library.scope.lookup('cloneableUndefined').getter !=
-                          null ||
-                      element.source.contents.data
-                          .contains('cloneableUndefined')) &&
-                  element.library.scope.lookup(r'$undefined').getter == null &&
-                  !element.source.contents.data.contains(r'$undefined');
+              sourceData.contains('cloneableUndefined') &&
+                  !sourceData.contains(r'$undefined');
           if (hasCloneableUndefined) {
             return ('cloneableUndefined', '');
           }
@@ -726,32 +860,77 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
           if (importPrefix != null) {
             return ('$importPrefix.\$undefined', '');
           }
-          final hasUndefined =
-              element.library.scope.lookup(r'$undefined').getter != null ||
-                  element.source.contents.data.contains(r'$undefined');
-          if (hasUndefined) {
-            return (r'$undefined', '');
+
+          var importsPackageCloneable = false;
+          var showsCloneableUndefined = false;
+          var hidesUndefined = false;
+
+          for (final imp in element.library.firstFragment.libraryImports) {
+            final uri =
+                imp.importedLibrary?.firstFragment.source.uri.toString() ??
+                    imp.uri.toString();
+            if (uri == 'package:cloneable/cloneable.dart' ||
+                uri == 'package:cloneable/src/annotations.dart') {
+              importsPackageCloneable = true;
+              for (final comb in imp.combinators) {
+                if (comb is ShowElementCombinator) {
+                  if (comb.shownNames.contains('cloneableUndefined') &&
+                      !comb.shownNames.contains(r'$undefined')) {
+                    showsCloneableUndefined = true;
+                  }
+                } else if (comb is HideElementCombinator) {
+                  if (comb.hiddenNames.contains(r'$undefined')) {
+                    hidesUndefined = true;
+                  }
+                }
+              }
+            }
           }
+
+          final sourceData = element.library.firstFragment.source.contents.data;
           final hasCloneableUndefined =
-              element.library.scope.lookup('cloneableUndefined').getter !=
-                      null ||
-                  element.source.contents.data.contains('cloneableUndefined');
+              sourceData.contains('cloneableUndefined') &&
+                  !sourceData.contains(r'$undefined');
           if (hasCloneableUndefined) {
             return ('cloneableUndefined', '');
           }
+
+          if (!importsPackageCloneable) {
+            if (sourceData.contains('package:cloneable/cloneable.dart') ||
+                sourceData.contains('package:cloneable/src/annotations.dart')) {
+              importsPackageCloneable = true;
+            }
+          }
+
+          if (importsPackageCloneable && !hidesUndefined) {
+            if (showsCloneableUndefined) {
+              return ('cloneableUndefined', '');
+            }
+            return (r'$undefined', '');
+          }
+
           return (
             customSentinel,
-            includeHeader ? 'const $customSentinel = Object();\n\n' : '',
+            shouldEmitTopLevelSentinel
+                ? 'const $customSentinel = Object();\n\n'
+                : '',
           );
         }(),
     };
 
+    if (shouldEmitTopLevelSentinel && sentinelDeclaration.isNotEmpty) {
+      declaredSentinels?.add(customSentinel);
+    }
+
     // Class-level configuration
-    final constructorName = annotation.peek('constructor')?.stringValue;
+    final constructorName =
+        annotation.peek('constructor')?.stringValue ?? astConfig?.constructor;
     final classDeepCopy = annotation.peek('deepCopyCollections')?.boolValue ??
+        astConfig?.deepCopyCollections ??
         resolvedDefaults.deepCopyCollections;
-    final classIgnoreNull =
-        annotation.peek('ignoreNull')?.boolValue ?? resolvedDefaults.ignoreNull;
+    final classIgnoreNull = annotation.peek('ignoreNull')?.boolValue ??
+        astConfig?.ignoreNull ??
+        resolvedDefaults.ignoreNull;
 
     // Resolve constructor
     final constructor = switch (constructorName) {
@@ -771,19 +950,30 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         (!hasPartDirective && !effectiveIsInline);
 
     if (isSeparateLibrary) {
-      if (element.name.startsWith('_')) {
+      if ((element.name ?? '').startsWith('_')) {
         throw InvalidGenerationSourceError(
           "Class '${element.name}' is private. Dart does not allow accessing private classes from standalone generated libraries.\n"
           "To generate copyWith for private classes, use 'CloneableOutput.part' with a part directive, or 'CloneableOutput.inLibrary' / 'CloneableOutput.inClass'.",
           element: element,
         );
       }
-      if (constructor.name.startsWith('_')) {
+      final cName = constructor.name ?? '';
+      if (cName.startsWith('_')) {
         throw InvalidGenerationSourceError(
-          "Constructor '${constructor.name}' of class '${element.name}' is private. Standalone generated libraries cannot access private constructors across library boundaries.\n"
+          "Constructor '$cName' of class '${element.name}' is private. Standalone generated libraries cannot access private constructors across library boundaries.\n"
           "Use a public constructor, or switch to 'CloneableOutput.part' / 'CloneableOutput.inClass'.",
           element: element,
         );
+      }
+
+      // Standalone extensions on public classes must be public
+      if (!(element.name ?? '').startsWith('_') &&
+          effectiveExtensionPrefix.startsWith('_')) {
+        effectiveExtensionPrefix =
+            effectiveExtensionPrefix.replaceFirst(RegExp(r'^_+'), r'$');
+        if (effectiveExtensionPrefix.isEmpty) {
+          effectiveExtensionPrefix = r'$';
+        }
       }
     }
 
@@ -792,24 +982,21 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         switch (element.typeParameters) {
       [] => ('', ''),
       final params => (
-          '<${params.map((p) => p.getDisplayString(withNullability: true)).join(', ')}>',
+          '<${params.map((p) => p.bound != null ? '${p.name} extends ${p.bound!.getDisplayString()}' : p.name).join(', ')}>',
           '<${params.map((p) => p.name).join(', ')}>',
         ),
     };
 
-    final classDecl = _findClassDeclaration(
-      element: element,
-      parsedLibResult: parsedLibResult,
-    );
-
-    // Resolve fields whitelist (from annotation or in-class getter/field)
+    // Resolve fields whitelist
     final annotationFields = switch (annotation.peek('fields')?.listValue) {
-      null => null,
+      null => astConfig?.fields,
       final list =>
         list.map((item) => item.toStringValue()).whereType<String>().toList(),
     };
 
-    final customGetter = annotation.peek('cloneableFieldsGetter')?.stringValue;
+    final customGetter =
+        annotation.peek('cloneableFieldsGetter')?.stringValue ??
+            astConfig?.cloneableFieldsGetter;
 
     final inClassResult = _findInClassFields(
       element: element,
@@ -827,7 +1014,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       final index?
           when index >= 0 && index < CloneableFieldsConflict.values.length =>
         CloneableFieldsConflict.values[index],
-      _ => resolvedDefaults.fieldsConflict,
+      _ => astConfig?.fieldsConflict ?? resolvedDefaults.fieldsConflict,
     };
 
     final List<String>? allowedFields;
@@ -865,14 +1052,14 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
           : inClassResult?.getterName;
     }
 
-    // If explicitly empty (AND NOT NULL), ignore code generation (like active = false)
     if (allowedFields != null && allowedFields.isEmpty) {
       return '';
     }
 
     if (allowedFields != null) {
-      final constructorParamNames =
-          constructor.parameters.map((p) => p.name).toSet();
+      final constructorParamNames = constructor.formalParameters
+          .map((FormalParameterElement p) => p.name)
+          .toSet();
       for (final fieldName in allowedFields) {
         if (!constructorParamNames.contains(fieldName)) {
           throw InvalidGenerationSourceError(
@@ -885,24 +1072,25 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
 
     // Process parameters
     final params = <_FieldInfo>[];
-    for (final param in constructor.parameters) {
-      final field = element.getField(param.name) ??
-          element.getGetter(param.name)?.variable ??
+    for (final param in constructor.formalParameters) {
+      final paramName = param.name!;
+      final field = element.getField(paramName) ??
+          element.getGetter(paramName)?.variable ??
           (throw InvalidGenerationSourceError(
-            "Constructor parameter '${param.name}' does not match any field or getter in class '${element.name}'.",
+            "Constructor parameter '$paramName' does not match any field or getter in class '${element.name}'.",
             element: param,
           ));
 
-      if (isSeparateLibrary && param.name.startsWith('_')) {
+      if (isSeparateLibrary && paramName.startsWith('_')) {
         throw InvalidGenerationSourceError(
-          "Constructor parameter '${param.name}' in class '${element.name}' is private. Standalone generated libraries cannot access private fields across library boundaries.\n"
+          "Constructor parameter '$paramName' in class '${element.name}' is private. Standalone generated libraries cannot access private fields across library boundaries.\n"
           "Make the field public, or switch to 'CloneableOutput.part' / 'CloneableOutput.inClass'.",
           element: param,
         );
       }
 
       final isWhitelisted =
-          allowedFields == null || allowedFields.contains(param.name);
+          allowedFields == null || allowedFields.contains(paramName);
       final isIgnored = !isWhitelisted || _isFieldIgnored(param, field);
       final fieldDeepCopy = _getFieldDeepCopy(param, field);
       final fieldCloner = _getFieldCloner(param, field, classDecl: classDecl);
@@ -915,7 +1103,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       if (isSeparateLibrary && fieldCloner != null) {
         if (fieldCloner.startsWith('_') || fieldCloner.contains('._')) {
           throw InvalidGenerationSourceError(
-            "Cloner function '$fieldCloner' on field '${param.name}' of class '${element.name}' is private. Standalone generated libraries cannot access private cloner functions across library boundaries.\n"
+            "Cloner function '$fieldCloner' on field '$paramName' of class '${element.name}' is private. Standalone generated libraries cannot access private cloner functions across library boundaries.\n"
             "Use a public cloner function, or switch to 'CloneableOutput.part' / 'CloneableOutput.inClass'.",
             element: element,
           );
@@ -937,7 +1125,7 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
 
       params.add(
         _FieldInfo(
-          name: param.name,
+          name: paramName,
           type: resolvedType,
           isNullable: isNullable,
           isNamed: param.isNamed,
@@ -960,36 +1148,10 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
 
     final extensionName =
         '$effectiveExtensionPrefix${element.name}$effectiveExtensionSuffix';
-    final typedefName =
-        '$effectiveTypedefPrefix${element.name}$effectiveTypedefSuffix';
     final resolvedMixinName = detectedMixinName ?? prefixScoped;
 
-    // Validate symbol name collisions
-    final colliding = <String>[];
-    if (output != CloneableOutput.inClass) {
-      if (useExtension && extensionName == typedefName) {
-        colliding.add("extension '$extensionName' and typedef '$typedefName'");
-      }
-      if (!useExtension && resolvedMixinName == typedefName) {
-        colliding.add("mixin '$resolvedMixinName' and typedef '$typedefName'");
-      }
-      if (!useExtension && resolvedMixinName == extensionName) {
-        colliding
-            .add("mixin '$resolvedMixinName' and extension '$extensionName'");
-      }
-    }
-
-    if (colliding.isNotEmpty) {
-      throw InvalidGenerationSourceError(
-        "Naming conflict detected for class '${element.name}':\n"
-        "The following generated symbols have identical names: ${colliding.join(', ')}.\n"
-        "To resolve this, customize 'naming' in @Cloneable with distinct prefixes or suffixes for mixin, extension, and typedef (e.g. naming: CloneableNaming(extension: CloneableAffix(suffix: 'Extension'), typedef: CloneableAffix(suffix: 'CopyWithFn'))).",
-        element: element,
-      );
-    }
-
     return _generateCode(
-      className: element.name,
+      className: element.name!,
       constructorName: constructorName,
       typeParamsWithBounds: typeParamsWithBounds,
       typeParamsArgs: typeParamsArgs,
@@ -997,7 +1159,6 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       useExtension: useExtension,
       mixinName: resolvedMixinName,
       extensionName: extensionName,
-      typedefName: typedefName,
       methodName: methodName,
       hasPartDirective: hasPartDirective,
       inputFileName: inputFileName,
@@ -1007,13 +1168,13 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       includeHeader: includeHeader,
       fileImports: fileImports,
       output: output,
+      sentinelStrategy: sentinelStrategy,
     );
   }
 
-  /// Generates the separated code parts for [CloneableOutput.inClass]:
-  /// - [typedefCode]: The top-level strongly-typed copyWith function typedef.
-  /// - [memberCode]: The class members (sentinel, getter, and private copy method).
-  ({String typedefCode, String memberCode}) generateInClassParts({
+  /// Generates the class members for [CloneableOutput.inClass]:
+  /// (sentinel, getter, and private copy method).
+  String generateInClassMembers({
     required ClassElement element,
     required ConstantReader annotation,
     required String inputFileName,
@@ -1038,22 +1199,13 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       resolvedDefaults: resolvedDefaults,
     );
 
-    final typedefPattern = RegExp(
-      r'([\s\S]*?typedef\s+[^\n]+\s*=\s*[^\n]+\s+Function\s*\([\s\S]*?\);)\s*([\s\S]*)',
-    );
-    if (typedefPattern.firstMatch(fullCode.trim()) case final match?) {
-      return (
-        typedefCode: match.group(1)?.trim() ?? '',
-        memberCode: match.group(2)?.trim() ?? '',
-      );
-    }
-
-    return (typedefCode: '', memberCode: fullCode.trim());
+    return fullCode.trim();
   }
 
   String? _findCloneableImportPrefix(ClassElement element) {
-    for (final import in element.library.libraryImports) {
-      final uri = import.importedLibrary?.source.uri.toString();
+    for (final import in element.library.firstFragment.libraryImports) {
+      final uri = import.importedLibrary?.firstFragment.source.uri.toString() ??
+          import.uri.toString();
       if (uri == 'package:cloneable/cloneable.dart' ||
           uri == 'package:cloneable/src/annotations.dart') {
         final prefix = import.prefix?.element.name;
@@ -1066,17 +1218,19 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
   }
 
   ConstantReader? _getFieldAnnotationReader(
-      ParameterElement param, Element field) {
-    const checker = TypeChecker.fromRuntime(CloneableField);
-    if (checker.firstAnnotationOf(param) case final obj?) {
+      FormalParameterElement param, Element field) {
+    if (_fieldAnnotationTypeChecker.firstAnnotationOf(param) case final obj?) {
       return ConstantReader(obj);
     }
-    if (checker.firstAnnotationOf(field) case final obj?) {
+    if (_fieldAnnotationTypeChecker.firstAnnotationOf(field) case final obj?) {
       return ConstantReader(obj);
     }
 
     // Fallback by element name for test environments / mock elements
-    for (final meta in [...param.metadata, ...field.metadata]) {
+    for (final meta in [
+      ...param.metadata.annotations,
+      ...field.metadata.annotations,
+    ]) {
       if (meta.computeConstantValue() case final val?
           when val.type?.element?.name == 'CloneableField') {
         return ConstantReader(val);
@@ -1085,18 +1239,18 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     return null;
   }
 
-  bool _isFieldIgnored(ParameterElement param, Element field) =>
+  bool _isFieldIgnored(FormalParameterElement param, Element field) =>
       _getFieldAnnotationReader(param, field)?.peek('ignore')?.boolValue ==
       true;
 
-  bool? _getFieldDeepCopy(ParameterElement param, Element field) =>
+  bool? _getFieldDeepCopy(FormalParameterElement param, Element field) =>
       _getFieldAnnotationReader(param, field)?.peek('deepCopy')?.boolValue;
 
-  bool? _getFieldIgnoreNull(ParameterElement param, Element field) =>
+  bool? _getFieldIgnoreNull(FormalParameterElement param, Element field) =>
       _getFieldAnnotationReader(param, field)?.peek('ignoreNull')?.boolValue;
 
   String? _getFieldCloner(
-    ParameterElement param,
+    FormalParameterElement param,
     Element field, {
     ClassDeclaration? classDecl,
   }) {
@@ -1107,15 +1261,15 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
             if (variable.name.lexeme == param.name ||
                 variable.name.lexeme == field.name) {
               for (final metadata in member.metadata) {
-                final annName = metadata.name.name;
+                final annName = metadata.name.toSource();
                 if (annName == 'CloneableField' ||
                     annName.endsWith('.CloneableField')) {
                   final args = metadata.arguments?.arguments;
                   if (args != null) {
                     for (final arg in args) {
-                      if (arg is NamedExpression &&
-                          arg.name.label.name == 'cloner') {
-                        return arg.expression.toSource();
+                      final (name, expr) = AstConfigReader.getArgumentInfo(arg);
+                      if (name == 'cloner' && expr != null) {
+                        return expr.toSource();
                       }
                     }
                   }
@@ -1159,8 +1313,8 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       return _CollectionKind.iterable;
     }
 
-    final name = type.element?.name ??
-        type.getDisplayString(withNullability: false).split('<').first.trim();
+    final name =
+        type.element?.name ?? type.getDisplayString().split('<').first.trim();
 
     return switch (name) {
       'Queue' => _CollectionKind.queue,
@@ -1231,7 +1385,6 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     required bool useExtension,
     required String mixinName,
     required String extensionName,
-    required String typedefName,
     required String methodName,
     required bool hasPartDirective,
     required String inputFileName,
@@ -1241,9 +1394,9 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     required bool includeHeader,
     required List<String> fileImports,
     required CloneableOutput output,
+    required CloneableSentinel sentinelStrategy,
   }) {
     final targetClassType = '$className$typeParamsArgs';
-    final copyWithTypedefWithArgs = '$typedefName$typeParamsArgs';
     final privateMethodName = '_$methodName';
 
     final needsTypedData = fields.any((f) =>
@@ -1261,7 +1414,9 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       true => '',
       false => () {
           final buffer = StringBuffer();
-          buffer.writeln("import 'package:cloneable/cloneable.dart';");
+          if (sentinelStrategy != CloneableSentinel.private) {
+            buffer.writeln("import 'package:cloneable/cloneable.dart';");
+          }
           if (needsTypedData &&
               !fileImports.any((i) =>
                   i.contains("'dart:typed_data'") ||
@@ -1286,13 +1441,13 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
     // Filter fields accepted in copyWith call (exclude ignored ones)
     final copyFields = fields.where((f) => !f.isIgnored).toList();
 
-    // Generate typedef function parameters
-    final typedefParamsBuffer = StringBuffer();
+    // Generate function parameters
+    final fnParamsBuffer = StringBuffer();
     for (final field in copyFields) {
       final paramType = field.shouldIgnoreNull && !field.isNullable
           ? '${field.type}?'
           : field.type;
-      typedefParamsBuffer.writeln('    $paramType ${field.name},');
+      fnParamsBuffer.writeln('    $paramType ${field.name},');
     }
 
     // Generate mixin/extension/class private method parameters
@@ -1337,9 +1492,11 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       }
     }
 
+    final getterReturnType = '$targetClassType Function({\n$fnParamsBuffer  })';
+
     final implementation = switch (output) {
       CloneableOutput.inClass => '''
-$sentinelDeclaration  $copyWithTypedefWithArgs get $methodName => $privateMethodName;
+$sentinelDeclaration  $getterReturnType get $methodName => $privateMethodName;
 
   $targetClassType $privateMethodName({
 $callParamsBuffer  }) {
@@ -1351,7 +1508,7 @@ $constructorArgsBuffer    );
           true => '''
 /// Generated cloneable extension for [$className].
 extension $extensionName$typeParamsWithBounds on $targetClassType {
-  $copyWithTypedefWithArgs get $methodName => $privateMethodName;
+  $getterReturnType get $methodName => $privateMethodName;
 
   $targetClassType $privateMethodName({
 $callParamsBuffer  }) {
@@ -1364,7 +1521,7 @@ $constructorArgsBuffer    );
           false => '''
 /// Generated cloneable mixin for [$className].
 mixin $mixinName$typeParamsWithBounds {
-  $copyWithTypedefWithArgs get $methodName => $privateMethodName;
+  $getterReturnType get $methodName => $privateMethodName;
 
   $targetClassType $privateMethodName({
 $callParamsBuffer  }) {
@@ -1377,25 +1534,15 @@ $constructorArgsBuffer    );
         },
     };
 
-    final typedefDoc =
-        '/// Strongly-typed $methodName function signature for [$className].\n'
-        'typedef $typedefName$typeParamsWithBounds = $targetClassType Function({\n'
-        '$typedefParamsBuffer});';
-
     if (output == CloneableOutput.inClass) {
-      return '''
-$typedefDoc
-
-$implementation''';
+      return implementation;
     }
 
     final topSentinel =
         output != CloneableOutput.inClass ? sentinelDeclaration : '';
 
     return '''
-$standaloneHeader$topSentinel$typedefDoc
-
-$implementation''';
+$standaloneHeader$topSentinel$implementation''';
   }
 
   String _generateDeepCopyExpression(
@@ -1442,21 +1589,22 @@ $implementation''';
     required SomeParsedLibraryResult? parsedLibResult,
   }) {
     if (parsedLibResult case ParsedLibraryResult parsedLib) {
-      try {
-        if (parsedLib.getElementDeclaration(element)?.node
-            case ClassDeclaration decl) {
-          return decl;
+      for (final u in parsedLib.units) {
+        for (final decl in u.unit.declarations) {
+          if (decl is ClassDeclaration && decl.className == element.name) {
+            return decl;
+          }
         }
-      } catch (_) {}
+      }
     }
 
     try {
       final parseResult = parseString(
-        content: element.source.contents.data,
+        content: element.library.firstFragment.source.contents.data,
         throwIfDiagnostics: false,
       );
       for (final decl in parseResult.unit.declarations) {
-        if (decl is ClassDeclaration && decl.name.lexeme == element.name) {
+        if (decl is ClassDeclaration && decl.className == element.name) {
           return decl;
         }
       }
@@ -1503,7 +1651,7 @@ $implementation''';
     if (imports.isEmpty) {
       try {
         final parseResult = parseString(
-          content: element.source.contents.data,
+          content: element.library.firstFragment.source.contents.data,
           throwIfDiagnostics: false,
         );
         collectFromUnit(parseResult.unit);
@@ -1514,7 +1662,7 @@ $implementation''';
   }
 
   String _resolveFieldType({
-    required ParameterElement param,
+    required FormalParameterElement param,
     required Element field,
     required ClassDeclaration? classDecl,
     required String? constructorName,
@@ -1529,19 +1677,13 @@ $implementation''';
           };
           if (isTargetConstructor) {
             for (final p in member.parameters.parameters) {
-              final actualParam = switch (p) {
-                DefaultFormalParameter(:final parameter) => parameter,
-                _ => p,
-              };
-              if (actualParam.name?.lexeme == param.name) {
-                final typeSource = switch (actualParam) {
-                  SimpleFormalParameter(:final type?) => type.toSource(),
-                  FieldFormalParameter(:final type?) => type.toSource(),
-                  _ => null,
-                };
-                if (typeSource != null && typeSource.isNotEmpty) {
-                  return typeSource;
-                }
+              if (p.name?.lexeme == param.name) {
+                try {
+                  final typeSource = (p as dynamic).type?.toSource() as String?;
+                  if (typeSource != null && typeSource.isNotEmpty) {
+                    return typeSource;
+                  }
+                } catch (_) {}
               }
             }
           }
@@ -1570,7 +1712,7 @@ $implementation''';
       }
     }
 
-    return param.type.getDisplayString(withNullability: true);
+    return param.type.getDisplayString();
   }
 
   ({String getterName, List<String> fields})? _findInClassFields({
@@ -1582,8 +1724,9 @@ $implementation''';
   }) {
     if (classDecl == null) return null;
 
-    final constructorParamNames =
-        constructor.parameters.map((p) => p.name).toSet();
+    final constructorParamNames = constructor.formalParameters
+        .map((FormalParameterElement p) => p.name)
+        .toSet();
 
     final (hasCustomName, candidateNames) = switch (customGetter?.trim()) {
       final name? when name.isNotEmpty => (true, [name]),
@@ -1593,7 +1736,7 @@ $implementation''';
     final found = <String, List<String>>{};
 
     for (final member in classDecl.members) {
-      // 1. Method / Getter declaration (e.g. List<Object?> get cloneableFields => [name, age];)
+      // 1. Method / Getter declaration
       if (member is MethodDeclaration && member.isGetter) {
         final name = member.name.lexeme;
         if (candidateNames.contains(name)) {
@@ -1603,7 +1746,7 @@ $implementation''';
         }
       }
 
-      // 2. Field declaration (e.g. static const cloneableFields = [...] or final copyWithFields = [...])
+      // 2. Field declaration
       if (member is FieldDeclaration) {
         for (final variable in member.fields.variables) {
           final name = variable.name.lexeme;
@@ -1658,7 +1801,7 @@ $implementation''';
 
     if (expr == null) {
       throw InvalidGenerationSourceError(
-        "The '$getterName' getter in class '${element.name}' must return a list literal (e.g. '=> [fieldA, fieldB]').",
+        "The '$getterName' getter in class '${element.name}' must return a list literal (e.g. `[name, age]`).",
         element: element,
       );
     }
@@ -1668,37 +1811,27 @@ $implementation''';
 
   List<String> _extractListNamesFromExpr(
       Expression expr, ClassElement element, String getterName) {
-    final listExpr = switch (expr) {
-      ListLiteral l => l,
-      ParenthesizedExpression(:final expression)
-          when expression is ListLiteral =>
-        expression,
-      _ => null,
-    };
-
-    if (listExpr == null) {
+    if (expr is! ListLiteral) {
       throw InvalidGenerationSourceError(
-        "The '$getterName' getter in class '${element.name}' must return a list literal (e.g. '=> [fieldA, fieldB]').",
+        "The '$getterName' getter in class '${element.name}' must return a list literal (e.g. `['name', 'age']` or `[name, age]`).",
         element: element,
       );
     }
 
     final names = <String>[];
-    for (final elem in listExpr.elements) {
-      final name = switch (elem) {
-        SimpleIdentifier id => id.name,
-        SimpleStringLiteral str => str.value,
-        StringLiteral str when str.stringValue != null => str.stringValue!,
-        PropertyAccess prop => prop.propertyName.name,
-        PrefixedIdentifier pre when pre.prefix.name == 'this' =>
-          pre.identifier.name,
-        _ => throw InvalidGenerationSourceError(
-            "The '$getterName' list in class '${element.name}' must contain only field identifiers or field name strings.",
-            element: element,
-          ),
-      };
-      names.add(name);
+    for (final elem in expr.elements) {
+      if (elem is SimpleStringLiteral) {
+        names.add(elem.value);
+      } else if (elem is SimpleIdentifier) {
+        names.add(elem.name);
+      } else {
+        throw InvalidGenerationSourceError(
+          "The '$getterName' list in class '${element.name}' must contain only field identifiers or field name strings.",
+          element: element,
+        );
+      }
     }
+
     return names;
   }
 }

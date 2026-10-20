@@ -2,16 +2,10 @@
 
 part of 'complex_models.dart';
 
-/// Strongly-typed copyWith function signature for [Address].
-typedef $AddressCopyWithFn = Address Function({
-  String street,
-  String city,
-  String? zipCode,
-});
-
 /// Generated cloneable mixin for [Address].
 mixin _$AddressCloneable {
-  $AddressCopyWithFn get copyWith => _copyWith;
+  Address Function({String street, String city, String? zipCode})
+      get copyWith => _copyWith;
 
   Address _copyWith({
     Object? street = $undefined,
@@ -28,19 +22,16 @@ mixin _$AddressCloneable {
   }
 }
 
-/// Strongly-typed copyWith function signature for [Employee].
-typedef $EmployeeCopyWithFn = Employee Function({
-  String id,
-  String name,
-  Role role,
-  Address? address,
-  List<String> tags,
-  Map<String, dynamic>? metadata,
-});
-
 /// Generated cloneable mixin for [Employee].
 mixin _$EmployeeCloneable {
-  $EmployeeCopyWithFn get copyWith => _copyWith;
+  Employee Function({
+    String id,
+    String name,
+    Role role,
+    Address? address,
+    List<String> tags,
+    Map<String, dynamic>? metadata,
+  }) get copyWith => _copyWith;
 
   Employee _copyWith({
     Object? id = $undefined,

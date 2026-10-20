@@ -234,10 +234,8 @@ Generated in `user.g.dart`:
 ```dart
 part of 'user.dart';
 
-typedef $UserCopyWithFn = User Function({String name});
-
 extension $UserExtension on User {
-  $UserCopyWithFn get copyWith => _copyWith;
+  User Function({String name}) get copyWith => _copyWith;
   User _copyWith({Object? name = $undefined}) {
     final self = this;
     return User(name: identical(name, $undefined) ? self.name : name as String);
@@ -263,18 +261,10 @@ class Product {
 }
 ```
 
-Run `dart run cloneable_generator`. The generator injects the typedef at the top of the file and `copyWith` inside the class body:
+Run `dart run cloneable_generator`. The generator injects `copyWith` directly inside the class body:
 
 ```dart
 import 'package:cloneable/cloneable.dart';
-
-// cloneable:typedef:start (Product) - GENERATED CODE - DO NOT MODIFY BY HAND
-// (run: dart run cloneable_generator to regenerate)
-typedef $ProductCopyWithFn = Product Function({
-  String title,
-  double price,
-});
-// cloneable:typedef:end (Product)
 
 @Cloneable.inClass()
 class Product {
@@ -287,7 +277,10 @@ class Product {
 // (run: dart run cloneable_generator to regenerate)
   static const _$undefined = Object();
 
-  $ProductCopyWithFn get copyWith => _copyWith;
+  Product Function({
+    String title,
+    double price,
+  }) get copyWith => _copyWith;
 
   Product _copyWith({
     Object? title = _$undefined,
@@ -323,10 +316,8 @@ Generated in the same file:
 ```dart
 // cloneable:start (Account) - GENERATED CODE - DO NOT MODIFY BY HAND
 // (run: dart run cloneable_generator to regenerate)
-typedef $AccountCopyWithFn = Account Function({String email});
-
 extension $AccountExtension on Account {
-  $AccountCopyWithFn get copyWith => _copyWith;
+  Account Function({String email}) get copyWith => _copyWith;
   Account _copyWith({Object? email = $undefined}) {
     final self = this;
     return Account(
@@ -359,10 +350,8 @@ Generated in `order.cloneable.dart`:
 import 'package:cloneable/cloneable.dart';
 import 'order.dart';
 
-typedef $OrderCopyWithFn = Order Function({String orderId});
-
 extension $OrderExtension on Order {
-  $OrderCopyWithFn get copyWith => _copyWith;
+  Order Function({String orderId}) get copyWith => _copyWith;
   Order _copyWith({Object? orderId = $undefined}) {
     final self = this;
     return Order(
@@ -669,13 +658,14 @@ Configure defaults across your entire project without repeating options on every
 | `naming.sentinel` | `String` | `r'_$undefined'` | Private sentinel identifier name (`_$undefined`). |
 | `naming.mixin` | `CloneableAffix` | `CloneableAffix(prefix: r'_$', suffix: 'Cloneable')` | Mixin naming pattern (`_$ClassNameCloneable`). |
 | `naming.extension` | `CloneableAffix` | `CloneableAffix(prefix: r'$', suffix: 'Extension')` | Extension naming pattern (`$ClassNameExtension`). |
-| `naming.typedef` | `CloneableAffix` | `CloneableAffix(prefix: r'$', suffix: 'CopyWithFn')` | Typedef function signature pattern (`$ClassNameCopyWithFn`). |
 | `naming.file` | `CloneableAffix` | `CloneableAffix(prefix: '', suffix: '.cloneable.g')` | Generated file naming pattern (`$className.cloneable.g.dart`). |
 | `naming.directory` | `String?` | `null` | Optional subfolder path for generated files (e.g. `'generated'`). |
 
-### 2. Modern Dart 3+ Configuration Idioms
+### 2. Modern Dart 3+ Configuration
 
-#### Idiom A: Unnamed Library Directive (Recommended)
+#### Library Directive (Recommended)
+
+Place `@Cloneable.defaults(...)` directly above an unnamed `library;` directive:
 
 ```dart
 @Cloneable.defaults(
@@ -689,38 +679,29 @@ library;
 import 'package:cloneable/cloneable.dart';
 ```
 
-#### Idiom B: Abstract Final Config Class
+#### Shared Project Configuration
+
+Place your defaults in `lib/cloneable_defaults.dart` and import it into your model files. Defaults are automatically inherited across imported files:
 
 ```dart
-import 'package:cloneable/cloneable.dart';
-
+// lib/cloneable_defaults.dart
 @Cloneable.defaults(
-  strategy: CloneableStrategy.extension,
+  output: CloneableOutput.inClass,
   deepCopyCollections: true,
 )
-abstract final class CloneableConfig {}
-```
+library;
 
-#### Idiom C: Top-Level Constant
-
-```dart
 import 'package:cloneable/cloneable.dart';
-
-const cloneableConfig = CloneableDefaults(
-  output: CloneableOutput.standalone,
-  ignoreNull: true,
-);
 ```
 
-#### Idiom D: Shared Project Configuration
+### 3. Cascading Precedence & Activeness
 
-Place your defaults in `lib/cloneable_defaults.dart` and import it into your model files. Defaults are automatically inherited across imported files.
-
-### 3. Cascading Precedence
-
-1. **Class Annotation (`@Cloneable(...)`)**: Explicit per-class overrides take highest priority. Partial `CloneableAffix` overrides (e.g. specifying only `prefix`) preserve the default suffix.
+1. **Class Annotation (`@Cloneable(...)`)**: Explicit per-class overrides take priority. Supports `CloneableActiveness`:
+   - `CloneableActiveness.forceActive`: Forces code generation even if parent/library defaults are inactive.
+   - `CloneableActiveness.forceInactive`: Suppresses code generation for this class.
+   - Partial `CloneableAffix` overrides (e.g. specifying only `prefix`) preserve the default suffix.
 2. **File / Library In-Code Defaults (`@Cloneable.defaults(...)`)**: Applied to all models declared in the file.
-3. **Imported / Shared In-Code Defaults**: Discovered from imported config files.
+3. **Imported / Shared In-Code Defaults**: Discovered from imported configuration files.
 4. **Built-In Defaults (`CloneableDefaults.instance`)**: Standard fallbacks.
 
 ---
@@ -735,7 +716,6 @@ Customize symbol prefixes and suffixes across all targets using `naming: Cloneab
     method: 'copyWith',
     mixin: CloneableAffix(prefix: r'_$', suffix: 'Cloneable'),
     extension: CloneableAffix(prefix: 'Ext', suffix: 'Extension'),
-    typedef: CloneableAffix(prefix: 'Signature', suffix: 'Fn'),
     file: CloneableAffix(prefix: '', suffix: '.cloneable'),
     directory: 'generated',
   ),

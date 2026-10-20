@@ -3,10 +3,11 @@ import 'package:cloneable_generator/src/cloneable_generator.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:source_gen/source_gen.dart';
 
-final _formatter = DartFormatter();
+final _formatter =
+    DartFormatter(languageVersion: DartFormatter.latestLanguageVersion);
 final _bannerRegex = RegExp(r'// \*+\s*(\n// [^\n]*)*\n// \*+');
 
-String _cleanFormat(String code) {
+String _cleanFormat(String code, [dynamic _]) {
   var cleaned = code.replaceAll(_bannerRegex, '');
   cleaned = cleaned.replaceAll(RegExp(r'// \*+\s*'), '');
   return _formatter.format(cleaned);

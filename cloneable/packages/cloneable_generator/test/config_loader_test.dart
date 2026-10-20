@@ -1,9 +1,14 @@
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build_test/build_test.dart';
 import 'package:cloneable/cloneable.dart';
 import 'package:cloneable_generator/src/cloneable_generator.dart';
 import 'package:cloneable_generator/src/config_loader.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
+
+extension on Metadata {
+  ElementAnnotation get first => annotations.first;
+}
 
 void main() {
   group('ConfigLoader Built-in Defaults', () {
@@ -27,8 +32,6 @@ void main() {
       expect(config.mixin.suffix, equals('Cloneable'));
       expect(config.extension.prefix, equals(r'$'));
       expect(config.extension.suffix, equals('Extension'));
-      expect(config.typedef.prefix, equals(r'$'));
-      expect(config.typedef.suffix, equals('CopyWithFn'));
       expect(config.file.prefix, equals(''));
       expect(config.file.suffix, equals('.cloneable.g'));
     });
@@ -273,8 +276,9 @@ class CustomUser {
           inputFileName: 'cascade_lib.dart',
           resolvedDefaults: defaults,
         );
-        expect(defaultOutput,
-            contains(r'$DefaultUserProjectMethodFn get projectMethod'));
+        expect(defaultOutput, contains(r'DefaultUser Function({'));
+        expect(
+            defaultOutput, contains(r'get projectMethod => _projectMethod;'));
 
         // CustomUser overrides projectMethod with classMethod:
         final customClass = library.getClass('CustomUser')!;
@@ -285,8 +289,8 @@ class CustomUser {
           inputFileName: 'cascade_lib.dart',
           resolvedDefaults: defaults,
         );
-        expect(
-            customOutput, contains(r'$CustomUserCopyWithFn get classMethod'));
+        expect(customOutput, contains(r'CustomUser Function({'));
+        expect(customOutput, contains(r'get classMethod => _classMethod;'));
         expect(customOutput, isNot(contains('projectMethod')));
       });
     });

@@ -2,17 +2,10 @@
 
 part of 'clean_models.dart';
 
-/// Strongly-typed copyWith function signature for [CleanUser].
-typedef $CleanUserCopyWithFn = CleanUser Function({
-  String id,
-  String name,
-  int age,
-  String? bio,
-});
-
 /// Generated cloneable extension for [CleanUser].
 extension $CleanUserExtension on CleanUser {
-  $CleanUserCopyWithFn get copyWith => _copyWith;
+  CleanUser Function({String id, String name, int age, String? bio})
+      get copyWith => _copyWith;
 
   CleanUser _copyWith({
     Object? id = $undefined,
@@ -30,16 +23,10 @@ extension $CleanUserExtension on CleanUser {
   }
 }
 
-/// Strongly-typed copyWith function signature for [CleanProduct].
-typedef $CleanProductCopyWithFn = CleanProduct Function({
-  String sku,
-  double price,
-  List<String> tags,
-});
-
 /// Generated cloneable extension for [CleanProduct].
 extension $CleanProductExtension on CleanProduct {
-  $CleanProductCopyWithFn get copyWith => _copyWith;
+  CleanProduct Function({String sku, double price, List<String> tags})
+      get copyWith => _copyWith;
 
   CleanProduct _copyWith({
     Object? sku = $undefined,
@@ -57,16 +44,10 @@ extension $CleanProductExtension on CleanProduct {
   }
 }
 
-/// Strongly-typed copyWith function signature for [ExtensionUser].
-typedef $ExtensionUserCopyWithFn = ExtensionUser Function({
-  String name,
-  int age,
-  String? nickname,
-});
-
 /// Generated cloneable extension for [ExtensionUser].
 extension $ExtensionUserExtension on ExtensionUser {
-  $ExtensionUserCopyWithFn get copyWith => _copyWith;
+  ExtensionUser Function({String name, int age, String? nickname})
+      get copyWith => _copyWith;
 
   ExtensionUser _copyWith({
     Object? name = $undefined,
@@ -83,15 +64,9 @@ extension $ExtensionUserExtension on ExtensionUser {
   }
 }
 
-/// Strongly-typed copyWith function signature for [AliasedUserModel].
-typedef $AliasedUserModelCopyWithFn = AliasedUserModel Function({
-  String name,
-  int age,
-});
-
 /// Generated cloneable extension for [AliasedUserModel].
 extension $AliasedUserModelExtension on AliasedUserModel {
-  $AliasedUserModelCopyWithFn get copyWith => _copyWith;
+  AliasedUserModel Function({String name, int age}) get copyWith => _copyWith;
 
   AliasedUserModel _copyWith({
     Object? name = $undefined,
@@ -105,15 +80,10 @@ extension $AliasedUserModelExtension on AliasedUserModel {
   }
 }
 
-/// Strongly-typed copyWith function signature for [CustomPrefixUser].
-typedef $CustomPrefixUserCopyWithFn = CustomPrefixUser Function({
-  String name,
-  String email,
-});
-
 /// Generated cloneable extension for [CustomPrefixUser].
 extension CustomCustomPrefixUserExtension on CustomPrefixUser {
-  $CustomPrefixUserCopyWithFn get copyWith => _copyWith;
+  CustomPrefixUser Function({String name, String email}) get copyWith =>
+      _copyWith;
 
   CustomPrefixUser _copyWith({
     Object? name = $undefined,
@@ -127,15 +97,10 @@ extension CustomCustomPrefixUserExtension on CustomPrefixUser {
   }
 }
 
-/// Strongly-typed copyWith function signature for [CustomMixinUser].
-typedef $CustomMixinUserCopyWithFn = CustomMixinUser Function({
-  String name,
-  String email,
-});
-
 /// Generated cloneable mixin for [CustomMixinUser].
 mixin _CustomMixinUserCloneable {
-  $CustomMixinUserCopyWithFn get copyWith => _copyWith;
+  CustomMixinUser Function({String name, String email}) get copyWith =>
+      _copyWith;
 
   CustomMixinUser _copyWith({
     Object? name = $undefined,

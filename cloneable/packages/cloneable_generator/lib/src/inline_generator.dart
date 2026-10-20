@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/token.dart';
 import 'package:cloneable/cloneable.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
@@ -10,6 +11,18 @@ import 'package:source_gen/source_gen.dart';
 
 import 'cloneable_generator.dart';
 import 'config_loader.dart';
+
+extension _ClassDeclarationHelper on ClassDeclaration {
+  BlockClassBody? get asBlockBody =>
+      body is BlockClassBody ? body as BlockClassBody : null;
+  Token get leftBracket => asBlockBody!.leftBracket;
+  Token get rightBracket => asBlockBody!.rightBracket;
+  List<ClassMember> get members => asBlockBody?.members ?? const [];
+}
+
+extension _NamedTypeHelper on NamedType {
+  String get typeName => name.lexeme;
+}
 
 /// The result of executing [CloneableGeneratorRunner.run].
 final class CloneableResult {
@@ -50,6 +63,9 @@ final class _FileEdit {
 ///
 /// Completely independent of `build_runner`.
 final class CloneableGeneratorRunner {
+  static const _cloneableTypeChecker =
+      TypeChecker.fromUrl('package:cloneable/cloneable.dart#Cloneable');
+
   final DartFormatter _formatter;
   final CloneableGenerator _generator;
 
@@ -58,7 +74,10 @@ final class CloneableGeneratorRunner {
   CloneableGeneratorRunner({
     DartFormatter? formatter,
     CloneableGenerator? generator,
-  })  : _formatter = formatter ?? DartFormatter(),
+  })  : _formatter = formatter ??
+            DartFormatter(
+              languageVersion: DartFormatter.latestLanguageVersion,
+            ),
         _generator = generator ?? const CloneableGenerator();
 
   /// Updates [content] with generated code blocks for the classes in [classCodeMap].
@@ -141,8 +160,8 @@ final class CloneableGeneratorRunner {
 
     final inlineClassCodeMap = <String, String?>{};
     final partFileCodes = <String>[];
+    final declaredSentinels = <String>{};
     String? matchedPartName;
-    const typeChecker = TypeChecker.fromRuntime(Cloneable);
 
     // Look for part directives in the source file AST
     for (final directive in unitResult.unit.directives) {
@@ -162,24 +181,26 @@ final class CloneableGeneratorRunner {
     final edits = <_FileEdit>[];
     var fileNeedsPartDirective = false;
     String? desiredPartFileName;
+    var fileNeedsPackageSentinel = false;
+    final injectedMixins = <String>{};
 
     final removedClasses = <String>{};
     final activeAnnotatedClasses = <String>{};
 
     for (final declaration in unitResult.unit.declarations) {
       if (declaration is! ClassDeclaration) continue;
-      final element = declaration.declaredElement;
+      final element = declaration.declaredFragment?.element;
       if (element == null) continue;
 
       ConstantReader? annotationReader;
       try {
-        if (typeChecker.firstAnnotationOf(element) case final obj?) {
+        if (_cloneableTypeChecker.firstAnnotationOf(element) case final obj?) {
           annotationReader = ConstantReader(obj);
         }
       } catch (_) {}
 
       if (annotationReader == null) {
-        for (final meta in element.metadata) {
+        for (final meta in element.metadata.annotations) {
           try {
             if (meta.computeConstantValue() case final val?
                 when val.type?.element?.name == 'Cloneable') {
@@ -190,7 +211,17 @@ final class CloneableGeneratorRunner {
         }
       }
 
-      if (annotationReader == null) continue;
+      // Check AST annotation for dot-shorthands
+      RawCloneableConfig? astConfig;
+      for (final meta in declaration.metadata) {
+        final name = meta.name.toSource();
+        if (name == 'Cloneable' || name.startsWith('Cloneable.')) {
+          astConfig = AstConfigReader.parseFromAnnotationAst(meta);
+          break;
+        }
+      }
+
+      if (annotationReader == null && astConfig == null) continue;
 
       final resolvedDefaults = ConfigLoader.resolveDefaults(
         library: element.library,
@@ -198,35 +229,82 @@ final class CloneableGeneratorRunner {
         filePath: filePath,
       );
 
-      final isActive =
-          annotationReader.peek('active')?.boolValue ?? resolvedDefaults.active;
-      if (!isActive) continue;
+      final rawActiveness = annotationReader?.peek('activeness') != null
+          ? switch (annotationReader!
+              .peek('activeness')!
+              .objectValue
+              .getField('index')
+              ?.toIntValue()) {
+              final index?
+                  when index >= 0 &&
+                      index < CloneableActiveness.values.length =>
+                CloneableActiveness.values[index],
+              _ => null,
+            }
+          : astConfig?.activeness;
 
-      final className = element.name;
+      final rawActive =
+          annotationReader?.peek('active')?.boolValue ?? astConfig?.active;
+
+      final bool isActive;
+      if (rawActiveness == CloneableActiveness.forceActive) {
+        isActive = true;
+      } else if (rawActiveness == CloneableActiveness.forceInactive) {
+        isActive = false;
+      } else if (resolvedDefaults.activeness ==
+          CloneableActiveness.forceInactive) {
+        isActive = false;
+      } else if (rawActiveness != null) {
+        isActive = rawActiveness.isActive;
+      } else if (rawActive != null) {
+        isActive = rawActive;
+      } else {
+        isActive = resolvedDefaults.active;
+      }
+
+      if (!isActive) continue;
+      if (element.name == null) continue;
+
+      final className = element.name!;
       activeAnnotatedClasses.add(className);
 
       final output = switch (annotationReader
-          .peek('output')
+          ?.peek('output')
           ?.objectValue
           .getField('index')
           ?.toIntValue()) {
         final index? when index >= 0 && index < CloneableOutput.values.length =>
           CloneableOutput.values[index],
-        _ => resolvedDefaults.output,
+        _ => astConfig?.output ?? resolvedDefaults.output,
       };
 
       final strategy = switch (annotationReader
-          .peek('strategy')
+          ?.peek('strategy')
           ?.objectValue
           .getField('index')
           ?.toIntValue()) {
         final index?
             when index >= 0 && index < CloneableStrategy.values.length =>
           CloneableStrategy.values[index],
-        _ => resolvedDefaults.strategy,
+        _ => astConfig?.strategy ?? resolvedDefaults.strategy,
+      };
+
+      final sentinel = switch (annotationReader
+          ?.peek('sentinel')
+          ?.objectValue
+          .getField('index')
+          ?.toIntValue()) {
+        final index?
+            when index >= 0 && index < CloneableSentinel.values.length =>
+          CloneableSentinel.values[index],
+        _ => astConfig?.sentinel ?? resolvedDefaults.sentinel,
       };
 
       final isInline = output.isInline;
+
+      if (!isInline && sentinel != CloneableSentinel.private) {
+        fileNeedsPackageSentinel = true;
+      }
 
       // Auto-inject missing mixin if strategy: CloneableStrategy.mixin
       if (strategy == CloneableStrategy.mixin &&
@@ -234,8 +312,8 @@ final class CloneableGeneratorRunner {
         var hasMixin = false;
         if (declaration.withClause != null) {
           for (final mixinType in declaration.withClause!.mixinTypes) {
-            final name = mixinType.name2.lexeme;
-            if (name.contains(element.name) || name.startsWith(r'_$')) {
+            final name = mixinType.typeName;
+            if (name.contains(element.name!) || name.startsWith(r'_$')) {
               hasMixin = true;
               break;
             }
@@ -243,37 +321,44 @@ final class CloneableGeneratorRunner {
         }
 
         if (!hasMixin) {
-          final namingReader = annotationReader.peek('naming');
+          injectedMixins.add(className);
+          final namingReader = annotationReader?.peek('naming');
           final mixinAffix = namingReader?.peek('mixin');
           final mixinPrefix = mixinAffix?.peek('prefix')?.stringValue ??
+              astConfig?.mixin?.prefix ??
               resolvedDefaults.mixin.prefix ??
               CloneableNaming.defaultMixin.prefix ??
               '';
           final mixinSuffix = mixinAffix?.peek('suffix')?.stringValue ??
+              astConfig?.mixin?.suffix ??
               resolvedDefaults.mixin.suffix ??
               CloneableNaming.defaultMixin.suffix ??
               '';
           final mixinName = mixinPrefix.startsWith('_')
               ? '$mixinPrefix${element.name}$mixinSuffix'
               : '${r'_$'}$mixinPrefix${element.name}$mixinSuffix';
+          final typeArgs = element.typeParameters.isEmpty
+              ? ''
+              : '<${element.typeParameters.map((p) => p.name).join(', ')}>';
+          final mixinWithArgs = '$mixinName$typeArgs';
 
           if (declaration.withClause != null) {
             edits.add(_FileEdit(
               offset: declaration.withClause!.end,
               end: declaration.withClause!.end,
-              text: ', $mixinName',
+              text: ', $mixinWithArgs',
             ));
           } else if (declaration.implementsClause != null) {
             edits.add(_FileEdit(
               offset: declaration.implementsClause!.offset,
               end: declaration.implementsClause!.offset,
-              text: 'with $mixinName ',
+              text: 'with $mixinWithArgs ',
             ));
           } else {
             edits.add(_FileEdit(
               offset: declaration.leftBracket.offset,
               end: declaration.leftBracket.offset,
-              text: 'with $mixinName ',
+              text: 'with $mixinWithArgs ',
             ));
           }
         }
@@ -284,15 +369,18 @@ final class CloneableGeneratorRunner {
         if (output == CloneableOutput.part ||
             strategy == CloneableStrategy.mixin) {
           fileNeedsPartDirective = true;
-          final namingReader = annotationReader.peek('naming');
+          final namingReader = annotationReader?.peek('naming');
           final directory = namingReader?.peek('directory')?.stringValue ??
+              astConfig?.directory ??
               resolvedDefaults.directory;
           final fileAffix = namingReader?.peek('file');
           final filePrefix = fileAffix?.peek('prefix')?.stringValue ??
+              astConfig?.file?.prefix ??
               resolvedDefaults.file.prefix ??
               CloneableNaming.defaultFile.prefix ??
               '';
           final fileSuffix = fileAffix?.peek('suffix')?.stringValue ??
+              astConfig?.file?.suffix ??
               resolvedDefaults.file.suffix ??
               CloneableNaming.defaultFile.suffix ??
               '';
@@ -345,21 +433,20 @@ final class CloneableGeneratorRunner {
     for (final declaration in unitResult.unit.declarations) {
       if (declaration is! ClassDeclaration) continue;
 
-      final element = declaration.declaredElement;
-      if (element == null) continue;
+      final element = declaration.declaredFragment?.element;
+      if (element == null || element.name == null) continue;
 
-      final className = element.name;
+      final className = element.name!;
 
-      // Locate Cloneable annotation
       ConstantReader? annotationReader;
       try {
-        if (typeChecker.firstAnnotationOf(element) case final obj?) {
+        if (_cloneableTypeChecker.firstAnnotationOf(element) case final obj?) {
           annotationReader = ConstantReader(obj);
         }
       } catch (_) {}
 
       if (annotationReader == null) {
-        for (final meta in element.metadata) {
+        for (final meta in element.metadata.annotations) {
           try {
             if (meta.computeConstantValue() case final val?
                 when val.type?.element?.name == 'Cloneable') {
@@ -370,47 +457,90 @@ final class CloneableGeneratorRunner {
         }
       }
 
-      if (annotationReader != null) {
+      RawCloneableConfig? astConfig;
+      for (final meta in declaration.metadata) {
+        final name = meta.name.toSource();
+        if (name == 'Cloneable' || name.startsWith('Cloneable.')) {
+          astConfig = AstConfigReader.parseFromAnnotationAst(meta);
+          break;
+        }
+      }
+
+      if (annotationReader != null || astConfig != null) {
+        final effectiveReader = annotationReader ??
+            ConstantReader(null); // safely handled via astConfig fallback
+
         final resolvedDefaults = ConfigLoader.resolveDefaults(
           library: element.library,
           classElement: element,
           filePath: filePath,
         );
 
-        final isActive = annotationReader.peek('active')?.boolValue ??
-            resolvedDefaults.active;
+        final rawActiveness = annotationReader?.peek('activeness') != null
+            ? switch (annotationReader!
+                .peek('activeness')!
+                .objectValue
+                .getField('index')
+                ?.toIntValue()) {
+                final index?
+                    when index >= 0 &&
+                        index < CloneableActiveness.values.length =>
+                  CloneableActiveness.values[index],
+                _ => null,
+              }
+            : astConfig?.activeness;
+
+        final rawActive =
+            annotationReader?.peek('active')?.boolValue ?? astConfig?.active;
+
+        final bool isActive;
+        if (rawActiveness == CloneableActiveness.forceActive) {
+          isActive = true;
+        } else if (rawActiveness == CloneableActiveness.forceInactive) {
+          isActive = false;
+        } else if (resolvedDefaults.activeness ==
+            CloneableActiveness.forceInactive) {
+          isActive = false;
+        } else if (rawActiveness != null) {
+          isActive = rawActiveness.isActive;
+        } else if (rawActive != null) {
+          isActive = rawActive;
+        } else {
+          isActive = resolvedDefaults.active;
+        }
+
         final output = switch (annotationReader
-            .peek('output')
+            ?.peek('output')
             ?.objectValue
             .getField('index')
             ?.toIntValue()) {
           final index?
               when index >= 0 && index < CloneableOutput.values.length =>
             CloneableOutput.values[index],
-          _ => resolvedDefaults.output,
+          _ => astConfig?.output ?? resolvedDefaults.output,
         };
         final isInline = output.isInline;
 
         final sentinel = switch (annotationReader
-            .peek('sentinel')
+            ?.peek('sentinel')
             ?.objectValue
             .getField('index')
             ?.toIntValue()) {
           final index?
               when index >= 0 && index < CloneableSentinel.values.length =>
             CloneableSentinel.values[index],
-          _ => resolvedDefaults.sentinel,
+          _ => astConfig?.sentinel ?? resolvedDefaults.sentinel,
         };
 
         final cleanup = switch (annotationReader
-            .peek('cleanup')
+            ?.peek('cleanup')
             ?.objectValue
             .getField('index')
             ?.toIntValue()) {
           final index?
               when index >= 0 && index < CloneableCleanup.values.length =>
             CloneableCleanup.values[index],
-          _ => resolvedDefaults.cleanup,
+          _ => astConfig?.cleanup ?? resolvedDefaults.cleanup,
         };
         final shouldRemove = cleanup == CloneableCleanup.remove &&
             sentinel == CloneableSentinel.private;
@@ -428,18 +558,20 @@ final class CloneableGeneratorRunner {
                 ));
               } else {
                 final args = meta.arguments!;
-                NamedExpression? activeArg;
+                AstNode? activeArg;
+                AstNode? activeExpr;
                 for (final arg in args.arguments) {
-                  if (arg is NamedExpression &&
-                      arg.name.label.name == 'active') {
+                  final (name, expr) = AstConfigReader.getArgumentInfo(arg);
+                  if (name == 'active') {
                     activeArg = arg;
+                    activeExpr = expr;
                     break;
                   }
                 }
-                if (activeArg != null) {
+                if (activeArg != null && activeExpr != null) {
                   edits.add(_FileEdit(
-                    offset: activeArg.expression.offset,
-                    end: activeArg.expression.end,
+                    offset: activeExpr.offset,
+                    end: activeExpr.end,
                     text: 'false',
                   ));
                 } else if (args.arguments.isEmpty) {
@@ -533,6 +665,10 @@ final class CloneableGeneratorRunner {
               edits.add(_FileEdit(offset: m.start, end: m.end, text: ''));
             }
           }
+          for (final m in CloneableGenerator.typedefMarkerPattern(className)
+              .allMatches(content)) {
+            edits.add(_FileEdit(offset: m.start, end: m.end, text: ''));
+          }
         }
 
         if (isActive) {
@@ -546,16 +682,17 @@ final class CloneableGeneratorRunner {
 
               if (output == CloneableOutput.inClass) {
                 cleanOutsideMarkers();
-                final parts = _generator.generateInClassParts(
+                final memberCode = _generator.generateInClassMembers(
                   element: element,
-                  annotation: annotationReader,
+                  annotation: effectiveReader,
                   inputFileName: p.basename(filePath),
                   inputFilePath: filePath,
                   sourceCode: content,
                   parsedLibResult: parsedLibResult,
+                  resolvedDefaults: resolvedDefaults,
                 );
 
-                if (parts.memberCode.isNotEmpty) {
+                if (memberCode.isNotEmpty) {
                   if (shouldRemove) {
                     removedClasses.add(className);
 
@@ -563,11 +700,10 @@ final class CloneableGeneratorRunner {
                     edits.add(_FileEdit(
                       offset: declaration.rightBracket.offset,
                       end: declaration.rightBracket.offset,
-                      text: '\n${parts.memberCode}\n',
+                      text: '\n$memberCode\n',
                     ));
 
-                    // Auto-remove @Cloneable annotation on class and replace with typedef if present
-                    var replacedCloneable = false;
+                    // Auto-remove @Cloneable annotation on class
                     for (final meta in declaration.metadata) {
                       if (meta.name.name == 'Cloneable' ||
                           meta.name.name.startsWith('Cloneable.')) {
@@ -581,27 +717,12 @@ final class CloneableGeneratorRunner {
                           metaEnd++;
                           if (isNewline) break;
                         }
-
-                        final replacement =
-                            (!replacedCloneable && parts.typedefCode.isNotEmpty)
-                                ? '${parts.typedefCode}\n\n'
-                                : '';
-                        replacedCloneable = true;
-
                         edits.add(_FileEdit(
                           offset: meta.offset,
                           end: metaEnd,
-                          text: replacement,
+                          text: '',
                         ));
                       }
-                    }
-
-                    if (!replacedCloneable && parts.typedefCode.isNotEmpty) {
-                      edits.add(_FileEdit(
-                        offset: declaration.offset,
-                        end: declaration.offset,
-                        text: '${parts.typedefCode}\n\n',
-                      ));
                     }
 
                     // Remove @CloneableField annotations on members and params
@@ -688,35 +809,15 @@ final class CloneableGeneratorRunner {
                         offset: insideMarker.start,
                         end: insideMarker.end,
                         text: CloneableGenerator.wrapWithMarkers(
-                            className, parts.memberCode),
+                            className, memberCode),
                       ));
                     } else {
                       edits.add(_FileEdit(
                         offset: declaration.rightBracket.offset,
                         end: declaration.rightBracket.offset,
                         text:
-                            '\n${CloneableGenerator.wrapWithMarkers(className, parts.memberCode)}\n',
+                            '\n${CloneableGenerator.wrapWithMarkers(className, memberCode)}\n',
                       ));
-                    }
-
-                    if (parts.typedefCode.isNotEmpty) {
-                      if (CloneableGenerator.typedefMarkerPattern(className)
-                              .firstMatch(content)
-                          case final m?) {
-                        edits.add(_FileEdit(
-                          offset: m.start,
-                          end: m.end,
-                          text: CloneableGenerator.wrapWithTypedefMarkers(
-                              className, parts.typedefCode),
-                        ));
-                      } else {
-                        edits.add(_FileEdit(
-                          offset: declaration.offset,
-                          end: declaration.offset,
-                          text:
-                              '${CloneableGenerator.wrapWithTypedefMarkers(className, parts.typedefCode)}\n',
-                        ));
-                      }
                     }
 
                     if (shouldDeactivate) {
@@ -731,12 +832,16 @@ final class CloneableGeneratorRunner {
                 cleanInClassMembers();
                 final code = _generator.generateForClass(
                   element: element,
-                  annotation: annotationReader,
+                  annotation: effectiveReader,
                   inputFileName: p.basename(filePath),
                   inputFilePath: filePath,
                   sourceCode: content,
                   isInline: true,
                   parsedLibResult: parsedLibResult,
+                  resolvedDefaults: resolvedDefaults,
+                  hasPartDirectiveOverride: fileNeedsPartDirective,
+                  hasMixinOverride: injectedMixins.contains(className),
+                  declaredSentinels: declaredSentinels,
                 );
 
                 if (shouldRemove) {
@@ -833,20 +938,62 @@ final class CloneableGeneratorRunner {
 
               final code = _generator.generateForClass(
                 element: element,
-                annotation: annotationReader,
+                annotation: effectiveReader,
                 inputFileName: p.basename(filePath),
                 inputFilePath: filePath,
                 sourceCode: content,
                 isInline: false,
                 includeHeader: false,
                 parsedLibResult: parsedLibResult,
+                resolvedDefaults: resolvedDefaults,
+                hasPartDirectiveOverride: fileNeedsPartDirective,
+                hasMixinOverride: injectedMixins.contains(className),
+                declaredSentinels: declaredSentinels,
               );
 
               if (code.trim().isNotEmpty) {
                 partFileCodes.add(code.trim());
               }
 
-              if (shouldDeactivate) {
+              if (shouldRemove) {
+                removedClasses.add(className);
+                for (final meta in declaration.metadata) {
+                  if (meta.name.name == 'Cloneable' ||
+                      meta.name.name.startsWith('Cloneable.')) {
+                    edits.add(_FileEdit(
+                      offset: meta.offset,
+                      end: meta.end,
+                      text: '',
+                    ));
+                  }
+                }
+                for (final member in declaration.members) {
+                  for (final meta in member.metadata) {
+                    if (meta.name.name == 'CloneableField' ||
+                        meta.name.name.startsWith('CloneableField.')) {
+                      edits.add(_FileEdit(
+                        offset: meta.offset,
+                        end: meta.end,
+                        text: '',
+                      ));
+                    }
+                  }
+                  if (member is ConstructorDeclaration) {
+                    for (final param in member.parameters.parameters) {
+                      for (final meta in param.metadata) {
+                        if (meta.name.name == 'CloneableField' ||
+                            meta.name.name.startsWith('CloneableField.')) {
+                          edits.add(_FileEdit(
+                            offset: meta.offset,
+                            end: meta.end,
+                            text: '',
+                          ));
+                        }
+                      }
+                    }
+                  }
+                }
+              } else if (shouldDeactivate) {
                 deactivateAnnotation();
               }
             }
@@ -856,7 +1003,7 @@ final class CloneableGeneratorRunner {
       }
 
       // If class is present but not annotated at all (removed annotation):
-      if (annotationReader == null) {
+      if (annotationReader == null && astConfig == null) {
         if (existingMarkerClasses.contains(className)) {
           inlineClassCodeMap[className] = null;
           existingMarkerClasses.remove(className);
@@ -1035,7 +1182,7 @@ final class CloneableGeneratorRunner {
       }
     }
 
-    // 2. Process part file updates
+    // 2. Process part / standalone file updates
     if (!inlineOnly) {
       if (partFileCodes.isNotEmpty) {
         final buffer = StringBuffer();
@@ -1043,7 +1190,9 @@ final class CloneableGeneratorRunner {
         if (hasPartDirective) {
           buffer.writeln("part of '${p.basename(filePath)}';\n");
         } else {
-          buffer.writeln("import 'package:cloneable/cloneable.dart';");
+          if (fileNeedsPackageSentinel) {
+            buffer.writeln("import 'package:cloneable/cloneable.dart';");
+          }
           buffer.writeln("import '${p.basename(filePath)}';");
           for (final directive in unitResult.unit.directives) {
             if (directive is ImportDirective) {

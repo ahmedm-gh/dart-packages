@@ -2,16 +2,10 @@
 
 part of 'generic_models.dart';
 
-/// Strongly-typed copyWith function signature for [Box].
-typedef $BoxCopyWithFn<T> = Box<T> Function({
-  T value,
-  T? optionalValue,
-  String tag,
-});
-
 /// Generated cloneable mixin for [Box].
 mixin _$BoxCloneable<T> {
-  $BoxCopyWithFn<T> get copyWith => _copyWith;
+  Box<T> Function({T value, T? optionalValue, String tag}) get copyWith =>
+      _copyWith;
 
   Box<T> _copyWith({
     Object? value = $undefined,
@@ -29,15 +23,9 @@ mixin _$BoxCloneable<T> {
   }
 }
 
-/// Strongly-typed copyWith function signature for [BoundedBox].
-typedef $BoundedBoxCopyWithFn<T extends num> = BoundedBox<T> Function({
-  T number,
-  String label,
-});
-
 /// Generated cloneable mixin for [BoundedBox].
 mixin _$BoundedBoxCloneable<T extends num> {
-  $BoundedBoxCopyWithFn<T> get copyWith => _copyWith;
+  BoundedBox<T> Function({T number, String label}) get copyWith => _copyWith;
 
   BoundedBox<T> _copyWith({
     Object? number = $undefined,
@@ -51,15 +39,9 @@ mixin _$BoundedBoxCloneable<T extends num> {
   }
 }
 
-/// Strongly-typed copyWith function signature for [Pair].
-typedef $PairCopyWithFn<A, B> = Pair<A, B> Function({
-  A first,
-  B second,
-});
-
 /// Generated cloneable mixin for [Pair].
 mixin _$PairCloneable<A, B> {
-  $PairCopyWithFn<A, B> get copyWith => _copyWith;
+  Pair<A, B> Function({A first, B second}) get copyWith => _copyWith;
 
   Pair<A, B> _copyWith({
     Object? first = $undefined,

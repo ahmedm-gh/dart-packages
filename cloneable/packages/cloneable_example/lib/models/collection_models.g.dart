@@ -2,19 +2,16 @@
 
 part of 'collection_models.dart';
 
-/// Strongly-typed copyWith function signature for [DeepCopyModel].
-typedef $DeepCopyModelCopyWithFn = DeepCopyModel Function({
-  List<String> tags,
-  Set<int> ids,
-  Map<String, dynamic> metadata,
-  List<String>? optionalTags,
-  Map<String, int>? optionalScores,
-  List<String> shallowList,
-});
-
 /// Generated cloneable mixin for [DeepCopyModel].
 mixin _$DeepCopyModelCloneable {
-  $DeepCopyModelCopyWithFn get copyWith => _copyWith;
+  DeepCopyModel Function({
+    List<String> tags,
+    Set<int> ids,
+    Map<String, dynamic> metadata,
+    List<String>? optionalTags,
+    Map<String, int>? optionalScores,
+    List<String> shallowList,
+  }) get copyWith => _copyWith;
 
   DeepCopyModel _copyWith({
     Object? tags = $undefined,
@@ -52,16 +49,13 @@ mixin _$DeepCopyModelCloneable {
   }
 }
 
-/// Strongly-typed copyWith function signature for [SelectiveDeepCopyModel].
-typedef $SelectiveDeepCopyModelCopyWithFn = SelectiveDeepCopyModel Function({
-  List<String> defaultTags,
-  List<String> deepTags,
-  Map<String, String>? deepMap,
-});
-
 /// Generated cloneable mixin for [SelectiveDeepCopyModel].
 mixin _$SelectiveDeepCopyModelCloneable {
-  $SelectiveDeepCopyModelCopyWithFn get copyWith => _copyWith;
+  SelectiveDeepCopyModel Function({
+    List<String> defaultTags,
+    List<String> deepTags,
+    Map<String, String>? deepMap,
+  }) get copyWith => _copyWith;
 
   SelectiveDeepCopyModel _copyWith({
     Object? defaultTags = $undefined,

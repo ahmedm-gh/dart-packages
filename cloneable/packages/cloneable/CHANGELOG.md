@@ -11,7 +11,7 @@
 - Programmatic runtime setter `Cloneable.setDefaults(...)` and `CloneableDefaults.setDefaults(...)`.
 - Advanced enums (`CloneableStrategy`, `CloneableSentinel`, `CloneableFieldsConflict`, `CloneableOutput`) with expressive capability getters.
 - `CloneableOutput.inLibrary` and `CloneableOutput.inClass` output generation modes.
-- `CloneableNaming` and `CloneableAffix` for granular target (`mixin`, `extension`, `typedef`, `file`) and approach-specific prefix/suffix customization.
+- `CloneableNaming` and `CloneableAffix` for granular target (`mixin`, `extension`, `file`) and approach-specific prefix/suffix customization.
 - Configurable post-generation cleanup via `CloneableCleanup` (`none`, `deactivate`, `remove`).
 - `@CloneableField()` annotation with field-level ignore, deep copy support, and optional `cloner` function reference.
 - Built-in deep copying expanded for all Dart typed data (`Uint8List`, `Int32List`, `ByteData`, etc.) and collections (`Queue`, `HashMap`, `SplayTreeMap`, etc.).
@@ -24,4 +24,3 @@
 - `CloneableAffix` now accepts nullable `prefix` and `suffix` parameters to support seamless partial overrides while preserving defaults.
 - Added documentation for `CloneableDefaults.instance` and modern Dart 3 in-code configuration alternatives.
 - Zero external runtime dependencies.
-

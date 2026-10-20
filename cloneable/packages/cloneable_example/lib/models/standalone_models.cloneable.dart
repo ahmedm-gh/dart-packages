@@ -1,23 +1,21 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 import 'package:cloneable/cloneable.dart';
+
 import 'standalone_models.dart';
 import 'external_library.dart';
 import 'external_library.dart' as ext;
 
-/// Strongly-typed copyWith function signature for [StandaloneOrder].
-typedef $StandaloneOrderCopyWithFn = StandaloneOrder Function({
-  String id,
-  ExternalStatus status,
-  ExternalPriority priority,
-  ExternalAddress address,
-  ExternalConfig config,
-  List<ExternalAddress> locations,
-});
-
 /// Generated cloneable extension for [StandaloneOrder].
 extension $StandaloneOrderExtension on StandaloneOrder {
-  $StandaloneOrderCopyWithFn get copyWith => _copyWith;
+  StandaloneOrder Function({
+    String id,
+    ExternalStatus status,
+    ExternalPriority priority,
+    ExternalAddress address,
+    ExternalConfig config,
+    List<ExternalAddress> locations,
+  }) get copyWith => _copyWith;
 
   StandaloneOrder _copyWith({
     Object? id = $undefined,
@@ -49,18 +47,14 @@ extension $StandaloneOrderExtension on StandaloneOrder {
   }
 }
 
-/// Strongly-typed copyWith function signature for [StandalonePrefixedCustomer].
-typedef $StandalonePrefixedCustomerCopyWithFn = StandalonePrefixedCustomer
-    Function({
-  String id,
-  ext.ExternalStatus status,
-  ext.ExternalAddress address,
-  ext.ExternalConfig config,
-});
-
 /// Generated cloneable extension for [StandalonePrefixedCustomer].
 extension $StandalonePrefixedCustomerExtension on StandalonePrefixedCustomer {
-  $StandalonePrefixedCustomerCopyWithFn get copyWith => _copyWith;
+  StandalonePrefixedCustomer Function({
+    String id,
+    ext.ExternalStatus status,
+    ext.ExternalAddress address,
+    ext.ExternalConfig config,
+  }) get copyWith => _copyWith;
 
   StandalonePrefixedCustomer _copyWith({
     Object? id = $undefined,
@@ -84,15 +78,10 @@ extension $StandalonePrefixedCustomerExtension on StandalonePrefixedCustomer {
   }
 }
 
-/// Strongly-typed copyWith function signature for [StandaloneCustomProfile].
-typedef $StandaloneCustomProfileCopyWithFn = StandaloneCustomProfile Function({
-  String username,
-  String? bio,
-});
-
 /// Generated cloneable extension for [StandaloneCustomProfile].
 extension CustomStandaloneCustomProfileExtension on StandaloneCustomProfile {
-  $StandaloneCustomProfileCopyWithFn get copyWith => _copyWith;
+  StandaloneCustomProfile Function({String username, String? bio})
+      get copyWith => _copyWith;
 
   StandaloneCustomProfile _copyWith({
     Object? username = $undefined,

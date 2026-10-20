@@ -76,7 +76,7 @@ enum CloneableOutput {
   standalone,
 
   /// Generates code directly inside the same library that contains the class
-  /// (top-level extension and typedef) wrapped between marker comments.
+  /// (top-level extension) wrapped between marker comments.
   inLibrary,
 
   /// Generates the `copyWith` method directly inside the class body itself
@@ -104,6 +104,28 @@ enum CloneableCleanup {
   /// This action is **only active** when [sentinel] is set to [CloneableSentinel.private],
   /// ensuring the generated code is 100% self-contained and free of runtime dependencies.
   remove;
+}
+
+/// The activation state and override precedence for code generation.
+enum CloneableActiveness {
+  /// Code generation is active. Can be overridden by child or parent configurations.
+  active,
+
+  /// Code generation is inactive. Can be overridden by explicit child activation.
+  inactive,
+
+  /// Forces code generation to be active, overriding parent deactivations.
+  forceActive,
+
+  /// Master kill-switch: forces code generation to be inactive across its scope,
+  /// overriding child configurations.
+  forceInactive;
+
+  /// Whether code generation is active.
+  bool get isActive => this == active || this == forceActive;
+
+  /// Whether code generation is forced.
+  bool get isForced => this == forceActive || this == forceInactive;
 }
 
 /// Represents a configurable prefix and suffix pair for generated code symbols or files.
@@ -136,7 +158,7 @@ class CloneableAffix {
 }
 
 /// Configuration for naming patterns and symbol prefixes/suffixes
-/// of generated code (mixins, extensions, copyWith typedef signatures, and files).
+/// of generated code (mixins, extensions, and files).
 class CloneableNaming {
   /// The default name for the copy method (`'copyWith'`).
   static const defaultMethod = 'copyWith';
@@ -154,12 +176,6 @@ class CloneableNaming {
   static const defaultExtension = CloneableAffix(
     prefix: r'$',
     suffix: 'Extension',
-  );
-
-  /// The default affix for generated copyWith typedef signatures (`$ClassNameCopyWithFn`).
-  static const defaultTypedef = CloneableAffix(
-    prefix: r'$',
-    suffix: 'CopyWithFn',
   );
 
   /// The default affix for generated files (`$className.cloneable.g.dart`).
@@ -190,9 +206,6 @@ class CloneableNaming {
   /// Configures prefix and suffix for generated extensions.
   final CloneableAffix extension;
 
-  /// Configures prefix and suffix for generated copyWith typedef signatures.
-  final CloneableAffix typedef;
-
   /// Configures prefix and suffix for generated files (part files and standalone files).
   final CloneableAffix file;
 
@@ -222,7 +235,6 @@ class CloneableNaming {
     this.sentinel = defaultSentinel,
     this.mixin = defaultMixin,
     this.extension = defaultExtension,
-    this.typedef = defaultTypedef,
     this.file = defaultFile,
     this.directory = defaultDirectory,
     this.part,
@@ -240,7 +252,6 @@ class CloneableNaming {
           sentinel == other.sentinel &&
           mixin == other.mixin &&
           extension == other.extension &&
-          typedef == other.typedef &&
           file == other.file &&
           directory == other.directory &&
           part == other.part &&
@@ -254,7 +265,6 @@ class CloneableNaming {
         sentinel,
         mixin,
         extension,
-        typedef,
         file,
         directory,
         part,
@@ -265,7 +275,7 @@ class CloneableNaming {
 
   @override
   String toString() =>
-      'CloneableNaming(method: "$method", sentinel: "$sentinel", mixin: $mixin, extension: $extension, typedef: $typedef, file: $file, directory: ${directory != null ? '"$directory"' : null}, part: $part, standalone: $standalone, inLibrary: $inLibrary, inClass: $inClass)';
+      'CloneableNaming(method: "$method", sentinel: "$sentinel", mixin: $mixin, extension: $extension, file: $file, directory: ${directory != null ? '"$directory"' : null}, part: $part, standalone: $standalone, inLibrary: $inLibrary, inClass: $inClass)';
 }
 
 /// Annotation to mark a Dart class for `copyWith` code generation.
@@ -337,6 +347,15 @@ class Cloneable {
   /// When `null`, inherits the setting from [CloneableDefaults.instance].
   final bool? active;
 
+  /// The activation state and override precedence for code generation.
+  ///
+  /// Takes precedence over [active]. Supports [CloneableActiveness.active],
+  /// [CloneableActiveness.inactive], [CloneableActiveness.forceActive],
+  /// and [CloneableActiveness.forceInactive].
+  ///
+  /// When `null`, falls back to [active] or inherits from [CloneableDefaults.instance].
+  final CloneableActiveness? activeness;
+
   /// The cleanup action to perform on source annotations after code generation.
   ///
   /// - [CloneableCleanup.none]: Keeps annotations intact (default).
@@ -394,6 +413,7 @@ class Cloneable {
     this.ignoreNull,
     this.sentinel,
     this.active,
+    this.activeness,
     this.cleanup,
     this.output,
     this.fields,
@@ -420,6 +440,7 @@ class Cloneable {
     bool deepCopyCollections,
     bool ignoreNull,
     bool active,
+    CloneableActiveness activeness,
     CloneableCleanup cleanup,
     CloneableFieldsConflict fieldsConflict,
     CloneableNaming naming,
@@ -437,6 +458,7 @@ class Cloneable {
     this.ignoreNull,
     this.sentinel,
     this.active,
+    this.activeness,
     this.cleanup,
     this.fields,
     this.cloneableFieldsGetter,
@@ -455,6 +477,7 @@ class Cloneable {
     this.ignoreNull,
     this.sentinel,
     this.active,
+    this.activeness,
     this.cleanup,
     this.fields,
     this.cloneableFieldsGetter,
@@ -470,6 +493,7 @@ class Cloneable {
     this.ignoreNull,
     this.sentinel,
     this.active,
+    this.activeness,
     this.cleanup,
     this.fields,
     this.cloneableFieldsGetter,
@@ -484,6 +508,7 @@ class Cloneable {
     this.ignoreNull,
     this.sentinel,
     this.active,
+    this.activeness,
     this.cleanup,
     this.fields,
     this.cloneableFieldsGetter,
@@ -500,6 +525,7 @@ class Cloneable {
     bool deepCopyCollections = false,
     bool ignoreNull = false,
     bool active = true,
+    CloneableActiveness activeness = CloneableActiveness.active,
     CloneableCleanup cleanup = CloneableCleanup.none,
     CloneableFieldsConflict fieldsConflict = CloneableFieldsConflict.error,
     CloneableNaming naming = const CloneableNaming(),
@@ -511,6 +537,7 @@ class Cloneable {
       deepCopyCollections: deepCopyCollections,
       ignoreNull: ignoreNull,
       active: active,
+      activeness: activeness,
       cleanup: cleanup,
       fieldsConflict: fieldsConflict,
       naming: naming,
@@ -543,9 +570,19 @@ class CloneableDefaults extends Cloneable {
   @override
   bool get ignoreNull => super.ignoreNull ?? false;
 
+  /// The default activeness setting.
+  @override
+  CloneableActiveness get activeness =>
+      super.activeness ??
+      (super.active != null
+          ? (super.active!
+              ? CloneableActiveness.active
+              : CloneableActiveness.inactive)
+          : CloneableActiveness.active);
+
   /// Whether code generation is active by default.
   @override
-  bool get active => super.active ?? true;
+  bool get active => activeness.isActive;
 
   /// The default cleanup action on source annotations.
   @override
@@ -568,6 +605,7 @@ class CloneableDefaults extends Cloneable {
     super.deepCopyCollections,
     super.ignoreNull,
     super.active,
+    super.activeness,
     super.cleanup,
     super.fieldsConflict,
     super.naming,
@@ -592,6 +630,7 @@ class CloneableDefaults extends Cloneable {
           deepCopyCollections == other.deepCopyCollections &&
           ignoreNull == other.ignoreNull &&
           active == other.active &&
+          activeness == other.activeness &&
           cleanup == other.cleanup &&
           fieldsConflict == other.fieldsConflict &&
           naming == other.naming;
@@ -604,6 +643,7 @@ class CloneableDefaults extends Cloneable {
         deepCopyCollections,
         ignoreNull,
         active,
+        activeness,
         cleanup,
         fieldsConflict,
         naming,
@@ -611,7 +651,7 @@ class CloneableDefaults extends Cloneable {
 
   @override
   String toString() =>
-      'CloneableDefaults(output: $output, strategy: $strategy, sentinel: $sentinel, deepCopyCollections: $deepCopyCollections, ignoreNull: $ignoreNull, active: $active, cleanup: $cleanup, fieldsConflict: $fieldsConflict, naming: $naming)';
+      'CloneableDefaults(output: $output, strategy: $strategy, sentinel: $sentinel, deepCopyCollections: $deepCopyCollections, ignoreNull: $ignoreNull, active: $active, activeness: $activeness, cleanup: $cleanup, fieldsConflict: $fieldsConflict, naming: $naming)';
 }
 
 /// Annotation to customize code generation for an individual class field.

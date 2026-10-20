@@ -285,11 +285,10 @@ class User {
           updatedContent1,
           contains(
               '// cloneable:start (User) - GENERATED CODE - DO NOT MODIFY BY HAND\n// (run: dart run cloneable_generator to regenerate)'));
-      expect(updatedContent1, contains('// cloneable:end (User)'));
-      expect(updatedContent1, contains('typedef \$UserCopyWithFn'));
       expect(updatedContent1, contains('extension \$UserExtension on User'));
-      expect(updatedContent1,
-          contains('\$UserCopyWithFn get copyWith => _copyWith;'));
+      expect(updatedContent1, contains('User Function({'));
+      expect(updatedContent1, contains('get copyWith => _copyWith;'));
+      expect(updatedContent1, isNot(contains('typedef')));
 
       // 2. Second execution -> idempotent, 0 updated files
       final result2 = await generator.run(paths: [libDir.path]);
@@ -311,7 +310,7 @@ class User {
 
 // cloneable:start (User) - GENERATED CODE - DO NOT MODIFY BY HAND
 // (run: dart run cloneable_generator to regenerate)
-typedef \$UserCopyWithFn = User Function({String? name, int? age});
+extension \$UserExtension on User {}
 // cloneable:end (User)
 ''');
 
@@ -359,6 +358,117 @@ class Profile with _\$ProfileCloneable {
       expect(updatedContent, contains('mixin _\$ProfileCloneable {'));
     });
 
+    test('auto-injects mixin when strategy is CloneableStrategy.mixin',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'profile.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(strategy: CloneableStrategy.mixin, output: CloneableOutput.inLibrary)
+class Profile {
+  final String bio;
+
+  const Profile({
+    required this.bio,
+  });
+}
+''');
+
+      final generator = CloneableGeneratorRunner();
+      final result = await generator.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(1));
+
+      final updatedContent = modelFile.readAsStringSync();
+      expect(
+          updatedContent, contains('class Profile with _\$ProfileCloneable {'));
+      expect(updatedContent, contains('mixin _\$ProfileCloneable {'));
+    });
+
+    test(
+        'auto-injects generic mixin when strategy is CloneableStrategy.mixin on generic class',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'box.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(strategy: CloneableStrategy.mixin, output: CloneableOutput.inLibrary)
+class Box<T> {
+  final T value;
+
+  const Box({
+    required this.value,
+  });
+}
+''');
+
+      final generator = CloneableGeneratorRunner();
+      final result = await generator.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(1));
+
+      final updatedContent = modelFile.readAsStringSync();
+      expect(
+          updatedContent, contains('class Box<T> with _\$BoxCloneable<T> {'));
+      expect(updatedContent, contains('mixin _\$BoxCloneable<T> {'));
+      expect(updatedContent,
+          contains('Box<T> Function({T value}) get copyWith => _copyWith;'));
+    });
+
+    test(
+        'auto-injects mixin and part directive when strategy is CloneableStrategy.mixin with output CloneableOutput.part',
+        () async {
+      final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      pubspec.writeAsStringSync('''
+name: test_pkg
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+''');
+
+      final libDir = Directory(p.join(tempDir.path, 'lib'))..createSync();
+      final modelFile = File(p.join(libDir.path, 'gadget.dart'));
+      modelFile.writeAsStringSync('''
+import 'package:cloneable/cloneable.dart';
+
+@Cloneable(strategy: CloneableStrategy.mixin, output: CloneableOutput.part)
+class Gadget {
+  final String name;
+
+  const Gadget({
+    required this.name,
+  });
+}
+''');
+
+      final generator = CloneableGeneratorRunner();
+      final result = await generator.run(paths: [libDir.path]);
+      expect(result.updatedFiles, hasLength(2));
+
+      final updatedContent = modelFile.readAsStringSync();
+      expect(updatedContent, contains("part 'gadget.cloneable.g.dart';"));
+      expect(
+          updatedContent, contains('class Gadget with _\$GadgetCloneable {'));
+
+      final partFile = File(p.join(libDir.path, 'gadget.cloneable.g.dart'));
+      expect(partFile.existsSync(), isTrue);
+      expect(
+          partFile.readAsStringSync(), contains('mixin _\$GadgetCloneable {'));
+    });
+
     test('generates clean external part file without asterisks banner',
         () async {
       final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
@@ -404,8 +514,8 @@ class Item with _\$ItemCloneable {
       expect(partContent, contains("part of 'item.dart';"));
       expect(partContent, isNot(contains('***')));
       expect(partContent, isNot(contains('CloneableGenerator\n// ***')));
-      expect(partContent, contains('mixin _\$ItemCloneable {'));
-      expect(partContent, contains('typedef \$ItemCopyWithFn'));
+      expect(partContent, contains('Item Function({'));
+      expect(partContent, isNot(contains('typedef')));
 
       // 2. Re-run is idempotent
       final result2 = await runner.run(paths: [libDir.path]);
@@ -501,19 +611,14 @@ class CustomInlineUser {
       expect(
           updatedContent,
           contains(
-              'typedef CustomCustomInlineUserCopyWithFn = CustomInlineUser Function({'));
-      expect(
-          updatedContent,
-          contains(
               'extension CustomCustomInlineUserExtension on CustomInlineUser {'));
-      expect(
-          updatedContent,
-          contains(
-              'CustomCustomInlineUserCopyWithFn get copyWith => _copyWith;'));
+      expect(updatedContent, contains('CustomInlineUser Function({'));
+      expect(updatedContent, contains('get copyWith => _copyWith;'));
+      expect(updatedContent, isNot(contains('typedef')));
     });
 
     test(
-        'supports inClass generation with copyWith inside class body and typedef at top-level',
+        'supports inClass generation with copyWith inside class body without top-level typedef',
         () async {
       final pubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
       pubspec.writeAsStringSync('''
@@ -544,19 +649,17 @@ class InClassUser {
       expect(result.updatedFiles, hasLength(1));
 
       final updatedContent = modelFile.readAsStringSync();
-      // Typedef should be at top-level before the class
-      expect(updatedContent,
-          contains('typedef \$InClassUserCopyWithFn = InClassUser Function({'));
+      // No typedef generated anywhere in the file
+      expect(updatedContent, isNot(contains('typedef')));
+      expect(updatedContent, isNot(contains('cloneable:typedef')));
+
       // In-class markers and methods should be inside the class body
       expect(updatedContent, contains(r'static const _$undefined = Object();'));
-      expect(updatedContent,
-          contains('\$InClassUserCopyWithFn get copyWith => _copyWith;'));
+      expect(updatedContent, contains('InClassUser Function({'));
+      expect(updatedContent, contains('get copyWith => _copyWith;'));
       expect(updatedContent, contains('InClassUser _copyWith({'));
       expect(updatedContent, contains('// cloneable:start (InClassUser)'));
-      expect(
-          updatedContent, contains('// cloneable:typedef:start (InClassUser)'));
-      expect(
-          updatedContent, contains('// cloneable:typedef:end (InClassUser)'));
+      expect(updatedContent, contains('// cloneable:end (InClassUser)'));
     });
 
     test(
@@ -747,8 +850,10 @@ class TransitionTarget {
           r2Content,
           contains(
               'extension \$TransitionTargetExtension on TransitionTarget'));
-      expect(r2Content,
-          contains('\$TransitionTargetCopyWithFn get copyWith => _copyWith;'));
+      expect(
+          r2Content,
+          contains(
+              'TransitionTarget Function({String name}) get copyWith => _copyWith;'));
     });
 
     test(

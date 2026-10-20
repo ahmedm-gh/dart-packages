@@ -11,11 +11,10 @@
 - Removed `yaml` dependency completely for zero-dependency purity and optimal build performance.
 - Support partial `CloneableAffix` overrides while preserving default prefixes and suffixes.
 - Updated default file suffix to `.cloneable.g` (`$className.cloneable.g.dart`).
-- Support for dedicated named constructors (`@Cloneable.inClass`, `@Cloneable.inLibrary`, `@Cloneable.part`, `@Cloneable.standalone`).
-- Generated `$ClassNameCopyWithFn` callable interface enforcing non-nullable compile safety.
+- Strongly-typed inline function signature for `copyWith` getter enforcing non-nullable compile safety with zero typedef indirection.
 - Generated mixin `_$ClassNameCloneable` with zero-allocation `copyWith` getter, and extension `$ClassNameExtension`.
 - Added standalone `cloneable_generator` CLI runner supporting:
-  - `CloneableOutput.inLibrary`: emits extension and signature typedef at the library top-level.
+  - `CloneableOutput.inLibrary`: emits extension directly at the library top-level.
   - `CloneableOutput.inClass`: emits `copyWith` implementation directly inside the class body.
   - `CloneableCleanup`: post-generation cleanup (`none`, `deactivate`, `remove`) eliminating `@Cloneable`, `@CloneableField`, and `package:cloneable` imports when generating self-contained code with private sentinels.
 - Comprehensive built-in deep copying for standard Dart collections (`List`, `Set`, `Map`), specialized collections (`Queue`, `HashMap`, `SplayTreeMap`, etc.), and all `dart:typed_data` arrays (`Uint8List`, `Int32List`, `ByteData`, etc.).

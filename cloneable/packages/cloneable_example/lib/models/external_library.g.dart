@@ -2,15 +2,10 @@
 
 part of 'external_library.dart';
 
-/// Strongly-typed copyWith function signature for [ExternalProfile].
-typedef $ExternalProfileCopyWithFn = ExternalProfile Function({
-  String username,
-  String email,
-});
-
 /// Generated cloneable mixin for [ExternalProfile].
 mixin _$ExternalProfileCloneable {
-  $ExternalProfileCopyWithFn get copyWith => _copyWith;
+  ExternalProfile Function({String username, String email}) get copyWith =>
+      _copyWith;
 
   ExternalProfile _copyWith({
     Object? username = $undefined,

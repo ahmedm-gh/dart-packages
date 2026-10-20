@@ -2,16 +2,10 @@
 
 part of 'constructor_models.dart';
 
-/// Strongly-typed copyWith function signature for [Coordinate].
-typedef $CoordinateCopyWithFn = Coordinate Function({
-  double x,
-  double y,
-  double? z,
-});
-
 /// Generated cloneable mixin for [Coordinate].
 mixin _$CoordinateCloneable {
-  $CoordinateCopyWithFn get copyWith => _copyWith;
+  Coordinate Function({double x, double y, double? z}) get copyWith =>
+      _copyWith;
 
   Coordinate _copyWith({
     Object? x = $undefined,
@@ -27,16 +21,10 @@ mixin _$CoordinateCloneable {
   }
 }
 
-/// Strongly-typed copyWith function signature for [ServiceConfig].
-typedef $ServiceConfigCopyWithFn = ServiceConfig Function({
-  String host,
-  int port,
-  bool? enableSsl,
-});
-
 /// Generated cloneable mixin for [ServiceConfig].
 mixin _$ServiceConfigCloneable {
-  $ServiceConfigCopyWithFn get copyWith => _copyWith;
+  ServiceConfig Function({String host, int port, bool? enableSsl})
+      get copyWith => _copyWith;
 
   ServiceConfig _copyWith({
     Object? host = $undefined,
@@ -54,15 +42,9 @@ mixin _$ServiceConfigCloneable {
   }
 }
 
-/// Strongly-typed copyWith function signature for [AuditedEntity].
-typedef $AuditedEntityCopyWithFn = AuditedEntity Function({
-  String id,
-  String title,
-});
-
 /// Generated cloneable mixin for [AuditedEntity].
 mixin _$AuditedEntityCloneable {
-  $AuditedEntityCopyWithFn get copyWith => _copyWith;
+  AuditedEntity Function({String id, String title}) get copyWith => _copyWith;
 
   AuditedEntity _copyWith({
     Object? id = $undefined,

@@ -152,21 +152,11 @@ Run the generator:
 dart run cloneable_generator
 ```
 
-The generator places the typedef at the top of the file and injects `copyWith` directly inside the class body between managed comment markers:
+The generator injects `copyWith` directly inside the class body between managed comment markers with zero top-of-file clutter:
 
 ```dart
 // lib/models/product.dart
 import 'package:cloneable/cloneable.dart';
-
-// cloneable:typedef:start (Product) - GENERATED CODE - DO NOT MODIFY BY HAND
-// (run: dart run cloneable_generator to regenerate)
-typedef $ProductCopyWithFn = Product Function({
-  String id,
-  String title,
-  double price,
-  String? description,
-});
-// cloneable:typedef:end (Product)
 
 @Cloneable.inClass()
 class Product {
@@ -186,7 +176,12 @@ class Product {
 // (run: dart run cloneable_generator to regenerate)
   static const _$undefined = Object();
 
-  $ProductCopyWithFn get copyWith => _copyWith;
+  Product Function({
+    String id,
+    String title,
+    double price,
+    String? description,
+  }) get copyWith => _copyWith;
 
   Product _copyWith({
     Object? id = _$undefined,
@@ -239,14 +234,18 @@ class Order with _$OrderCloneable {
 `cloneable_generator` includes an optimized, standalone command-line executable that parses your Dart AST, resolves project defaults, and writes generated code directly **without invoking `build_runner`**.
 
 ```bash
-# Run on all files in lib/
+# Run on all files in lib/ (short & ergonomic):
+dart run cloneable
+# or full command:
 dart run cloneable_generator
 
 # Build alias:
-dart run cloneable_generator:build
+dart run cloneable:build
+# or:
+dart run cloneable:cbuild
 
 # Inline-only alias (processes only inClass and inLibrary models):
-dart run cloneable_generator:inline
+dart run cloneable:inline
 ```
 
 #### Targeting Specific Paths
@@ -355,10 +354,8 @@ Generated in `user.g.dart`:
 ```dart
 part of 'user.dart';
 
-typedef $UserCopyWithFn = User Function({String name});
-
 extension $UserExtension on User {
-  $UserCopyWithFn get copyWith => _copyWith;
+  User Function({String name}) get copyWith => _copyWith;
   User _copyWith({Object? name = $undefined}) {
     final self = this;
     return User(name: identical(name, $undefined) ? self.name : name as String);
@@ -390,10 +387,8 @@ Generated in `customer.cloneable.dart`:
 import 'package:cloneable/cloneable.dart';
 import 'customer.dart';
 
-typedef $CustomerCopyWithFn = Customer Function({String id, String name});
-
 extension $CustomerExtension on Customer {
-  $CustomerCopyWithFn get copyWith => _copyWith;
+  Customer Function({String id, String name}) get copyWith => _copyWith;
   Customer _copyWith({Object? id = $undefined, Object? name = $undefined}) {
     final self = this;
     return Customer(
@@ -408,7 +403,7 @@ extension $CustomerExtension on Customer {
 
 ### 3. In-Library Mode (`CloneableOutput.inLibrary`)
 
-Emits the extension and typedef directly inside your source file at the library top-level between comment markers:
+Emits the extension directly inside your source file at the library top-level between comment markers:
 
 ```dart
 import 'package:cloneable/cloneable.dart';
@@ -424,10 +419,8 @@ Generated directly in the same file:
 ```dart
 // cloneable:start (Account) - GENERATED CODE - DO NOT MODIFY BY HAND
 // (run: dart run cloneable_generator to regenerate)
-typedef $AccountCopyWithFn = Account Function({String email});
-
 extension $AccountExtension on Account {
-  $AccountCopyWithFn get copyWith => _copyWith;
+  Account Function({String email}) get copyWith => _copyWith;
   Account _copyWith({Object? email = $undefined}) {
     final self = this;
     return Account(
@@ -442,7 +435,7 @@ extension $AccountExtension on Account {
 
 ### 4. In-Class Mode (`CloneableOutput.inClass`)
 
-Emits the `copyWith` and `_copyWith` implementations directly inside the class body before the closing brace, with the typedef signature at the top of the file:
+Emits the `copyWith` and `_copyWith` implementations directly inside the class body before the closing brace:
 
 ```dart
 import 'package:cloneable/cloneable.dart';
@@ -458,14 +451,6 @@ class Settings {
 
 Generated in-class:
 ```dart
-// cloneable:typedef:start (Settings) - GENERATED CODE - DO NOT MODIFY BY HAND
-// (run: dart run cloneable_generator to regenerate)
-typedef $SettingsCopyWithFn = Settings Function({
-  bool darkMode,
-  String language,
-});
-// cloneable:typedef:end (Settings)
-
 @Cloneable.inClass()
 class Settings {
   final bool darkMode;
@@ -477,7 +462,10 @@ class Settings {
 // (run: dart run cloneable_generator to regenerate)
   static const _$undefined = Object();
 
-  $SettingsCopyWithFn get copyWith => _copyWith;
+  Settings Function({
+    bool darkMode,
+    String language,
+  }) get copyWith => _copyWith;
 
   Settings _copyWith({
     Object? darkMode = _$undefined,
@@ -584,7 +572,6 @@ When no custom defaults are specified, `cloneable_generator` applies:
 | `naming.sentinel` | `String` | `r'_$undefined'` | Private sentinel identifier name (`_$undefined`). |
 | `naming.mixin` | `CloneableAffix` | `CloneableAffix(prefix: r'_$', suffix: 'Cloneable')` | Mixin naming pattern (`_$ClassNameCloneable`). |
 | `naming.extension` | `CloneableAffix` | `CloneableAffix(prefix: r'$', suffix: 'Extension')` | Extension naming pattern (`$ClassNameExtension`). |
-| `naming.typedef` | `CloneableAffix` | `CloneableAffix(prefix: r'$', suffix: 'CopyWithFn')` | Typedef function signature pattern (`$ClassNameCopyWithFn`). |
 | `naming.file` | `CloneableAffix` | `CloneableAffix(prefix: '', suffix: '.cloneable.g')` | Generated file naming pattern (`$className.cloneable.g.dart`). |
 | `naming.directory` | `String?` | `null` | Optional subfolder path for generated files (e.g. `'generated'`). |
 
@@ -592,7 +579,7 @@ When no custom defaults are specified, `cloneable_generator` applies:
 
 Declare library or project defaults using any of the following idioms:
 
-#### Idiom A: Unnamed Library Directive (Recommended)
+#### Library Directive (Recommended)
 
 Place `@Cloneable.defaults(...)` directly above an unnamed `library;` directive:
 
@@ -608,42 +595,19 @@ library;
 import 'package:cloneable/cloneable.dart';
 ```
 
-#### Idiom B: Modern Abstract Final Config Class
-
-```dart
-import 'package:cloneable/cloneable.dart';
-
-@Cloneable.defaults(
-  strategy: CloneableStrategy.extension,
-  deepCopyCollections: true,
-)
-abstract final class CloneableConfig {}
-```
-
-#### Idiom C: Top-Level Constant
-
-```dart
-import 'package:cloneable/cloneable.dart';
-
-const appCloneableDefaults = CloneableDefaults(
-  output: CloneableOutput.standalone,
-  ignoreNull: true,
-);
-```
-
-#### Idiom D: Shared Project Configuration
+#### Shared Project Configuration
 
 Put your defaults in `lib/cloneable_defaults.dart` and import it into your model files:
 
 ```dart
 // lib/cloneable_defaults.dart
-import 'package:cloneable/cloneable.dart';
-
 @Cloneable.defaults(
   output: CloneableOutput.part,
   deepCopyCollections: true,
 )
 library;
+
+import 'package:cloneable/cloneable.dart';
 ```
 
 `cloneable_generator` automatically discovers defaults across imported files!
@@ -841,7 +805,6 @@ Customize symbol generation patterns across all targets:
     method: 'clone',
     mixin: CloneableAffix(prefix: r'_$', suffix: 'Cloneable'),
     extension: CloneableAffix(prefix: 'Ext', suffix: 'Methods'),
-    typedef: CloneableAffix(prefix: 'Fn', suffix: 'Signature'),
     file: CloneableAffix(prefix: '', suffix: '.cloneable'),
     directory: 'generated',
   ),

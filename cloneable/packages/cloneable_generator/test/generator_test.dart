@@ -1,8 +1,13 @@
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:cloneable_generator/src/cloneable_generator.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
+
+extension on Metadata {
+  ElementAnnotation get first => annotations.first;
+}
 
 void main() {
   group('CloneableGenerator Direct Tests', () {
@@ -52,14 +57,13 @@ class Person with _\$PersonCloneable {
           _MockBuildStep('test_lib.dart'),
         );
 
-        expect(
-            output, contains('typedef \$PersonCopyWithFn = Person Function({'));
+        expect(output, contains('Person Function({'));
         expect(output, contains('String name,'));
         expect(output, contains('int age,'));
         expect(output, contains('String? bio,'));
         expect(output, contains('mixin _\$PersonCloneable {'));
-        expect(
-            output, contains('\$PersonCopyWithFn get copyWith => _copyWith;'));
+        expect(output, contains('get copyWith => _copyWith;'));
+        expect(output, isNot(contains('typedef')));
         expect(output, contains('Object? name = cloneableUndefined,'));
         expect(
             output,
@@ -229,7 +233,8 @@ enum MyEnum { a, b }
 
       await resolveSource(source, (resolver) async {
         final library = await resolver.findLibraryByName('test_lib');
-        final enumElement = library!.definingCompilationUnit.getEnum('MyEnum')!;
+        final enumElement =
+            library!.enums.firstWhere((e) => e.name == 'MyEnum');
         final annotation = enumElement.metadata.first;
 
         expect(
@@ -298,15 +303,12 @@ class CleanPerson {
           _MockBuildStep('test_lib.dart'),
         );
 
-        expect(
-            output,
-            contains(
-                'typedef \$CleanPersonCopyWithFn = CleanPerson Function({'));
+        expect(output, contains('CleanPerson Function({'));
         expect(output,
             contains('extension \$CleanPersonExtension on CleanPerson {'));
-        expect(output,
-            contains('\$CleanPersonCopyWithFn get copyWith => _copyWith;'));
+        expect(output, contains('get copyWith => _copyWith;'));
         expect(output, contains('CleanPerson _copyWith({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -382,10 +384,11 @@ class Person with _\$PersonClone {
           _MockBuildStep('test_lib.dart'),
         );
 
-        expect(output, contains('typedef \$PersonCloneFn = Person Function({'));
+        expect(output, contains('Person Function({'));
         expect(output, contains('mixin _\$PersonClone {'));
-        expect(output, contains('\$PersonCloneFn get clone => _clone;'));
+        expect(output, contains('get clone => _clone;'));
         expect(output, contains('Person _clone({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -552,15 +555,13 @@ class StandalonePerson {
         // Includes standalone imports
         expect(output, contains("import 'package:cloneable/cloneable.dart';"));
         expect(output, contains("import 'test_lib.dart';"));
-        // Emits extension
         expect(
             output,
             contains(
                 'extension \$StandalonePersonExtension on StandalonePerson {'));
-        expect(
-            output,
-            contains(
-                '\$StandalonePersonCopyWithFn get copyWith => _copyWith;'));
+        expect(output, contains('StandalonePerson Function({'));
+        expect(output, contains('get copyWith => _copyWith;'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -1086,11 +1087,12 @@ class User with _\$UserCloneable {
           _MockBuildStep('test_lib.dart'),
         );
 
-        // Typedef includes allowed fields but NOT excluded field
-        expect(output, contains('typedef \$UserCopyWithFn = User Function({'));
+        // Function signature includes allowed fields but NOT excluded field
+        expect(output, contains('User Function({'));
         expect(output, contains('String name,'));
         expect(output, contains('int age,'));
         expect(output, isNot(contains('String email,')));
+        expect(output, isNot(contains('typedef')));
 
         // Call parameters include allowed fields
         expect(output, contains('Object? name = cloneableUndefined,'));
@@ -1197,11 +1199,12 @@ class User with _\$UserCloneable {
           _MockBuildStep('test_lib.dart'),
         );
 
-        expect(output, contains('typedef \$UserCopyWithFn = User Function({'));
+        expect(output, contains('User Function({'));
         expect(output, contains('String name,'));
         expect(output, contains('int age,'));
         expect(output, isNot(contains('String email,')));
         expect(output, contains('email: self.email,'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -1246,11 +1249,12 @@ class User with _\$UserCloneable {
           _MockBuildStep('test_lib.dart'),
         );
 
-        expect(output, contains('typedef \$UserCopyWithFn = User Function({'));
+        expect(output, contains('User Function({'));
         expect(output, contains('String name,'));
         expect(output, contains('int age,'));
         expect(output, isNot(contains('String email,')));
         expect(output, contains('email: self.email,'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -1684,8 +1688,9 @@ class AliasedModel with _\$AliasedModelCloneable {
           _MockBuildStep('test_lib.dart'),
         );
 
-        expect(output, contains('typedef \$AliasedModelCopyWith'));
+        expect(output, contains('AliasedModel Function({'));
         expect(output, contains('mixin _\$AliasedModelCloneable'));
+        expect(output, isNot(contains('typedef')));
 
         final cloneableType = library.getClass('Cloneable')!.thisType;
         final annotated = LibraryReader(library)
@@ -1781,13 +1786,10 @@ class CustomPerson with _CustomPersonCloneable {
           _MockBuildStep('test_lib.dart'),
         );
 
-        expect(
-            output,
-            contains(
-                'typedef _CustomPersonCopyWithFn = CustomPerson Function({'));
+        expect(output, contains('CustomPerson Function({'));
         expect(output, contains('mixin _CustomPersonCloneable {'));
-        expect(output,
-            contains('_CustomPersonCopyWithFn get copyWith => _copyWith;'));
+        expect(output, contains('get copyWith => _copyWith;'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -1835,16 +1837,13 @@ class StandaloneItem {
           inputFileName: 'standalone_item.dart',
         );
 
-        expect(
-            output,
-            contains(
-                'typedef MyStandaloneItemCopyWithFn = StandaloneItem Function({'));
+        expect(output, contains('StandaloneItem Function({'));
         expect(
             output,
             contains(
                 'extension MyStandaloneItemExtension on StandaloneItem {'));
-        expect(output,
-            contains('MyStandaloneItemCopyWithFn get copyWith => _copyWith;'));
+        expect(output, contains('get copyWith => _copyWith;'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -1890,11 +1889,10 @@ class PlainUser {
           inputFileName: 'plain_user.dart',
         );
 
-        expect(output,
-            contains('typedef PlainUserCopyWithFn = PlainUser Function({'));
+        expect(output, contains('PlainUser Function({'));
         expect(output, contains('extension PlainUserExtension on PlainUser {'));
-        expect(
-            output, contains('PlainUserCopyWithFn get copyWith => _copyWith;'));
+        expect(output, contains('get copyWith => _copyWith;'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -1942,12 +1940,10 @@ class FallbackUser {
           inputFileName: 'fallback_user.dart',
         );
 
-        expect(
-            output,
-            contains(
-                'typedef GenFallbackUserCopyWithFn = FallbackUser Function({'));
+        expect(output, contains('FallbackUser Function({'));
         expect(output,
             contains('extension GenFallbackUserExtension on FallbackUser {'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -2061,10 +2057,8 @@ class CustomSuffixPerson with _$CustomSuffixPersonCopyable {
         );
 
         expect(output, contains('mixin _\$CustomSuffixPersonCopyable {'));
-        expect(
-            output,
-            contains(
-                'typedef \$CustomSuffixPersonCopyWithFn = CustomSuffixPerson Function({'));
+        expect(output, contains('CustomSuffixPerson Function({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -2116,10 +2110,8 @@ class StandaloneItem {
             output,
             contains(
                 'extension \$StandaloneItemCopyableExtension on StandaloneItem {'));
-        expect(
-            output,
-            contains(
-                'typedef \$StandaloneItemCopyWithFn = StandaloneItem Function({'));
+        expect(output, contains('StandaloneItem Function({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -2231,65 +2223,6 @@ class GranularExtUser {
       });
     });
 
-    test(
-        'generateForClass respects granular typedef prefix and suffix overrides',
-        () async {
-      const source = r'''
-library test_lib;
-
-class CloneableAffix {
-  final String prefix;
-  final String suffix;
-  const CloneableAffix({this.prefix = '', this.suffix = ''});
-}
-
-class CloneableNaming {
-  final CloneableAffix typedef;
-  const CloneableNaming({
-    this.typedef = const CloneableAffix(prefix: r'$', suffix: 'CopyWithFn'),
-  });
-}
-
-class Cloneable {
-  final CloneableNaming naming;
-  const Cloneable({this.naming = const CloneableNaming()});
-}
-
-const cloneableUndefined = Object();
-
-@Cloneable(
-  naming: CloneableNaming(
-    typedef: CloneableAffix(prefix: 'Signature', suffix: 'Function'),
-  ),
-)
-class GranularTypedefUser {
-  final String name;
-  const GranularTypedefUser({required this.name});
-}
-''';
-
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('GranularTypedefUser')!;
-        final annotation = classElement.metadata.first;
-
-        final output = generator.generateForClass(
-          element: classElement,
-          annotation: ConstantReader(annotation.computeConstantValue()),
-          inputFileName: 'granular_typedef_user.dart',
-        );
-
-        expect(
-            output,
-            contains(
-                'typedef SignatureGranularTypedefUserFunction = GranularTypedefUser Function({'));
-        expect(
-            output,
-            contains(
-                'SignatureGranularTypedefUserFunction get copyWith => _copyWith;'));
-      });
-    });
-
     test('generateForClass respects part affix in part approach', () async {
       const source = r'''
 library test_lib;
@@ -2339,10 +2272,8 @@ class PartApproachUser with _PPartApproachUserPart {
         );
 
         expect(output, contains('mixin _PPartApproachUserPart {'));
-        expect(
-            output,
-            contains(
-                'typedef PPartApproachUserCopyWithFn = PartApproachUser Function({'));
+        expect(output, contains('PartApproachUser Function({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -2397,10 +2328,8 @@ class StandaloneApproachUser {
             output,
             contains(
                 'extension SoloStandaloneApproachUserStandaloneExtension on StandaloneApproachUser {'));
-        expect(
-            output,
-            contains(
-                'typedef SoloStandaloneApproachUserCopyWithFn = StandaloneApproachUser Function({'));
+        expect(output, contains('StandaloneApproachUser Function({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -2469,10 +2398,8 @@ class InlineApproachUser {
             output,
             contains(
                 'extension InInlineApproachUserBlockExtension on InlineApproachUser {'));
-        expect(
-            output,
-            contains(
-                'typedef InInlineApproachUserCopyWithFn = InlineApproachUser Function({'));
+        expect(output, contains('InlineApproachUser Function({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -2542,10 +2469,8 @@ class AutoInlineUser {
             output,
             contains(
                 'extension AutoInAutoInlineUserScopeExtension on AutoInlineUser {'));
-        expect(
-            output,
-            contains(
-                'typedef AutoInAutoInlineUserCopyWithFn = AutoInlineUser Function({'));
+        expect(output, contains('AutoInlineUser Function({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -2883,8 +2808,8 @@ class RawUser with _$RawUser {
         );
 
         expect(output, contains('mixin _\$RawUser {'));
-        expect(output,
-            contains('typedef \$RawUserCopyWithFn = RawUser Function({'));
+        expect(output, contains('RawUser Function({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 
@@ -2903,11 +2828,9 @@ class CloneableAffix {
 class CloneableNaming {
   final CloneableAffix mixin;
   final CloneableAffix extension;
-  final CloneableAffix typedef;
   const CloneableNaming({
     this.mixin = const CloneableAffix(prefix: r'_$', suffix: 'Cloneable'),
     this.extension = const CloneableAffix(prefix: r'$', suffix: 'Extension'),
-    this.typedef = const CloneableAffix(prefix: r'$', suffix: 'CopyWithFn'),
   });
 }
 
@@ -2921,7 +2844,6 @@ const cloneableUndefined = Object();
 @Cloneable(
   naming: CloneableNaming(
     extension: CloneableAffix(prefix: 'Ext', suffix: 'Extension'),
-    typedef: CloneableAffix(prefix: 'Sig', suffix: 'Fn'),
   ),
 )
 class NamingTestUser {
@@ -2943,10 +2865,8 @@ class NamingTestUser {
 
         expect(output,
             contains('extension ExtNamingTestUserExtension on NamingTestUser'));
-        expect(
-            output,
-            contains(
-                'typedef SigNamingTestUserFn = NamingTestUser Function({'));
+        expect(output, contains('NamingTestUser Function({'));
+        expect(output, isNot(contains('typedef')));
       });
     });
 

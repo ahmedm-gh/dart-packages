@@ -99,15 +99,12 @@ void main() {
         cleanup: CloneableCleanup.remove,
         naming: CloneableNaming(
           method: 'clone',
-          typedef: CloneableAffix(prefix: 'Sig', suffix: 'Fn'),
         ),
       );
       expect(inClass.output, equals(CloneableOutput.inClass));
       expect(inClass.strategy, isNull);
       expect(inClass.cleanup, equals(CloneableCleanup.remove));
       expect(inClass.naming?.method, equals('clone'));
-      expect(inClass.naming?.typedef,
-          equals(const CloneableAffix(prefix: 'Sig', suffix: 'Fn')));
 
       const inLibrary = Cloneable.inLibrary(
         strategy: CloneableStrategy.mixin,

@@ -2,27 +2,24 @@
 
 part of 'imported_models.dart';
 
-/// Strongly-typed copyWith function signature for [ImportedAccount].
-typedef $ImportedAccountCopyWithFn = ImportedAccount Function({
-  String id,
-  ExternalStatus status,
-  ExternalPriority priority,
-  ExternalAddress address,
-  ExternalAddress? secondaryAddress,
-  ExternalProfile profile,
-  ExternalConfig config,
-  ExternalResult<String> payload,
-  int maxRetries,
-  DateTime createdAt,
-  Uri profileUri,
-  Duration sessionDuration,
-  List<ExternalAddress> branchLocations,
-  Map<String, ExternalStatus> statusHistory,
-});
-
 /// Generated cloneable mixin for [ImportedAccount].
 mixin _$ImportedAccountCloneable {
-  $ImportedAccountCopyWithFn get copyWith => _copyWith;
+  ImportedAccount Function({
+    String id,
+    ExternalStatus status,
+    ExternalPriority priority,
+    ExternalAddress address,
+    ExternalAddress? secondaryAddress,
+    ExternalProfile profile,
+    ExternalConfig config,
+    ExternalResult<String> payload,
+    int maxRetries,
+    DateTime createdAt,
+    Uri profileUri,
+    Duration sessionDuration,
+    List<ExternalAddress> branchLocations,
+    Map<String, ExternalStatus> statusHistory,
+  }) get copyWith => _copyWith;
 
   ImportedAccount _copyWith({
     Object? id = $undefined,
@@ -86,17 +83,14 @@ mixin _$ImportedAccountCloneable {
   }
 }
 
-/// Strongly-typed copyWith function signature for [PrefixedImportModel].
-typedef $PrefixedImportModelCopyWithFn = PrefixedImportModel Function({
-  String label,
-  ext.ExternalStatus status,
-  ext.ExternalAddress address,
-  ext.ExternalConfig config,
-});
-
 /// Generated cloneable mixin for [PrefixedImportModel].
 mixin _$PrefixedImportModelCloneable {
-  $PrefixedImportModelCopyWithFn get copyWith => _copyWith;
+  PrefixedImportModel Function({
+    String label,
+    ext.ExternalStatus status,
+    ext.ExternalAddress address,
+    ext.ExternalConfig config,
+  }) get copyWith => _copyWith;
 
   PrefixedImportModel _copyWith({
     Object? label = $undefined,
@@ -120,18 +114,14 @@ mixin _$PrefixedImportModelCloneable {
   }
 }
 
-/// Strongly-typed copyWith function signature for [ExtensionImportedProduct].
-typedef $ExtensionImportedProductCopyWithFn = ExtensionImportedProduct
-    Function({
-  String sku,
-  ExternalStatus status,
-  List<ExternalAddress> hubs,
-  ExternalConfig? customConfig,
-});
-
 /// Generated cloneable extension for [ExtensionImportedProduct].
 extension $ExtensionImportedProductExtension on ExtensionImportedProduct {
-  $ExtensionImportedProductCopyWithFn get copyWith => _copyWith;
+  ExtensionImportedProduct Function({
+    String sku,
+    ExternalStatus status,
+    List<ExternalAddress> hubs,
+    ExternalConfig? customConfig,
+  }) get copyWith => _copyWith;
 
   ExtensionImportedProduct _copyWith({
     Object? sku = $undefined,
@@ -155,15 +145,12 @@ extension $ExtensionImportedProductExtension on ExtensionImportedProduct {
   }
 }
 
-/// Strongly-typed copyWith function signature for [IgnoreNullImportedModel].
-typedef $IgnoreNullImportedModelCopyWithFn = IgnoreNullImportedModel Function({
-  ExternalStatus? status,
-  ExternalAddress? address,
-});
-
 /// Generated cloneable mixin for [IgnoreNullImportedModel].
 mixin _$IgnoreNullImportedModelCloneable {
-  $IgnoreNullImportedModelCopyWithFn get copyWith => _copyWith;
+  IgnoreNullImportedModel Function({
+    ExternalStatus? status,
+    ExternalAddress? address,
+  }) get copyWith => _copyWith;
 
   IgnoreNullImportedModel _copyWith({
     Object? status = $undefined,
@@ -181,15 +168,10 @@ mixin _$IgnoreNullImportedModelCloneable {
   }
 }
 
-/// Strongly-typed copyWith function signature for [SelectiveImportedModel].
-typedef $SelectiveImportedModelCopyWithFn = SelectiveImportedModel Function({
-  String title,
-  ExternalStatus status,
-});
-
 /// Generated cloneable mixin for [SelectiveImportedModel].
 mixin _$SelectiveImportedModelCloneable {
-  $SelectiveImportedModelCopyWithFn get copyWith => _copyWith;
+  SelectiveImportedModel Function({String title, ExternalStatus status})
+      get copyWith => _copyWith;
 
   SelectiveImportedModel _copyWith({
     Object? title = $undefined,

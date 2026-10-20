@@ -11,44 +11,28 @@ class InlineUser {
   final String name;
   final String? email;
 
-  const InlineUser({
-    required this.id,
-    required this.name,
-    this.email,
-  });
+  const InlineUser({required this.id, required this.name, this.email});
 }
 
 /// Example of an inline cloneable class with custom prefix.
 @Cloneable(
   output: CloneableOutput.inLibrary,
-  naming: CloneableNaming(
-    extension: CloneableAffix(prefix: 'Custom'),
-    typedef: CloneableAffix(prefix: 'Custom'),
-  ),
+  naming: CloneableNaming(extension: CloneableAffix(prefix: 'Custom')),
 )
 class CustomInlineConfig {
   final String key;
   final String value;
 
-  const CustomInlineConfig({
-    required this.key,
-    required this.value,
-  });
+  const CustomInlineConfig({required this.key, required this.value});
 }
 
 // cloneable:start (InlineUser) - GENERATED CODE - DO NOT MODIFY BY HAND
 // (run: dart run cloneable_generator to regenerate)
 
-/// Strongly-typed copyWith function signature for [InlineUser].
-typedef $InlineUserCopyWithFn = InlineUser Function({
-  String id,
-  String name,
-  String? email,
-});
-
 /// Generated cloneable extension for [InlineUser].
 extension $InlineUserExtension on InlineUser {
-  $InlineUserCopyWithFn get copyWith => _copyWith;
+  InlineUser Function({String id, String name, String? email}) get copyWith =>
+      _copyWith;
 
   InlineUser _copyWith({
     Object? id = $undefined,
@@ -69,15 +53,10 @@ extension $InlineUserExtension on InlineUser {
 // cloneable:start (CustomInlineConfig) - GENERATED CODE - DO NOT MODIFY BY HAND
 // (run: dart run cloneable_generator to regenerate)
 
-/// Strongly-typed copyWith function signature for [CustomInlineConfig].
-typedef CustomCustomInlineConfigCopyWithFn = CustomInlineConfig Function({
-  String key,
-  String value,
-});
-
 /// Generated cloneable extension for [CustomInlineConfig].
 extension CustomCustomInlineConfigExtension on CustomInlineConfig {
-  CustomCustomInlineConfigCopyWithFn get copyWith => _copyWith;
+  CustomInlineConfig Function({String key, String value}) get copyWith =>
+      _copyWith;
 
   CustomInlineConfig _copyWith({
     Object? key = $undefined,

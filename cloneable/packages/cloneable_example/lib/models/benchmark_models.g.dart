@@ -2,23 +2,20 @@
 
 part of 'benchmark_models.dart';
 
-/// Strongly-typed copyWith function signature for [MediumModel].
-typedef $MediumModelCopyWithFn = MediumModel Function({
-  String f1,
-  int f2,
-  double f3,
-  bool f4,
-  String? f5,
-  int? f6,
-  double? f7,
-  bool? f8,
-  List<String> f9,
-  Map<String, int>? f10,
-});
-
 /// Generated cloneable mixin for [MediumModel].
 mixin _$MediumModelCloneable {
-  $MediumModelCopyWithFn get copyWith => _copyWith;
+  MediumModel Function({
+    String f1,
+    int f2,
+    double f3,
+    bool f4,
+    String? f5,
+    int? f6,
+    double? f7,
+    bool? f8,
+    List<String> f9,
+    Map<String, int>? f10,
+  }) get copyWith => _copyWith;
 
   MediumModel _copyWith({
     Object? f1 = $undefined,
@@ -48,38 +45,35 @@ mixin _$MediumModelCloneable {
   }
 }
 
-/// Strongly-typed copyWith function signature for [LargeModel].
-typedef $LargeModelCopyWithFn = LargeModel Function({
-  String s1,
-  String s2,
-  String s3,
-  String s4,
-  String s5,
-  int i1,
-  int i2,
-  int i3,
-  int i4,
-  int i5,
-  double d1,
-  double d2,
-  double d3,
-  double d4,
-  double d5,
-  bool b1,
-  bool b2,
-  bool b3,
-  bool b4,
-  bool b5,
-  String? opt1,
-  String? opt2,
-  int? opt3,
-  double? opt4,
-  bool? opt5,
-});
-
 /// Generated cloneable mixin for [LargeModel].
 mixin _$LargeModelCloneable {
-  $LargeModelCopyWithFn get copyWith => _copyWith;
+  LargeModel Function({
+    String s1,
+    String s2,
+    String s3,
+    String s4,
+    String s5,
+    int i1,
+    int i2,
+    int i3,
+    int i4,
+    int i5,
+    double d1,
+    double d2,
+    double d3,
+    double d4,
+    double d5,
+    bool b1,
+    bool b2,
+    bool b3,
+    bool b4,
+    bool b5,
+    String? opt1,
+    String? opt2,
+    int? opt3,
+    double? opt4,
+    bool? opt5,
+  }) get copyWith => _copyWith;
 
   LargeModel _copyWith({
     Object? s1 = $undefined,
