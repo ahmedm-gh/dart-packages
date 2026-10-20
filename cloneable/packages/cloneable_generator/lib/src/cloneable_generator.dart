@@ -723,17 +723,11 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
         '${CloneableNaming.defaultMethod[0].toUpperCase()}${CloneableNaming.defaultMethod.substring(1)}';
 
     final prefixScoped =
-        (effectiveMixinPrefix.startsWith('_') || effectiveMixinPrefix.isEmpty)
-            ? '$effectiveMixinPrefix${element.name}$effectiveMixinSuffix'
-            : '_$effectiveMixinPrefix${element.name}$effectiveMixinSuffix';
+        '$effectiveMixinPrefix${element.name}$effectiveMixinSuffix';
     final prefixCapability =
-        (effectiveMixinPrefix.startsWith('_') || effectiveMixinPrefix.isEmpty)
-            ? '$effectiveMixinPrefix${element.name}$capitalizedMethod'
-            : '_$effectiveMixinPrefix${element.name}$capitalizedMethod';
+        '$effectiveMixinPrefix${element.name}$capitalizedMethod';
     final prefixDefaultCapability =
-        (effectiveMixinPrefix.startsWith('_') || effectiveMixinPrefix.isEmpty)
-            ? '$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod'
-            : '_$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod';
+        '$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod';
 
     final candidateMixinNames = <String>{
       prefixScoped,
@@ -741,14 +735,14 @@ final class CloneableGenerator extends GeneratorForAnnotation<Cloneable> {
       if (methodName != CloneableNaming.defaultMethod) prefixDefaultCapability,
       if (effectiveMixinPrefix.isNotEmpty &&
           !effectiveMixinPrefix.startsWith('_')) ...[
-        '$effectiveMixinPrefix${element.name}$effectiveMixinSuffix',
-        '$effectiveMixinPrefix${element.name}$capitalizedMethod',
-        if (methodName != CloneableNaming.defaultMethod)
-          '$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod',
+        '_$effectiveMixinPrefix${element.name}$effectiveMixinSuffix',
         '_\$$effectiveMixinPrefix${element.name}$effectiveMixinSuffix',
+        '_$effectiveMixinPrefix${element.name}$capitalizedMethod',
         '_\$$effectiveMixinPrefix${element.name}$capitalizedMethod',
-        if (methodName != CloneableNaming.defaultMethod)
+        if (methodName != CloneableNaming.defaultMethod) ...[
+          '_$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod',
           '_\$$effectiveMixinPrefix${element.name}$defaultCapitalizedMethod',
+        ],
       ],
       '_\$${element.name}$effectiveMixinSuffix',
       if (effectiveMixinSuffix.isEmpty) '_\$${element.name}',

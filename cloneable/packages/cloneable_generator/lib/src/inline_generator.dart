@@ -365,9 +365,7 @@ final class CloneableGeneratorRunner {
                   final s? => s,
                   _ => defaultMixinSuffix,
                 };
-          final mixinName = (mixinPrefix.startsWith('_') || mixinPrefix.isEmpty)
-              ? '$mixinPrefix${element.name}$mixinSuffix'
-              : '${r'_$'}$mixinPrefix${element.name}$mixinSuffix';
+          final mixinName = '$mixinPrefix${element.name}$mixinSuffix';
           final typeArgs = element.typeParameters.isEmpty
               ? ''
               : '<${element.typeParameters.map((p) => p.name).join(', ')}>';

@@ -2136,7 +2136,7 @@ class MissingMixinUser {
             isA<InvalidGenerationSourceError>().having(
               (e) => e.message,
               'message',
-              contains('_CustomMissingMixinUserCloneable'),
+              contains('CustomMissingMixinUserCloneable'),
             ),
           ),
         );
