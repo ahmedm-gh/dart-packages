@@ -1,0 +1,80 @@
+Scenario,Framework,RuntimeMode,Registrations,RunsCount,CrossRunMedian,Unit,CrossRunP95,CrossRunMean,Variance,StdDev,VariabilityPercent,MinLatency,MaxLatency,AvgThroughputOpsPerSec
+"0a. Baseline: Raw Empty For-Loop (no closure)","baseline_raw_loop","AOT",0,5,0.21,"ns",0.21,0.21,0.0000,0.000,0.00%,0.21,0.21,4397299502
+"0b. Baseline: Empty Closure Invocation in Loop","baseline_closure","AOT",0,5,1.09,"ns",1.18,1.11,0.0021,0.046,4.12%,1.06,1.18,890180166
+"0c. Baseline: Direct Variable Access (Speed of Light - No DI)","baseline_direct_var","AOT",1,5,1.71,"ns",1.75,1.71,0.0005,0.023,1.37%,1.67,1.75,566619069
+"0d. Baseline: Direct Field Access on Object (No DI)","baseline_field_access","AOT",1,5,1.50,"ns",1.54,1.51,0.0005,0.022,1.47%,1.49,1.54,650958465
+"Scale (1e5 ops): Direct Variable Access","baseline_direct","AOT",1,5,1.70,"ns",1.80,1.70,0.0080,0.089,5.26%,1.60,1.80,582674117
+"Scale (1e5 ops): Eager Singleton Resolution","dependency_box","AOT",1,5,13.95,"ns",18.85,15.14,4.3484,2.085,13.77%,13.05,18.85,62322086
+"Scale (1e5 ops): Eager Singleton Resolution","get_it","AOT",1,5,327.15,"ns",340.65,329.01,37.7794,6.146,1.87%,322.30,340.65,3026087
+"Scale (1e5 ops): Cached Lazy Singleton Resolution","dependency_box","AOT",1,5,16.70,"ns",18.30,16.96,0.5834,0.764,4.50%,16.15,18.30,59364368
+"Scale (1e5 ops): Cached Lazy Singleton Resolution","get_it","AOT",1,5,365.75,"ns",372.70,367.34,11.6934,3.420,0.93%,364.00,372.70,2587261
+"Scale (1e6 ops): Direct Variable Access","baseline_direct","AOT",1,5,1.66,"ns",2.90,1.91,0.2477,0.498,26.11%,1.64,2.90,535295216
+"Scale (1e6 ops): Eager Singleton Resolution","dependency_box","AOT",1,5,12.72,"ns",22.30,14.58,14.9578,3.868,26.52%,12.35,22.30,71247208
+"Scale (1e6 ops): Eager Singleton Resolution","get_it","AOT",1,5,331.07,"ns",344.74,332.63,40.1553,6.337,1.91%,326.06,344.74,2954662
+"Scale (1e6 ops): Cached Lazy Singleton Resolution","dependency_box","AOT",1,5,16.82,"ns",19.58,17.36,1.3141,1.146,6.60%,16.41,19.58,57966153
+"Scale (1e6 ops): Cached Lazy Singleton Resolution","get_it","AOT",1,5,371.95,"ns",403.53,384.01,234.0729,15.299,3.98%,371.26,403.53,2606649
+"Scale (1e7 ops): Direct Variable Access","baseline_direct","AOT",1,5,1.75,"ns",1.79,1.75,0.0004,0.021,1.21%,1.73,1.79,566482108
+"Scale (1e7 ops): Eager Singleton Resolution","dependency_box","AOT",1,5,12.89,"ns",13.13,12.88,0.0232,0.152,1.18%,12.66,13.13,76481191
+"Scale (1e7 ops): Eager Singleton Resolution","get_it","AOT",1,5,331.59,"ns",607.26,393.24,11667.9785,108.018,27.47%,329.09,607.26,2212512
+"Scale (1e7 ops): Cached Lazy Singleton Resolution","dependency_box","AOT",1,5,37.65,"ns",38.36,37.69,0.2677,0.517,1.37%,36.85,38.36,26560615
+"Scale (1e7 ops): Cached Lazy Singleton Resolution","get_it","AOT",1,5,659.61,"ns",712.50,668.90,496.5338,22.283,3.33%,650.95,712.50,1489815
+"Scale (1e8 ops): Direct Variable Access","baseline_direct","AOT",1,5,3.17,"ns",3.54,3.25,0.0217,0.147,4.54%,3.15,3.54,308664680
+"Scale (1e8 ops): Eager Singleton Resolution","dependency_box","AOT",1,5,33.40,"ns",35.78,33.85,1.5378,1.240,3.66%,32.17,35.78,29582861
+"Scale (1e8 ops): Cached Lazy Singleton Resolution","dependency_box","AOT",1,5,37.56,"ns",37.98,37.39,0.2183,0.467,1.25%,36.68,37.98,26748240
+"Scale (3e7 ops practical max): Eager Singleton Resolution","get_it","AOT",1,5,615.90,"ns",621.49,616.32,11.4720,3.387,0.55%,612.08,621.49,1622579
+"A1. Register Eager Singletons (10)","dependency_box","AOT",10,5,1.34,"us",1.83,1.43,0.0394,0.198,13.83%,1.32,1.83,608496
+"A1. Register Eager Singletons (10)","get_it","AOT",10,5,7.47,"us",8.04,7.56,0.1724,0.415,5.49%,6.88,8.04,129366
+"A1. Register Eager Singletons (100)","dependency_box","AOT",100,5,16.83,"us",18.73,16.71,1.9468,1.395,8.35%,14.99,18.73,59125
+"A1. Register Eager Singletons (100)","get_it","AOT",100,5,86.20,"us",89.64,84.59,23.2115,4.818,5.70%,75.81,89.64,11902
+"A1. Register Eager Singletons (1000)","dependency_box","AOT",1000,5,171.91,"us",179.48,172.34,23.0667,4.803,2.79%,165.19,179.48,5779
+"A1. Register Eager Singletons (1000)","get_it","AOT",1000,5,886.98,"us",900.78,877.78,370.1782,19.240,2.19%,845.49,900.78,1148
+"A2. Register Lazy Singletons (10)","dependency_box","AOT",10,5,1.45,"us",1.78,1.55,0.0215,0.147,9.44%,1.42,1.78,618021
+"A2. Register Lazy Singletons (10)","get_it","AOT",10,5,7.10,"us",8.19,7.23,0.3915,0.626,8.66%,6.38,8.19,134456
+"A2. Register Lazy Singletons (100)","dependency_box","AOT",100,5,16.55,"us",18.81,17.27,1.6062,1.267,7.34%,15.89,18.81,58311
+"A2. Register Lazy Singletons (100)","get_it","AOT",100,5,83.73,"us",88.84,83.29,28.2584,5.316,6.38%,74.06,88.84,12114
+"A2. Register Lazy Singletons (1000)","dependency_box","AOT",1000,5,184.13,"us",187.05,183.04,13.1938,3.632,1.98%,176.22,187.05,5494
+"A2. Register Lazy Singletons (1000)","get_it","AOT",1000,5,866.44,"us",901.88,868.23,341.7706,18.487,2.13%,847.65,901.88,1130
+"A3. Register Factories (10)","dependency_box","AOT",10,5,1.53,"us",1.75,1.55,0.0149,0.122,7.89%,1.38,1.75,590069
+"A3. Register Factories (10)","get_it","AOT",10,5,7.38,"us",8.00,7.38,0.2938,0.542,7.35%,6.54,8.00,128759
+"A3. Register Factories (100)","dependency_box","AOT",100,5,17.60,"us",18.86,17.28,2.2562,1.502,8.69%,14.48,18.86,57238
+"A3. Register Factories (100)","get_it","AOT",100,5,79.36,"us",90.86,81.22,60.5272,7.780,9.58%,69.78,90.86,12354
+"A3. Register Factories (1000)","dependency_box","AOT",1000,5,181.13,"us",183.93,181.53,3.5473,1.883,1.04%,178.72,183.93,5599
+"A3. Register Factories (1000)","get_it","AOT",1000,5,870.97,"us",880.99,858.81,419.3049,20.477,2.38%,833.74,880.99,1164
+"A4. Complete Graph Bootstrap (Real-world Graph)","dependency_box","AOT",12,5,0.93,"us",1.10,0.98,0.0061,0.078,8.03%,0.90,1.10,983407
+"A4. Complete Graph Bootstrap (Real-world Graph)","get_it","AOT",12,5,3.05,"us",3.20,3.06,0.0133,0.115,3.76%,2.86,3.20,324590
+"A4. Complete Graph Bootstrap (Real-world Graph)","injectable","AOT",12,5,3.91,"us",4.05,3.93,0.0103,0.102,2.58%,3.77,4.05,251546
+"A5. Lazy Singleton First Access","dependency_box","AOT",1,5,111.00,"ns",119.50,112.90,11.0400,3.323,2.94%,111.00,119.50,7717499
+"A5. Lazy Singleton First Access","get_it","AOT",1,5,1250.00,"ns",1305.00,1241.60,1954.3400,44.208,3.56%,1167.00,1305.00,746724
+"B1. Eager Singleton Hot-Path (10 items in container)","dependency_box","AOT",10,5,40.57,"ns",40.77,39.66,2.4423,1.563,3.94%,36.61,40.77,25105217
+"B1. Eager Singleton Hot-Path (10 items in container)","get_it","AOT",10,5,620.54,"ns",689.95,628.93,1011.5100,31.804,5.06%,599.61,689.95,1589321
+"B1. Eager Singleton Hot-Path (100 items in container)","dependency_box","AOT",100,5,30.71,"ns",40.66,32.81,16.9741,4.120,12.56%,29.66,40.66,30423858
+"B1. Eager Singleton Hot-Path (100 items in container)","get_it","AOT",100,5,598.50,"ns",625.11,608.53,172.8360,13.147,2.16%,596.58,625.11,1669502
+"B1. Eager Singleton Hot-Path (1000 items in container)","dependency_box","AOT",1000,5,29.27,"ns",34.91,29.96,8.3501,2.890,9.65%,26.99,34.91,33386439
+"B1. Eager Singleton Hot-Path (1000 items in container)","get_it","AOT",1000,5,599.72,"ns",650.62,609.32,505.0264,22.473,3.69%,589.11,650.62,1646027
+"B2. Cached Lazy Singleton Resolution","dependency_box","AOT",1,5,34.33,"ns",35.93,34.64,0.4183,0.647,1.87%,34.24,35.93,29206495
+"B2. Cached Lazy Singleton Resolution","get_it","AOT",1,5,645.76,"ns",665.90,646.90,191.7107,13.846,2.14%,627.33,665.90,1551795
+"B3. Factory Instantiation","dependency_box","AOT",1,5,41.98,"ns",44.80,39.89,19.0300,4.362,10.94%,33.34,44.80,24107534
+"B3. Factory Instantiation","get_it","AOT",1,5,667.86,"ns",689.51,672.97,139.9960,11.832,1.76%,657.86,689.51,1490872
+"B4. Keyed / Named Singleton Resolution","dependency_box","AOT",1,5,49.67,"ns",56.30,49.74,32.9868,5.743,11.55%,41.89,56.30,20203171
+"B4. Keyed / Named Singleton Resolution","get_it","AOT",1,5,685.17,"ns",724.35,695.94,255.0159,15.969,2.29%,682.36,724.35,1441694
+"B4. Keyed / Named Singleton Resolution","injectable","AOT",1,5,797.58,"ns",818.72,796.88,150.1713,12.254,1.54%,784.77,818.72,1264510
+"C1. Shallow Graph Factory Creation (1 dependency)","dependency_box","AOT",2,5,81.57,"ns",85.39,80.51,18.6338,4.317,5.36%,73.39,85.39,12553256
+"C1. Shallow Graph Factory Creation (1 dependency)","get_it","AOT",2,5,1381.78,"ns",1403.15,1359.73,3716.0299,60.959,4.48%,1240.01,1403.15,736546
+"C2. Medium Graph Factory Creation","dependency_box","AOT",5,5,215.64,"ns",235.32,214.21,515.8416,22.712,10.60%,172.41,235.32,4663967
+"C2. Medium Graph Factory Creation","get_it","AOT",5,5,3875.38,"ns",3950.41,3804.68,37884.5471,194.640,5.12%,3426.90,3950.41,260438
+"C2. Medium Graph Factory Creation","injectable","AOT",5,5,4040.76,"ns",4197.70,4014.07,35317.7659,187.930,4.68%,3661.64,4197.70,248004
+"C3. Deep Graph Factory Creation","dependency_box","AOT",5,5,207.81,"ns",222.85,210.66,87.4413,9.351,4.44%,199.01,222.85,4701906
+"C3. Deep Graph Factory Creation","get_it","AOT",5,5,3465.15,"ns",3570.54,3479.74,4195.3086,64.771,1.86%,3399.32,3570.54,287968
+"C3. Deep Graph Factory Creation","injectable","AOT",5,5,3483.52,"ns",3606.76,3500.22,3206.1209,56.623,1.62%,3442.96,3606.76,285006
+"D1. Single Lookup from Multi-Registration","dependency_box","AOT",3,5,27.33,"ns",28.56,27.40,0.7409,0.861,3.14%,25.96,28.56,36588674
+"D1. Single Lookup from Multi-Registration","get_it","AOT",3,5,702.49,"ns",724.86,701.51,224.4644,14.982,2.14%,678.67,724.86,1431166
+"D2. Bulk Retrieval of All Implementations (getAll)","dependency_box","AOT",3,5,125.13,"ns",135.72,123.79,54.1787,7.361,5.95%,113.51,135.72,8055859
+"D2. Bulk Retrieval of All Implementations (getAll)","get_it","AOT",3,5,915.76,"ns",933.63,917.24,145.8006,12.075,1.32%,901.11,933.63,1083931
+"E1. Cached Async Singleton Sync Access (Hot Path)","dependency_box","AOT",1,5,39.66,"ns",41.98,39.98,1.9538,1.398,3.50%,38.20,41.98,25097252
+"E1. Cached Async Singleton Sync Access (Hot Path)","get_it","AOT",1,5,1187.61,"ns",1226.38,1177.37,2362.1394,48.602,4.13%,1084.40,1226.38,850263
+"E2. Cached Async Singleton Future Resolution (getAsync)","dependency_box","AOT",1,5,423.48,"ns",457.46,427.88,243.4334,15.602,3.65%,412.32,457.46,2340095
+"E2. Cached Async Singleton Future Resolution (getAsync)","get_it","AOT",1,5,1105.44,"ns",1143.24,1103.72,515.2570,22.699,2.06%,1077.84,1143.24,906409
+"F1. Scoped Session Lifecycle (Create, Register, Use, Destroy)","dependency_box","AOT",1,5,0.50,"us",0.53,0.50,0.0002,0.015,2.96%,0.49,0.53,1927458
+"F1. Scoped Session Lifecycle (Create, Register, Use, Destroy)","get_it","AOT",1,5,1.93,"us",2.19,1.98,0.0147,0.121,6.13%,1.85,2.19,168722
+"G1. Bulk Disposal of 100 Instances","dependency_box","AOT",100,5,24.61,"us",35.03,27.19,32.0402,5.660,20.82%,21.46,35.03,13302
+"G1. Bulk Disposal of 100 Instances","get_it","AOT",100,5,183.38,"us",216.34,180.42,586.3128,24.214,13.42%,141.55,216.34,3260

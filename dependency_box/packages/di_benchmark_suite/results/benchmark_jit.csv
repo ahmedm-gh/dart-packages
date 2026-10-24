@@ -1,0 +1,80 @@
+Scenario,Framework,RuntimeMode,Registrations,TotalOperations,TotalElapsedMicros,MedianLatency,Unit,P95Latency,MinLatency,MaxLatency,VariabilityPercent,ThroughputOpsPerSec
+"0a. Baseline: Raw Empty For-Loop (no closure)","baseline_raw_loop","JIT",0,5000000,1456,0.20,"ns",1.03,0.20,1.03,85.08,3434065934
+"0b. Baseline: Empty Closure Invocation in Loop","baseline_closure","JIT",0,5000000,8562,1.71,"ns",1.79,1.66,1.79,2.14,583975707
+"0c. Baseline: Direct Variable Access (Speed of Light - No DI)","baseline_direct_var","JIT",1,5000000,16382,2.78,"ns",7.15,2.71,7.15,39.66,305213039
+"0d. Baseline: Direct Field Access on Object (No DI)","baseline_field_access","JIT",1,5000000,12090,2.37,"ns",2.58,2.33,2.58,3.48,413564930
+"Scale (1e5 ops): Direct Variable Access","baseline_direct","JIT",1,100000,353,2.55,"ns",5.70,2.20,5.70,42.72,283286119
+"Scale (1e5 ops): Eager Singleton Resolution","dependency_box","JIT",1,100000,2552,15.25,"ns",68.40,12.00,68.40,84.61,39184953
+"Scale (1e5 ops): Eager Singleton Resolution","get_it","JIT",1,100000,23527,229.70,"ns",269.25,221.90,269.25,7.44,4250436
+"Scale (1e5 ops): Cached Lazy Singleton Resolution","dependency_box","JIT",1,100000,1251,12.35,"ns",13.80,12.00,13.80,5.33,79936051
+"Scale (1e5 ops): Cached Lazy Singleton Resolution","get_it","JIT",1,100000,24837,250.50,"ns",261.10,236.55,261.10,3.41,4026251
+"Scale (1e6 ops): Direct Variable Access","baseline_direct","JIT",1,1000000,2526,2.46,"ns",2.94,2.31,2.94,8.54,395882819
+"Scale (1e6 ops): Eager Singleton Resolution","dependency_box","JIT",1,1000000,11914,11.78,"ns",12.38,11.64,12.38,2.22,83934867
+"Scale (1e6 ops): Eager Singleton Resolution","get_it","JIT",1,1000000,232250,232.71,"ns",233.77,230.60,233.77,0.60,4305705
+"Scale (1e6 ops): Cached Lazy Singleton Resolution","dependency_box","JIT",1,1000000,12897,12.76,"ns",14.41,11.99,14.41,6.92,77537412
+"Scale (1e6 ops): Cached Lazy Singleton Resolution","get_it","JIT",1,1000000,249525,250.43,"ns",251.49,245.13,251.49,0.92,4007614
+"Scale (1e7 ops): Direct Variable Access","baseline_direct","JIT",1,10000000,24452,2.42,"ns",2.52,2.37,2.52,2.45,408964502
+"Scale (1e7 ops): Eager Singleton Resolution","dependency_box","JIT",1,10000000,120575,11.99,"ns",12.38,11.82,12.38,1.86,82935932
+"Scale (1e7 ops): Eager Singleton Resolution","get_it","JIT",1,10000000,3181284,233.79,"ns",480.13,231.66,480.13,33.52,3143385
+"Scale (1e7 ops): Cached Lazy Singleton Resolution","dependency_box","JIT",1,10000000,422848,39.18,"ns",52.84,34.04,52.84,17.17,23649160
+"Scale (1e7 ops): Cached Lazy Singleton Resolution","get_it","JIT",1,10000000,5120782,511.01,"ns",521.07,507.03,521.07,0.98,1952827
+"Scale (1e8 ops): Direct Variable Access","baseline_direct","JIT",1,100000000,504418,5.04,"ns",5.07,5.02,5.07,0.49,198248278
+"Scale (1e8 ops): Eager Singleton Resolution","dependency_box","JIT",1,100000000,3165585,31.66,"ns",31.76,31.55,31.76,0.34,31589738
+"Scale (1e8 ops): Cached Lazy Singleton Resolution","dependency_box","JIT",1,100000000,2988060,29.88,"ns",30.28,29.48,30.28,1.34,33466530
+"Scale (3e7 ops practical max): Eager Singleton Resolution","get_it","JIT",1,30000000,15840571,528.02,"ns",551.87,504.17,551.87,4.52,1893871
+"A1. Register Eager Singletons (10)","dependency_box","JIT",10,1000,8691,8.56,"us",15.23,3.87,15.23,39.82,115062
+"A1. Register Eager Singletons (10)","get_it","JIT",10,1000,51261,45.45,"us",162.10,6.52,162.10,83.15,19508
+"A1. Register Eager Singletons (100)","dependency_box","JIT",100,1000,21381,17.34,"us",45.98,15.72,45.98,42.38,46770
+"A1. Register Eager Singletons (100)","get_it","JIT",100,1000,70081,67.13,"us",81.63,61.70,81.63,11.28,14269
+"A1. Register Eager Singletons (1000)","dependency_box","JIT",1000,1000,191344,191.59,"us",219.05,163.52,219.05,10.12,5226
+"A1. Register Eager Singletons (1000)","get_it","JIT",1000,1000,746711,765.94,"us",795.60,662.82,795.60,6.34,1339
+"A2. Register Lazy Singletons (10)","dependency_box","JIT",10,1000,3424,1.57,"us",15.11,1.46,15.11,118.00,292056
+"A2. Register Lazy Singletons (10)","get_it","JIT",10,1000,6900,6.42,"us",10.39,5.25,10.39,21.57,144928
+"A2. Register Lazy Singletons (100)","dependency_box","JIT",100,1000,17442,17.32,"us",25.29,13.75,25.29,18.57,57333
+"A2. Register Lazy Singletons (100)","get_it","JIT",100,1000,66793,70.81,"us",78.45,53.95,78.45,13.23,14972
+"A2. Register Lazy Singletons (1000)","dependency_box","JIT",1000,1000,176282,169.52,"us",218.76,153.60,218.76,11.39,5673
+"A2. Register Lazy Singletons (1000)","get_it","JIT",1000,1000,707174,698.01,"us",749.70,684.31,749.70,3.04,1414
+"A3. Register Factories (10)","dependency_box","JIT",10,1000,2426,2.49,"us",3.46,1.52,3.46,19.93,412201
+"A3. Register Factories (10)","get_it","JIT",10,1000,6378,6.30,"us",7.85,5.19,7.85,12.14,156789
+"A3. Register Factories (100)","dependency_box","JIT",100,1000,15050,14.86,"us",17.14,14.03,17.14,6.44,66445
+"A3. Register Factories (100)","get_it","JIT",100,1000,56496,55.55,"us",64.07,53.70,64.07,5.18,17700
+"A3. Register Factories (1000)","dependency_box","JIT",1000,1000,174133,177.14,"us",195.49,148.39,195.49,9.12,5743
+"A3. Register Factories (1000)","get_it","JIT",1000,1000,687073,705.86,"us",769.21,581.21,769.21,9.46,1455
+"A4. Complete Graph Bootstrap (Real-world Graph)","dependency_box","JIT",12,5000,11316,1.29,"us",5.92,0.85,5.92,74.58,441852
+"A4. Complete Graph Bootstrap (Real-world Graph)","get_it","JIT",12,5000,22727,3.28,"us",10.16,2.92,10.16,53.93,220003
+"A4. Complete Graph Bootstrap (Real-world Graph)","injectable","JIT",12,5000,37401,7.02,"us",15.13,4.03,15.13,44.25,133686
+"A5. Lazy Singleton First Access","dependency_box","JIT",1,10000,2519,261.50,"ns",384.00,119.00,384.00,35.73,3969829
+"A5. Lazy Singleton First Access","get_it","JIT",1,10000,34129,3467.50,"ns",4585.00,2640.00,4585.00,15.74,293006
+"B1. Eager Singleton Hot-Path (10 items in container)","dependency_box","JIT",10,5000000,141158,26.59,"ns",34.80,23.88,34.80,15.06,35421301
+"B1. Eager Singleton Hot-Path (10 items in container)","get_it","JIT",10,5000000,1930332,384.82,"ns",400.96,378.61,400.96,1.62,2590228
+"B1. Eager Singleton Hot-Path (100 items in container)","dependency_box","JIT",100,5000000,173351,33.14,"ns",41.18,30.64,41.18,11.04,28843214
+"B1. Eager Singleton Hot-Path (100 items in container)","get_it","JIT",100,5000000,2385959,471.38,"ns",508.01,460.72,508.01,2.74,2095593
+"B1. Eager Singleton Hot-Path (1000 items in container)","dependency_box","JIT",1000,5000000,160713,30.87,"ns",41.33,26.93,41.33,14.36,31111360
+"B1. Eager Singleton Hot-Path (1000 items in container)","get_it","JIT",1000,5000000,2286442,465.91,"ns",483.30,406.24,483.30,5.62,2186804
+"B2. Cached Lazy Singleton Resolution","dependency_box","JIT",1,5000000,186402,38.10,"ns",42.23,29.94,42.23,9.40,26823747
+"B2. Cached Lazy Singleton Resolution","get_it","JIT",1,5000000,2551610,510.90,"ns",533.25,491.61,533.25,2.53,1959547
+"B3. Factory Instantiation","dependency_box","JIT",1,5000000,206030,40.48,"ns",51.23,33.65,51.23,13.54,24268310
+"B3. Factory Instantiation","get_it","JIT",1,5000000,2510449,501.80,"ns",524.53,466.46,524.53,3.55,1991676
+"B4. Keyed / Named Singleton Resolution","dependency_box","JIT",1,5000000,257636,45.19,"ns",71.04,42.70,71.04,19.56,19407226
+"B4. Keyed / Named Singleton Resolution","get_it","JIT",1,5000000,2718419,546.21,"ns",560.68,516.66,560.68,2.17,1839304
+"B4. Keyed / Named Singleton Resolution","injectable","JIT",1,5000000,3005990,599.93,"ns",623.92,571.35,623.92,3.01,1663346
+"C1. Shallow Graph Factory Creation (1 dependency)","dependency_box","JIT",2,3000000,226092,76.48,"ns",90.22,56.63,90.22,13.65,13268935
+"C1. Shallow Graph Factory Creation (1 dependency)","get_it","JIT",2,3000000,3150307,994.40,"ns",1600.44,908.56,1600.44,17.92,952288
+"C2. Medium Graph Factory Creation","dependency_box","JIT",5,3000000,613242,201.80,"ns",236.08,174.32,236.08,9.88,4892033
+"C2. Medium Graph Factory Creation","get_it","JIT",5,3000000,8800312,2932.12,"ns",2987.56,2892.82,2987.56,1.14,340897
+"C2. Medium Graph Factory Creation","injectable","JIT",5,3000000,9101334,3018.91,"ns",3149.44,2961.12,3149.44,1.94,329622
+"C3. Deep Graph Factory Creation","dependency_box","JIT",5,3000000,530577,177.90,"ns",212.60,152.52,212.60,9.05,5654222
+"C3. Deep Graph Factory Creation","get_it","JIT",5,3000000,7546185,2494.44,"ns",2601.42,2445.27,2601.42,1.79,397552
+"C3. Deep Graph Factory Creation","injectable","JIT",5,3000000,7698045,2568.11,"ns",2617.33,2496.18,2617.33,1.27,389709
+"D1. Single Lookup from Multi-Registration","dependency_box","JIT",3,5000000,137212,26.99,"ns",31.74,24.79,31.74,8.84,36439962
+"D1. Single Lookup from Multi-Registration","get_it","JIT",3,5000000,2576664,527.01,"ns",543.34,415.02,543.34,7.01,1940494
+"D2. Bulk Retrieval of All Implementations (getAll)","dependency_box","JIT",3,2000000,138661,66.46,"ns",88.19,60.97,88.19,11.57,14423666
+"D2. Bulk Retrieval of All Implementations (getAll)","get_it","JIT",3,2000000,1069101,532.96,"ns",617.55,488.10,617.55,6.56,1870731
+"E1. Cached Async Singleton Sync Access (Hot Path)","dependency_box","JIT",1,5000000,212260,42.40,"ns",46.36,35.73,46.36,6.94,23556016
+"E1. Cached Async Singleton Sync Access (Hot Path)","get_it","JIT",1,5000000,4126576,828.02,"ns",856.21,791.40,856.21,2.26,1211658
+"E2. Cached Async Singleton Future Resolution (getAsync)","dependency_box","JIT",1,50000,41371,827.42,"ns",827.42,827.42,827.42,0.00,1208576
+"E2. Cached Async Singleton Future Resolution (getAsync)","get_it","JIT",1,50000,83889,1677.78,"ns",1677.78,1677.78,1677.78,0.00,596026
+"F1. Scoped Session Lifecycle (Create, Register, Use, Destroy)","dependency_box","JIT",1,10000,30469,1.45,"us",15.96,0.64,15.96,143.55,328202
+"F1. Scoped Session Lifecycle (Create, Register, Use, Destroy)","get_it","JIT",1,10000,84832,4.40,"us",28.75,2.36,28.75,111.20,117880
+"G1. Bulk Disposal of 100 Instances","dependency_box","JIT",100,1000,59972,42.59,"us",246.55,23.01,246.55,106.39,16674
+"G1. Bulk Disposal of 100 Instances","get_it","JIT",100,1000,165886,110.56,"us",561.11,69.18,561.11,85.71,6028

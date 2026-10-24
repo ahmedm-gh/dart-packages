@@ -1,0 +1,11 @@
+# Excluded from pub.dev package archive
+
+# Internal benchmarks, test suites, and tooling
+benchmark/
+packages/
+tool/
+
+# Standard pub/dart artifacts
+.dart_tool/
+pubspec.lock
+*.exe
