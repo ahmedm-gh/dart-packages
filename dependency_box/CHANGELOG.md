@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0
+
+- **First Stable Release**: Production-ready, zero-dependency Inversion-of-Control (IoC) container and service locator for Dart and Flutter applications.
+- **6 Registration Lifetimes**: Eager singletons, lazy singletons, weak-reference caches (`addCachedFactory`), transient factories, parameterized factories (`addFactoryWith`), and async singletons (`addAsyncSingleton`).
+- **Hierarchical Child Scopes**: Isolated sub-containers (`createChild()`) inheriting parent bindings, with child scope disposal isolation and root-anchored shared singletons (`addShared*`).
+- **Sub-15ns Resolution**: Zero-allocation hot path leveraging direct `Type` literal map lookups.
+- **Async Concurrency Deduplication**: Lock-free in-flight `Future` deduplication across concurrent callers.
+- **Automatic Resource Lifecycle**: Deterministic cleanup with `DependencyDisposable` and inline `onDispose` hooks.
+- **Container Diagnostics**: ASCII tree introspection via `printContainer()` with scope hierarchy, lifetime details, and shadowed binding indicators.
+- **Comprehensive Benchmarks**: Complete head-to-head performance benchmarks against `get_it 9.3.0` demonstrating up to 27.7× faster resolution in AOT.
+
 ## 0.1.2
 
 - **Performance Optimization**: Optimized parameterized factory resolution (`addFactoryWith`) by streamlining type casting paths, reducing invocation overhead from ~674 ns to sub-25 ns.
