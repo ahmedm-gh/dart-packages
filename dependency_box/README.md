@@ -162,10 +162,10 @@ dbox.addSingleton(
 
 ![DI Performance Benchmark Comparison](doc/benchmark_comparison.svg)
 
-- **Head-to-Head Resolution**: `dependency_box` delivers **15.66×–21.71× faster** dependency resolution than `get_it 9.3.0` (e.g. Singleton: 12.96 ns vs 281.45 ns/op).
-- **Container Setup**: **3.89×–4.35× faster** initialization and dependency binding setup.
-- **Production Architectures**: **3.77×–18.83× faster** across simulated real-world application lifecycles (routing, mixed traffic, startup), with specialized weak-reference caching reaching **63.72×**.
-- **Verified Suite Advantage**: **5.56× geometric-mean speedup in JIT** and **7.10× in AOT** across comprehensive multi-workload benchmarking.
+- **Head-to-Head Resolution**: `dependency_box` delivers up to **27.71× faster** dependency resolution than `get_it 9.3.0` (e.g. Singleton: 13.0 ns vs 361.5 ns in AOT; 14.5 ns vs 238.8 ns in JIT).
+- **Container Setup**: **2.30×–6.35× faster** initialization and dependency binding setup.
+- **Complex Architectures**: **13.87×–19.74× faster** across deep dependency graphs and application lifecycles, with weak-reference caching reaching **27.32×**.
+- **Verified Suite Advantage**: **5.57× geometric-mean speedup in JIT** and **6.67× in AOT** across comprehensive multi-workload benchmarking.
 
 ### 🔬 Reproducing the Benchmarks
 
@@ -180,14 +180,14 @@ All benchmark suites and measurement harnesses are 100% open source and reproduc
   dart run tool/comparison_benchmark/bin/real_world_benchmark.dart
   ```
 
-- **Standalone Package Microbenchmarks**: [`benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/benchmark)
+- **Standalone Package Microbenchmarks**: [`tool/benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool/benchmark)
   ```bash
-  dart run benchmark/benchmark.dart
+  dart run tool/benchmark/benchmark.dart
   ```
 
 > [!NOTE]
 > - Benchmarks were run on Dart SDK 3.13.4 on Windows x64.
-> - Comparison harness sources are located in [`tool/comparison_benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool/comparison_benchmark) and internal benchmarks in [`benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/benchmark).
+> - Comparison harness sources are located in [`tool/comparison_benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool/comparison_benchmark) and internal benchmarks in [`tool/benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool/benchmark).
 
 ---
 
