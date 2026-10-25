@@ -167,7 +167,7 @@ dbox.addSingleton(
 > - **JIT**: [JIT Resolution](doc/benchmark_jit_resolution.svg) · [JIT Registration & Scaling](doc/benchmark_jit_registration.svg) · [Full JIT Suite](doc/benchmark_jit.svg)
 > - **AOT**: [AOT Resolution](doc/benchmark_aot_resolution.svg) · [AOT Registration & Scaling](doc/benchmark_aot_registration.svg) · [Full AOT Suite](doc/benchmark_aot.svg)
 
-- **Head-to-Head Resolution**: `dependency_box` delivers up to **27.71× faster** dependency resolution than `get_it 9.3.0` (e.g. Singleton: 13.0 ns vs 361.5 ns in AOT; 14.5 ns vs 238.8 ns in JIT).
+- **Head-to-Head Resolution**: `dependency_box` delivers up to **27.71× faster** dependency resolution than `get_it 9.3.0` (e.g. Singleton: 13 ns vs 362 ns in AOT; 15 ns vs 239 ns in JIT).
 - **Container Setup**: **2.30×–6.35× faster** initialization and dependency binding setup.
 - **Complex Architectures**: **13.87×–19.74× faster** across deep dependency graphs and application lifecycles, with weak-reference caching reaching **27.32×**.
 - **Verified Suite Advantage**: **5.57× geometric-mean speedup in JIT** and **6.67× in AOT** across comprehensive multi-workload benchmarking.
