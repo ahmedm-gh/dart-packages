@@ -1,5 +1,5 @@
 name: comparison_benchmark
-description: Performance comparison between dependency_box, get_it, and injectable
+description: Performance comparison between dependency_box and get_it
 version: 1.0.0
 publish_to: none
 
@@ -8,9 +8,9 @@ environment:
 
 dependencies:
   get_it: ^9.3.0
-  injectable: ^3.0.0
   dependency_box:
     path: ../../
 
 dev_dependencies:
   lints: ^6.0.0
+  test: ^1.33.0

@@ -319,14 +319,21 @@ final class _FactoryWithRegistration<T extends Object, A>
     void Function(T instance) onCreated, [
     Object? args,
   ]) {
-    if (DependencyBoxConfig.isDebug && args is! A) {
-      return DependencyBox.throwError(
-        'Expected args of type $A for $T, but got ${args.runtimeType}',
-        DependencyBoxError.invalidArgument,
-      );
+    final A typedArgs;
+    if (DependencyBoxConfig.isDebug) {
+      try {
+        typedArgs = args as A;
+      } on TypeError {
+        return DependencyBox.throwError(
+          'Expected args of type $A for $T, but got ${args.runtimeType}',
+          DependencyBoxError.invalidArgument,
+        );
+      }
+    } else {
+      typedArgs = args as A;
     }
 
-    final instance = factory(container, args as A);
+    final instance = factory(container, typedArgs);
     onCreated(instance);
     return instance;
   }

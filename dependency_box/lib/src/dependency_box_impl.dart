@@ -583,6 +583,11 @@ class DependencyBoxImpl extends DependencyBox {
   Future<void> dispose() async {
     _isDisposed = true;
 
+    if (_container.isEmpty && (_multiContainer?.isEmpty ?? true)) {
+      _multiTypes?.clear();
+      return;
+    }
+
     final toDispose = <DependencyBoxRegistration>{
       ..._container.values,
       if (_multiContainer case final multiContainer?)

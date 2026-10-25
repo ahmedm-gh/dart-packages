@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:dependency_box/dependency_box.dart';
 import 'package:get_it/get_it.dart';
-import 'package:injectable/injectable.dart';
 
 // ============================================================================
 // Real-world Test Models
@@ -75,7 +74,7 @@ void main() {
   stdout.writeln(
       '=========================================================================================');
   stdout.writeln(
-      '  COMPREHENSIVE HEAD-TO-HEAD BENCHMARK: dependency_box vs get_it 9.3.0 vs injectable 3.0.0');
+      '  COMPREHENSIVE HEAD-TO-HEAD BENCHMARK: dependency_box vs get_it 9.3.0');
   stdout.writeln(
       '  Dart SDK: ${Platform.version.split(' ').first} (${Platform.operatingSystem})');
   stdout.writeln(
@@ -230,24 +229,24 @@ void main() {
   stdout.writeln('Done.');
 
   // ---------------------------------------------------------------------------
-  // 7. Injectable (GetItHelper) vs DependencyBox Registration Overhead
+  // 7. Setup Overhead: 100 Dependencies per Container
   // ---------------------------------------------------------------------------
   stdout.write(
-      'Running Test 7/10: Setup Overhead via Injectable GetItHelper (2,000 setups of 100 deps)... ');
-  const setupCountInjectable = 2000;
-  final swBoxInjectable = Stopwatch()..start();
-  for (var r = 0; r < setupCountInjectable; r++) {
+      'Running Test 7/10: Setup Overhead: 100 Dependencies (2,000 setups of 100 deps)... ');
+  const setupCount = 2000;
+  final swBoxSetup = Stopwatch()..start();
+  for (var r = 0; r < setupCount; r++) {
     final box = DependencyBox.main();
     for (var i = 0; i < 100; i++) {
       box.addSingleton<int>(i, key: 'id_$i');
     }
   }
-  swBoxInjectable.stop();
+  swBoxSetup.stop();
   final scoreBoxSetup =
-      BenchmarkScore(setupCountInjectable, swBoxInjectable.elapsedMicroseconds);
+      BenchmarkScore(setupCount, swBoxSetup.elapsedMicroseconds);
 
   final swGetItSetup = Stopwatch()..start();
-  for (var r = 0; r < setupCountInjectable; r++) {
+  for (var r = 0; r < setupCount; r++) {
     final gi = GetIt.asNewInstance();
     for (var i = 0; i < 100; i++) {
       gi.registerSingleton<int>(i, instanceName: 'id_$i');
@@ -255,21 +254,7 @@ void main() {
   }
   swGetItSetup.stop();
   final scoreGetItSetup =
-      BenchmarkScore(setupCountInjectable, swGetItSetup.elapsedMicroseconds);
-
-  final swInjectableSetup = Stopwatch()..start();
-  for (var r = 0; r < setupCountInjectable; r++) {
-    final gi = GetIt.asNewInstance();
-    final gh = GetItHelper(gi);
-    for (var i = 0; i < 100; i++) {
-      gh.singleton<int>(() {
-        return i;
-      }, instanceName: 'id_$i');
-    }
-  }
-  swInjectableSetup.stop();
-  final scoreInjectableSetup = BenchmarkScore(
-      setupCountInjectable, swInjectableSetup.elapsedMicroseconds);
+      BenchmarkScore(setupCount, swGetItSetup.elapsedMicroseconds);
   stdout.writeln('Done.');
 
   // ---------------------------------------------------------------------------
@@ -349,8 +334,7 @@ void main() {
   // Formatted Output Results
   // ===========================================================================
 
-  void printComparison(String title, BenchmarkScore box, BenchmarkScore getIt,
-      {BenchmarkScore? injectable}) {
+  void printComparison(String title, BenchmarkScore box, BenchmarkScore getIt) {
     final speedup = getIt.nsPerOp / box.nsPerOp;
     final diffPercent = ((getIt.nsPerOp - box.nsPerOp) / getIt.nsPerOp) * 100.0;
     final winner = box.nsPerOp < getIt.nsPerOp
@@ -358,13 +342,12 @@ void main() {
         : 'get_it is ${(1 / speedup).toStringAsFixed(2)}x faster';
 
     stdout.writeln('### $title');
+    stdout.writeln('| Metric | dependency_box | get_it 9.3.0 | Advantage |');
+    stdout.writeln('|:---|:---:|:---:|:---|');
     stdout.writeln(
-        '| Metric | dependency_box | get_it 9.3.0 | injectable 3.0.0 | Advantage |');
-    stdout.writeln('|:---|:---:|:---:|:---:|:---|');
+        '| **Latency** | **${box.nsPerOp.toStringAsFixed(2)} ns/op** | ${getIt.nsPerOp.toStringAsFixed(2)} ns/op | **$winner** |');
     stdout.writeln(
-        '| **Latency** | **${box.nsPerOp.toStringAsFixed(2)} ns/op** | ${getIt.nsPerOp.toStringAsFixed(2)} ns/op | ${injectable != null ? '${injectable.nsPerOp.toStringAsFixed(2)} ns/op' : '${getIt.nsPerOp.toStringAsFixed(2)} ns/op*'} | **$winner** |');
-    stdout.writeln(
-        '| **Throughput** | **${box.opsPerSec.toStringAsFixed(0)} ops/s** | ${getIt.opsPerSec.toStringAsFixed(0)} ops/s | ${injectable != null ? '${injectable.opsPerSec.toStringAsFixed(0)} ops/s' : '${getIt.opsPerSec.toStringAsFixed(0)} ops/s*'} | |');
+        '| **Throughput** | **${box.opsPerSec.toStringAsFixed(0)} ops/s** | ${getIt.opsPerSec.toStringAsFixed(0)} ops/s | |');
     stdout.writeln('');
   }
 
@@ -381,15 +364,11 @@ void main() {
   printComparison('6. Deep Hierarchy Graph Resolution (5 nested layers)',
       scoreBox6, scoreGetIt6);
   printComparison('7. Setup Overhead: 100 Dependencies per Container',
-      scoreBoxSetup, scoreGetItSetup,
-      injectable: scoreInjectableSetup);
+      scoreBoxSetup, scoreGetItSetup);
   printComparison('8. Mass Setup: Create Container + 1,000 Keyed Singletons',
       scoreBoxMass, scoreGetItMass);
   printComparison('9. Cached Weak-Reference Factory (Auto-Expiring Singleton)',
       scoreBox9, scoreGetIt9);
   printComparison('10. Hierarchical Child Scope Shared Resolution', scoreBox10,
       scoreGetIt10);
-
-  stdout.writeln(
-      '*(Note: injectable delegates resolution at runtime to get_it, so its resolution latency is identical to get_it 9.3.0).*');
 }

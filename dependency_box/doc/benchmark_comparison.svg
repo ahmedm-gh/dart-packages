@@ -1,0 +1,267 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 682" width="100%" height="100%">
+  <title>DI Performance Benchmark Comparison: dependency_box vs get_it 9.3.0</title>
+  <desc>Dart SDK 3.13.4 VM benchmark results comparing dependency_box and get_it 9.3.0 on Windows x64. Lower latency is faster.</desc>
+  <defs>
+    <style>
+      :root {
+        --card-bg: #fbfdfe;
+        --border: #ebf1f9;
+        --title: #0a0f29;
+        --subtitle: #64748b;
+        --legend-label: #0a0f29;
+        --legend-muted: #64748b;
+        --section: #334155;
+        --col-header: #64748b;
+        --scenario: #0a0f29;
+        --brand: #4f46e5;
+        --brand-bar: #5b5df3;
+        --getit-icon: #5c728e;
+        --other-val: #475569;
+        --track: #edf2f9;
+        --divider: #e8edf4;
+        --pill-green-bg: #ecfdf5;
+        --pill-green-border: #a7f3d0;
+        --pill-green-text: #047857;
+        --pill-purple-bg: #f5f3ff;
+        --pill-purple-border: #ddd6fe;
+        --pill-purple-text: #6d28d9;
+        --footer: #64748b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --card-bg: #141923;
+          --border: #262f3f;
+          --title: #f0f6fc;
+          --subtitle: #8b949e;
+          --legend-label: #f0f6fc;
+          --legend-muted: #8b949e;
+          --section: #8b949e;
+          --col-header: #8b949e;
+          --scenario: #f0f6fc;
+          --brand: #818cf8;
+          --brand-bar: #6366f1;
+          --getit-icon: #64748b;
+          --other-val: #cbd5e1;
+          --track: #222b3a;
+          --divider: #262f3f;
+          --pill-green-bg: rgba(16, 185, 129, 0.12);
+          --pill-green-border: rgba(16, 185, 129, 0.35);
+          --pill-green-text: #34d399;
+          --pill-purple-bg: rgba(139, 92, 246, 0.15);
+          --pill-purple-border: rgba(139, 92, 246, 0.40);
+          --pill-purple-text: #c084fc;
+          --footer: #8b949e;
+        }
+      }
+      text {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .title { font-size: 24px; font-weight: 800; fill: var(--title); }
+      .subtitle { font-size: 13px; font-weight: 500; fill: var(--subtitle); }
+      .legend-title { font-size: 13px; font-weight: 700; fill: var(--legend-label); }
+      .legend-muted { font-size: 13px; font-weight: 500; fill: var(--legend-muted); }
+      .section-hdr { font-size: 11.5px; font-weight: 800; letter-spacing: 0.6px; fill: var(--section); }
+      .col-hdr { font-size: 10.5px; font-weight: 700; fill: var(--col-header); }
+      .col-hdr-brand { font-size: 11px; font-weight: 700; fill: var(--brand); }
+      .scenario { font-size: 12.5px; font-weight: 700; fill: var(--scenario); dominant-baseline: central; }
+      .val-brand { font-size: 12.5px; font-weight: 700; fill: var(--brand); dominant-baseline: central; }
+      .val-other { font-size: 12px; font-weight: 500; fill: var(--other-val); dominant-baseline: central; }
+      .pill-text { font-size: 11.5px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+      .footer-note { font-size: 11px; font-weight: 500; fill: var(--footer); }
+      .code-font { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+    </style>
+  </defs>
+
+  <!-- Card Background -->
+  <rect x="1" y="1" width="1022" height="680" rx="14" fill="var(--card-bg)" stroke="var(--border)" stroke-width="1.5"/>
+
+  <!-- ==================== HEADER ==================== -->
+  <text x="36" y="55" class="title">DI Performance Benchmark Comparison</text>
+  <text x="36" y="80" class="subtitle">Dart SDK 3.13.4 VM &#8226; Windows x64 &#8226; Lower latency is faster</text>
+
+  <!-- Header Legend -->
+  <g>
+    <!-- dependency_box -->
+    <rect x="740" y="47" width="16" height="15" rx="4" fill="var(--brand)"/>
+    <text x="764" y="59" class="legend-title">dependency_box</text>
+
+    <!-- get_it 9.3.0 -->
+    <rect x="888" y="47" width="15" height="15" rx="4" fill="var(--getit-icon)"/>
+    <text x="911" y="59" class="legend-muted">get_it 9.3.0</text>
+  </g>
+
+  <!-- ==================== SECTION 1 ==================== -->
+  <text x="36" y="117" class="section-hdr">1. CORE RESOLUTION &amp; CONTAINER SETUP</text>
+
+  <!-- Section 1 Column Headers -->
+  <g>
+    <text x="36" y="141" class="col-hdr">SCENARIO</text>
+
+    <rect x="269" y="131" width="11" height="11" rx="3" fill="var(--brand)"/>
+    <text x="286" y="141" class="col-hdr-brand">dependency_box</text>
+
+    <rect x="385" y="131" width="10" height="10" rx="5" fill="var(--getit-icon)"/>
+    <text x="401" y="141" class="col-hdr">get_it 9.3.0</text>
+
+    <text x="1000" y="141" class="col-hdr" text-anchor="end">RELATIVE IMPROVEMENT</text>
+  </g>
+
+  <!-- Row 1: Singleton Resolution -->
+  <g>
+    <text x="36" y="163" class="scenario">Singleton Resolution</text>
+    <text x="270" y="163" class="val-brand">12.96 ns</text>
+    <text x="386" y="163" class="val-other">281.45 ns</text>
+    <rect x="500" y="159" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="159" width="345" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="152" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="164" class="pill-text" fill="var(--pill-green-text)">21.71&#215;</text>
+  </g>
+
+  <!-- Row 2: Keyed / Named Singleton -->
+  <g>
+    <text x="36" y="194" class="scenario">Keyed / Named Singleton</text>
+    <text x="270" y="194" class="val-brand">17.63 ns</text>
+    <text x="386" y="194" class="val-other">330.86 ns</text>
+    <rect x="500" y="190" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="190" width="298" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="183" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="195" class="pill-text" fill="var(--pill-green-text)">18.77&#215;</text>
+  </g>
+
+  <!-- Row 3: Deep Graph (5 Layers) -->
+  <g>
+    <text x="36" y="224" class="scenario">Deep Graph (5 Layers)</text>
+    <text x="270" y="224" class="val-brand">17.47 ns</text>
+    <text x="386" y="224" class="val-other">292.66 ns</text>
+    <rect x="500" y="220" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="220" width="266" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="213" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="225" class="pill-text" fill="var(--pill-green-text)">16.75&#215;</text>
+  </g>
+
+  <!-- Row 4: Factory Creation -->
+  <g>
+    <text x="36" y="255" class="scenario">Factory Creation</text>
+    <text x="270" y="255" class="val-brand">18.27 ns</text>
+    <text x="386" y="255" class="val-other">286.05 ns</text>
+    <rect x="500" y="251" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="251" width="248" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="244" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="256" class="pill-text" fill="var(--pill-green-text)">15.66&#215;</text>
+  </g>
+
+  <!-- Row 5: Setup 100 Dependencies -->
+  <g>
+    <text x="36" y="287" class="scenario">Setup 100 Dependencies</text>
+    <text x="270" y="287" class="val-brand">11.60 &#956;s</text>
+    <text x="386" y="287" class="val-other">45.13 &#956;s</text>
+    <rect x="500" y="283" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="283" width="62" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="276" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="288" class="pill-text" fill="var(--pill-green-text)">3.89&#215;</text>
+  </g>
+
+  <!-- Row 6: Setup 1,000 Dependencies -->
+  <g>
+    <text x="36" y="318" class="scenario">Setup 1,000 Dependencies</text>
+    <text x="270" y="318" class="val-brand">94.54 &#956;s</text>
+    <text x="386" y="318" class="val-other">411.23 &#956;s</text>
+    <rect x="500" y="314" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="314" width="69" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="307" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="319" class="pill-text" fill="var(--pill-green-text)">4.35&#215;</text>
+  </g>
+
+  <!-- ==================== DIVIDER ==================== -->
+  <line x1="25" y1="346" x2="999" y2="346" stroke="var(--divider)" stroke-width="1"/>
+
+  <!-- ==================== SECTION 2 ==================== -->
+  <text x="36" y="372" class="section-hdr">2. SIMULATED PRODUCTION ARCHITECTURES</text>
+
+  <!-- Section 2 Column Headers -->
+  <g>
+    <text x="36" y="394" class="col-hdr">SCENARIO</text>
+
+    <rect x="269" y="384" width="11" height="11" rx="3" fill="var(--brand)"/>
+    <text x="286" y="394" class="col-hdr-brand">dependency_box</text>
+
+    <rect x="385" y="384" width="10" height="10" rx="5" fill="var(--getit-icon)"/>
+    <text x="401" y="394" class="col-hdr">get_it 9.3.0</text>
+
+    <text x="1000" y="394" class="col-hdr" text-anchor="end">RELATIVE IMPROVEMENT</text>
+  </g>
+
+  <!-- Row 7: Screen & ViewModel Routing -->
+  <g>
+    <text x="36" y="421" class="scenario">Screen &amp; ViewModel Routing</text>
+    <text x="270" y="421" class="val-brand">63.05 ns</text>
+    <text x="386" y="421" class="val-other">1,187.41 ns</text>
+    <rect x="500" y="417" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="417" width="342" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="410" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="422" class="pill-text" fill="var(--pill-green-text)">18.83&#215;</text>
+  </g>
+
+  <!-- Row 8: Interleaved Mixed Production -->
+  <g>
+    <text x="36" y="456" class="scenario">Interleaved Mixed Production</text>
+    <text x="270" y="456" class="val-brand">144.86 ns</text>
+    <text x="386" y="456" class="val-other">2,388.22 ns</text>
+    <rect x="500" y="452" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="452" width="299" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="445" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="457" class="pill-text" fill="var(--pill-green-text)">16.49&#215;</text>
+  </g>
+
+  <!-- Row 9: Plugin / Interceptor Pipeline -->
+  <g>
+    <text x="36" y="490" class="scenario">Plugin / Interceptor Pipeline</text>
+    <text x="270" y="490" class="val-brand">53.99 ns</text>
+    <text x="386" y="490" class="val-other">342.70 ns</text>
+    <rect x="500" y="486" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="486" width="115" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="479" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="491" class="pill-text" fill="var(--pill-green-text)">6.35&#215;</text>
+  </g>
+
+  <!-- Row 10: Cold App Startup & Boot -->
+  <g>
+    <text x="36" y="524" class="scenario">Cold App Startup &amp; Boot</text>
+    <text x="270" y="524" class="val-brand">7.14 &#956;s</text>
+    <text x="386" y="524" class="val-other">42.31 &#956;s</text>
+    <rect x="500" y="520" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="520" width="107" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="513" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="525" class="pill-text" fill="var(--pill-green-text)">5.93&#215;</text>
+  </g>
+
+  <!-- Row 11: Scoped Feature / Wizard Session -->
+  <g>
+    <text x="36" y="560" class="scenario">Scoped Feature / Wizard Session</text>
+    <text x="270" y="560" class="val-brand">4.69 &#956;s</text>
+    <text x="386" y="560" class="val-other">17.68 &#956;s</text>
+    <rect x="500" y="556" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="556" width="68" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="549" width="58" height="22" rx="11" fill="var(--pill-green-bg)" stroke="var(--pill-green-border)" stroke-width="1"/>
+    <text x="971" y="561" class="pill-text" fill="var(--pill-green-text)">3.77&#215;</text>
+  </g>
+
+  <!-- Row 12: Weak-Ref Asset Cache (Specialized) -->
+  <g>
+    <text x="36" y="595" class="scenario">
+      <tspan font-weight="700">Weak-Ref Asset Cache </tspan>
+      <tspan font-weight="500" fill="var(--subtitle)">(Specialized)</tspan>
+    </text>
+    <text x="270" y="595" class="val-brand">15.93 ns</text>
+    <text x="386" y="595" class="val-other">1,015.32 ns</text>
+    <rect x="500" y="591" width="425" height="8" rx="4" fill="var(--track)"/>
+    <rect x="500" y="591" width="420" height="8" rx="4" fill="var(--brand-bar)"/>
+    <rect x="942" y="584" width="58" height="22" rx="11" fill="var(--pill-purple-bg)" stroke="var(--pill-purple-border)" stroke-width="1"/>
+    <text x="971" y="596" class="pill-text" fill="var(--pill-purple-text)">63.72&#215;</text>
+  </g>
+
+  <!-- ==================== FOOTER ==================== -->
+  <text x="36" y="645" class="footer-note">
+    Reported medians from verified benchmark runs &#8226; Lower latency is faster &#8226; Full harness in <tspan class="code-font">tool/comparison_benchmark/</tspan>
+  </text>
+</svg>

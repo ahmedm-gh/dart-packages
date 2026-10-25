@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- **Performance Optimization**: Optimized parameterized factory resolution (`addFactoryWith`) by streamlining type casting paths, reducing invocation overhead from ~674 ns to sub-25 ns.
+- **Benchmarks & Documentation**: Added comprehensive, open-source performance benchmarking suite comparing `dependency_box` and `get_it 9.3.0` across 16 core resolution and production architecture workloads in both JIT and AOT modes.
+- **Visuals**: Updated `doc/benchmark_comparison.svg` with native responsive light and dark theme styling.
+
 ## 0.1.1
 
 - Initial beta release of `dependency_box`.

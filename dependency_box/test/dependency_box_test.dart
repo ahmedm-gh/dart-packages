@@ -1616,6 +1616,15 @@ void main() {
         throwsA(isA<StateError>()),
       );
     });
+
+    test('disposing an empty container completes immediately and updates state',
+        () async {
+      final emptyBox = DependencyBox.main();
+      expect(emptyBox.isDisposed, isFalse);
+      await emptyBox.dispose();
+      expect(emptyBox.isDisposed, isTrue);
+      expect(() => emptyBox.createChild(), throwsA(isA<StateError>()));
+    });
   });
 
   group('child container disposal isolation', () {

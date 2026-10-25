@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:dependency_box/dependency_box.dart';
 import 'package:get_it/get_it.dart';
-import 'package:injectable/injectable.dart';
 
 // ============================================================================
 // Real-world Enterprise / Clean Architecture Models
@@ -262,7 +261,7 @@ void main() {
   stdout.writeln(
       '=========================================================================================');
   stdout.writeln(
-      '  REAL-WORLD SCENARIOS BENCHMARK: dependency_box vs get_it 9.3.0 vs injectable 3.0.0');
+      '  REAL-WORLD SCENARIOS BENCHMARK: dependency_box vs get_it 9.3.0');
   stdout.writeln(
       '  Dart SDK: ${Platform.version.split(' ').first} (${Platform.operatingSystem})');
   stdout.writeln(
@@ -700,53 +699,6 @@ void main() {
   final scoreGetItBoot =
       BenchmarkScore(bootCycles, swGetItBoot.elapsedMicroseconds);
 
-  // Also test with Injectable GetItHelper
-  final swInjectableBoot = Stopwatch()..start();
-  for (var b = 0; b < bootCycles; b++) {
-    final gi = GetIt.asNewInstance();
-    final gh = GetItHelper(gi);
-    // 20 Singletons
-    for (var i = 0; i < 20; i++) {
-      gh.singleton<String>(() {
-        return 'val_$i';
-      }, instanceName: 's_$i');
-    }
-    // 15 LazySingletons
-    for (var i = 0; i < 15; i++) {
-      gh.lazySingleton<int>(() {
-        return i * 10;
-      }, instanceName: 'l_$i');
-    }
-    // 10 Factories
-    for (var i = 0; i < 10; i++) {
-      gh.factory<double>(() {
-        return i * 1.5;
-      }, instanceName: 'f_$i');
-    }
-    // 5 Parameterized Factories
-    for (var i = 0; i < 5; i++) {
-      gh.factoryParam<String, String, dynamic>((a, _) {
-        return '$a-$i';
-      }, instanceName: 'p_$i');
-    }
-
-    // Resolve 15 critical startup services
-    for (var i = 0; i < 8; i++) {
-      final s = gi<String>(instanceName: 's_$i');
-      if (identical(s, null)) throw StateError('');
-    }
-    for (var i = 0; i < 5; i++) {
-      final l = gi<int>(instanceName: 'l_$i');
-      if (identical(l, null)) throw StateError('');
-    }
-    for (var i = 0; i < 2; i++) {
-      final f = gi<double>(instanceName: 'f_$i');
-      if (identical(f, null)) throw StateError('');
-    }
-  }
-  swInjectableBoot.stop();
-  final scoreInjectableBoot =
-      BenchmarkScore(bootCycles, swInjectableBoot.elapsedMicroseconds);
   stdout.writeln('Done.');
 
   // ===========================================================================
@@ -781,7 +733,7 @@ void main() {
   // ===========================================================================
 
   void printResult(String title, BenchmarkScore box, BenchmarkScore getIt,
-      {BenchmarkScore? injectable, bool isMicros = false}) {
+      {bool isMicros = false}) {
     final speedup = isMicros
         ? (getIt.microsPerOp / box.microsPerOp)
         : (getIt.nsPerOp / box.nsPerOp);
@@ -795,19 +747,18 @@ void main() {
         : 'get_it is ${(1 / speedup).toStringAsFixed(2)}x faster';
 
     stdout.writeln('### $title');
-    stdout.writeln(
-        '| Metric | dependency_box | get_it 9.3.0 | injectable 3.0.0 | Advantage |');
-    stdout.writeln('|:---|:---:|:---:|:---:|:---|');
+    stdout.writeln('| Metric | dependency_box | get_it 9.3.0 | Advantage |');
+    stdout.writeln('|:---|:---:|:---:|:---|');
     if (isMicros) {
       stdout.writeln(
-          '| **Latency / Boot** | **${box.microsPerOp.toStringAsFixed(2)} µs** | ${getIt.microsPerOp.toStringAsFixed(2)} µs | ${injectable != null ? '${injectable.microsPerOp.toStringAsFixed(2)} µs' : '${getIt.microsPerOp.toStringAsFixed(2)} µs*'} | **$winner** |');
+          '| **Latency / Boot** | **${box.microsPerOp.toStringAsFixed(2)} µs** | ${getIt.microsPerOp.toStringAsFixed(2)} µs | **$winner** |');
       stdout.writeln(
-          '| **Boot Throughput** | **${box.opsPerSec.toStringAsFixed(0)} boots/s** | ${getIt.opsPerSec.toStringAsFixed(0)} boots/s | ${injectable != null ? '${injectable.opsPerSec.toStringAsFixed(0)} boots/s' : '${getIt.opsPerSec.toStringAsFixed(0)} boots/s*'} | |');
+          '| **Boot Throughput** | **${box.opsPerSec.toStringAsFixed(0)} boots/s** | ${getIt.opsPerSec.toStringAsFixed(0)} boots/s | |');
     } else {
       stdout.writeln(
-          '| **Latency** | **${box.nsPerOp.toStringAsFixed(2)} ns/op** | ${getIt.nsPerOp.toStringAsFixed(2)} ns/op | ${injectable != null ? '${injectable.nsPerOp.toStringAsFixed(2)} ns/op' : '${getIt.nsPerOp.toStringAsFixed(2)} ns/op*'} | **$winner** |');
+          '| **Latency** | **${box.nsPerOp.toStringAsFixed(2)} ns/op** | ${getIt.nsPerOp.toStringAsFixed(2)} ns/op | **$winner** |');
       stdout.writeln(
-          '| **Throughput** | **${box.opsPerSec.toStringAsFixed(0)} ops/s** | ${getIt.opsPerSec.toStringAsFixed(0)} ops/s | ${injectable != null ? '${injectable.opsPerSec.toStringAsFixed(0)} ops/s' : '${getIt.opsPerSec.toStringAsFixed(0)} ops/s*'} | |');
+          '| **Throughput** | **${box.opsPerSec.toStringAsFixed(0)} ops/s** | ${getIt.opsPerSec.toStringAsFixed(0)} ops/s | |');
     }
     stdout.writeln('');
   }
@@ -832,11 +783,7 @@ void main() {
       '5. Cold App Startup & Container Bootstrapping (50 Services Registered + 15 Resolved)',
       scoreBoxBoot,
       scoreGetItBoot,
-      injectable: scoreInjectableBoot,
       isMicros: true);
   printResult('6. Weak-Reference Screen Asset Cache (addCachedFactory)',
       scoreBox6, scoreGetIt6);
-
-  stdout.writeln(
-      '*(Note: injectable code generation uses GetItHelper to configure GetIt; runtime resolution delegates directly to get_it 9.3.0).*');
 }
