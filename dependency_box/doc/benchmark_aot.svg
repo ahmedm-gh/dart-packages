@@ -1,0 +1,269 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1150" width="100%" height="100%" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8faff" />
+      <stop offset="100%" stop-color="#f0f4fc" />
+    </linearGradient>
+    <linearGradient id="purpleBar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a45ff" />
+      <stop offset="100%" stop-color="#3b28cc" />
+    </linearGradient>
+    <linearGradient id="greyBar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7c8b9e" />
+      <stop offset="100%" stop-color="#566578" />
+    </linearGradient>
+    <style>
+      .title { font-size: 32px; font-weight: 800; fill: #0d1b3e; }
+      .subtitle { font-size: 15.5px; fill: #5a6b87; font-weight: 500; }
+      .legend-text { font-size: 17px; font-weight: 700; fill: #1e293b; }
+      .panel { fill: #ffffff; stroke: #dce3f0; stroke-width: 1.5; rx: 14; }
+      .panel-title { font-size: 19px; font-weight: 800; fill: #0d1b3e; letter-spacing: 0.3px; }
+      .axis-label { font-size: 13.5px; fill: #64748b; font-weight: 600; }
+      .grid-line { stroke: #e2e8f0; stroke-width: 1; }
+      .axis-line { stroke: #475569; stroke-width: 1.5; }
+      .speedup-text { font-size: 15px; font-weight: 800; fill: #047857; text-anchor: middle; letter-spacing: -0.2px; }
+      /* Numbers above bars decreased by 10% from 13.5px to 12px */
+      .val-purple { font-size: 12px; font-weight: 800; fill: #4338ca; text-anchor: middle; }
+      .val-grey { font-size: 12px; font-weight: 800; fill: #334155; text-anchor: middle; }
+      .cat-label { font-size: 14px; font-weight: 700; fill: #334155; text-anchor: start; }
+      .card { fill: #f4f7fd; stroke: #dce3f0; stroke-width: 1.5; rx: 14; }
+      .card-title { font-size: 16px; font-weight: 800; fill: #0d1b3e; }
+      .card-sub { font-size: 13px; fill: #475569; font-weight: 500; }
+      .big-metric-jit { font-size: 34px; font-weight: 800; fill: #4f39f6; }
+      .big-metric-aot { font-size: 34px; font-weight: 800; fill: #0353a4; }
+      .mid-metric { font-size: 20px; font-weight: 800; }
+      .footer { font-size: 13px; fill: #64748b; font-weight: 500; }
+    </style>
+
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="1150" rx="18" fill="url(#bgGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+
+  <!-- HEADER -->
+  <text x="25" y="46" class="title">DI Performance Benchmark · AOT Suites</text>
+  <text x="25" y="72" class="subtitle">dependency_box vs get_it 9.3.0  ·  Dart 3.13.4  ·  Windows x64  ·  Median latency  ·  Lower is faster</text>
+
+  <!-- Badge -->
+  <rect x="1035" y="22" width="140" height="44" rx="22" fill="#0b3b75" />
+  <text x="1105" y="50" fill="#ffffff" font-size="17" font-weight="800" text-anchor="middle">AOT · 6.67×</text>
+
+  <!-- Legend -->
+  <rect x="25" y="88" width="22" height="22" rx="5" fill="url(#purpleBar)" />
+  <text x="56" y="105" class="legend-text">dependency_box</text>
+
+  <rect x="210" y="88" width="22" height="22" rx="5" fill="url(#greyBar)" />
+  <text x="241" y="105" class="legend-text">get_it 9.3.0</text>
+
+  <!-- AOT · RESOLUTION WORKLOADS -->
+  <g transform="translate(25, 125)">
+    <rect width="1150" height="410" class="panel" />
+    <text x="25" y="32" class="panel-title">AOT · RESOLUTION WORKLOADS</text>
+    <!-- Speedup Values (Clean green text) -->
+    <text x="153.8" y="62" class="speedup-text">27.71×</text>
+    <text x="231.2" y="62" class="speedup-text">27.29×</text>
+    <text x="308.8" y="62" class="speedup-text">19.28×</text>
+    <text x="386.2" y="62" class="speedup-text">19.49×</text>
+    <text x="463.8" y="62" class="speedup-text">17.15×</text>
+    <text x="541.2" y="62" class="speedup-text">1.65×</text>
+    <text x="618.8" y="62" class="speedup-text">15.72×</text>
+    <text x="696.2" y="62" class="speedup-text">13.87×</text>
+    <text x="773.8" y="62" class="speedup-text">14.00×</text>
+    <text x="851.2" y="62" class="speedup-text">19.74×</text>
+    <text x="928.8" y="62" class="speedup-text">2.38×</text>
+    <text x="1006.2" y="62" class="speedup-text">1.73×</text>
+    <!-- Y-Axis & Grid -->
+    <text x="-165" y="18" transform="rotate(-90)" class="axis-label" text-anchor="middle">Latency (ns)</text>
+    <text x="88" y="95" class="axis-label" text-anchor="end">4,000+</text>
+    <line x1="95" y1="90" x2="1125" y2="90" class="grid-line" />
+    <text x="88" y="137" class="axis-label" text-anchor="end">3,000</text>
+    <line x1="95" y1="132" x2="1125" y2="132" class="grid-line" />
+    <text x="88" y="177" class="axis-label" text-anchor="end">2,000</text>
+    <line x1="95" y1="172" x2="1125" y2="172" class="grid-line" />
+    <text x="88" y="219" class="axis-label" text-anchor="end">1,000</text>
+    <line x1="95" y1="214" x2="1125" y2="214" class="grid-line" />
+    <text x="88" y="260" class="axis-label" text-anchor="end">0</text>
+    <line x1="95" y1="80" x2="95" y2="255" class="axis-line" />
+    <line x1="95" y1="255" x2="1125" y2="255" class="axis-line" />
+    <!-- 1. Pre-Registered (cx=153.8) -->
+    <path d="M 124.8,255 V 252.5 Q 124.8,250.0 127.3,250.0 H 150.3 Q 152.8,250.0 152.8,252.5 V 255 Z" fill="url(#purpleBar)" />
+    <text x="138.8" y="244.0" class="val-purple">13.0</text>
+    <path d="M 154.8,255 V 243.0 Q 154.8,238.0 159.8,238.0 H 177.8 Q 182.8,238.0 182.8,243.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="168.8" y="232.0" class="val-grey">361.5</text>
+    <text x="147.8" y="269" transform="rotate(45 147.8,269)" class="cat-label">Pre-Registered</text>
+    <!-- 2. Cached Lazy (cx=231.2) -->
+    <path d="M 202.2,255 V 252.5 Q 202.2,250.0 204.7,250.0 H 227.7 Q 230.2,250.0 230.2,252.5 V 255 Z" fill="url(#purpleBar)" />
+    <text x="216.2" y="244.0" class="val-purple">13.3</text>
+    <path d="M 232.2,255 V 243.0 Q 232.2,238.0 237.2,238.0 H 255.2 Q 260.2,238.0 260.2,243.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="246.2" y="232.0" class="val-grey">362.3</text>
+    <text x="225.2" y="269" transform="rotate(45 225.2,269)" class="cat-label">Cached Lazy</text>
+    <!-- 3. Transient Factory (cx=308.8) -->
+    <path d="M 279.8,255 V 252.0 Q 279.8,249.0 282.8,249.0 H 304.8 Q 307.8,249.0 307.8,252.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="293.8" y="243.0" class="val-purple">19.0</text>
+    <path d="M 309.8,255 V 242.5 Q 309.8,237.5 314.8,237.5 H 332.8 Q 337.8,237.5 337.8,242.5 V 255 Z" fill="url(#greyBar)" />
+    <text x="323.8" y="231.5" class="val-grey">366.5</text>
+    <text x="302.8" y="269" transform="rotate(45 302.8,269)" class="cat-label">Transient Factory</text>
+    <!-- 4. Interface Mapping (cx=386.2) -->
+    <path d="M 357.2,255 V 252.5 Q 357.2,250.0 359.7,250.0 H 382.7 Q 385.2,250.0 385.2,252.5 V 255 Z" fill="url(#purpleBar)" />
+    <text x="371.2" y="244.0" class="val-purple">16.0</text>
+    <path d="M 387.2,255 V 244.5 Q 387.2,239.5 392.2,239.5 H 410.2 Q 415.2,239.5 415.2,244.5 V 255 Z" fill="url(#greyBar)" />
+    <text x="401.2" y="233.5" class="val-grey">312.4</text>
+    <text x="380.2" y="269" transform="rotate(45 380.2,269)" class="cat-label">Interface Mapping</text>
+    <!-- 5. Keyed / Named (cx=463.8) -->
+    <path d="M 434.8,255 V 251.5 Q 434.8,248.0 438.3,248.0 H 459.3 Q 462.8,248.0 462.8,251.5 V 255 Z" fill="url(#purpleBar)" />
+    <text x="448.8" y="242.0" class="val-purple">23.6</text>
+    <path d="M 464.8,255 V 240.0 Q 464.8,235.0 469.8,235.0 H 487.8 Q 492.8,235.0 492.8,240.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="478.8" y="229.0" class="val-grey">405.1</text>
+    <text x="457.8" y="269" transform="rotate(45 457.8,269)" class="cat-label">Keyed / Named</text>
+    <!-- 6. Parameterized Factory (cx=541.2) -->
+    <path d="M 512.2,255 V 244.0 Q 512.2,239.0 517.2,239.0 H 535.2 Q 540.2,239.0 540.2,244.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="526.2" y="233.0" class="val-purple">252.8</text>
+    <path d="M 542.2,255 V 239.5 Q 542.2,234.5 547.2,234.5 H 565.2 Q 570.2,234.5 570.2,239.5 V 255 Z" fill="url(#greyBar)" />
+    <text x="556.2" y="228.5" class="val-grey">416.8</text>
+    <text x="535.2" y="269" transform="rotate(45 535.2,269)" class="cat-label">Parameterized Factory</text>
+    <!-- 7. Shallow Graph (4 deps) (cx=618.8) -->
+    <path d="M 589.8,255 V 249.0 Q 589.8,244.0 594.8,244.0 H 612.8 Q 617.8,244.0 617.8,249.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="603.8" y="238.0" class="val-purple">116.4</text>
+    <path d="M 619.8,255 V 188.0 Q 619.8,183.0 624.8,183.0 H 642.8 Q 647.8,183.0 647.8,188.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="633.8" y="177.0" class="val-grey">1.83k</text>
+    <text x="612.8" y="269" transform="rotate(45 612.8,269)" class="cat-label">Shallow Graph (4 deps)</text>
+    <!-- 8. Deep 10-Level Chain (cx=696.2) -->
+    <path d="M 667.2,255 V 242.0 Q 667.2,237.0 672.2,237.0 H 690.2 Q 695.2,237.0 695.2,242.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="681.2" y="231.0" class="val-purple">278.0</text>
+    <path d="M 697.2,255 V 105.0 Q 697.2,100.0 702.2,100.0 H 720.2 Q 725.2,100.0 725.2,105.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="711.2" y="94.0" class="val-grey">3.86k</text>
+    <text x="690.2" y="269" transform="rotate(45 690.2,269)" class="cat-label">Deep 10-Level Chain</text>
+    <!-- 9. Shared Graph (Diamond) (cx=773.8) -->
+    <path d="M 744.8,255 V 246.0 Q 744.8,241.0 749.8,241.0 H 767.8 Q 772.8,241.0 772.8,246.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="758.8" y="235.0" class="val-purple">181.0</text>
+    <path d="M 774.8,255 V 158.0 Q 774.8,153.0 779.8,153.0 H 797.8 Q 802.8,153.0 802.8,158.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="788.8" y="147.0" class="val-grey">2.53k</text>
+    <text x="767.8" y="269" transform="rotate(45 767.8,269)" class="cat-label">Shared Graph (Diamond)</text>
+    <!-- 10. Enterprise Graph (cx=851.2) -->
+    <path d="M 822.2,255 V 249.0 Q 822.2,244.0 827.2,244.0 H 845.2 Q 850.2,244.0 850.2,249.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="836.2" y="238.0" class="val-purple">101.6</text>
+    <path d="M 852.2,255 V 178.0 Q 852.2,173.0 857.2,173.0 H 875.2 Q 880.2,173.0 880.2,178.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="866.2" y="167.0" class="val-grey">2.01k</text>
+    <text x="845.2" y="269" transform="rotate(45 845.2,269)" class="cat-label">Enterprise Graph</text>
+    <!-- 11. Async Singleton (cx=928.8) -->
+    <path d="M 899.8,255 V 244.0 Q 899.8,239.0 904.8,239.0 H 922.8 Q 927.8,239.0 927.8,244.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="913.8" y="233.0" class="val-purple">260.5</text>
+    <path d="M 929.8,255 V 230.0 Q 929.8,225.0 934.8,225.0 H 952.8 Q 957.8,225.0 957.8,230.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="943.8" y="219.0" class="val-grey">619.5</text>
+    <text x="922.8" y="269" transform="rotate(45 922.8,269)" class="cat-label">Async Singleton</text>
+    <!-- 12. Missing Registration (cx=1006.2) -->
+    <path d="M 977.2,255 V 253.0 Q 977.2,251.0 979.2,251.0 H 1003.2 Q 1005.2,251.0 1005.2,253.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="991.2" y="245.0" class="val-purple">8.1</text>
+    <path d="M 1007.2,255 V 252.0 Q 1007.2,249.0 1010.2,249.0 H 1032.2 Q 1035.2,249.0 1035.2,252.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="1021.2" y="243.0" class="val-grey">14.0</text>
+    <text x="1000.2" y="269" transform="rotate(45 1000.2,269)" class="cat-label">Missing Registration</text>
+  </g>
+
+  <!-- AOT · REGISTRATION / LIFECYCLE / SCALING -->
+  <g transform="translate(25, 565)">
+    <rect width="1150" height="410" class="panel" />
+    <text x="25" y="32" class="panel-title">AOT · REGISTRATION / LIFECYCLE / SCALING</text>
+    <!-- Speedup Values (Clean green text) -->
+    <text x="166.7" y="62" class="speedup-text">2.30×</text>
+    <text x="270.0" y="62" class="speedup-text">5.79×</text>
+    <text x="373.3" y="62" class="speedup-text">6.35×</text>
+    <text x="476.7" y="62" class="speedup-text">5.70×</text>
+    <text x="580.0" y="62" class="speedup-text">5.58×</text>
+    <text x="683.3" y="62" class="speedup-text">2.22×</text>
+    <text x="786.7" y="62" class="speedup-text">27.32×</text>
+    <text x="890.0" y="62" class="speedup-text">6.13×</text>
+    <text x="993.3" y="62" class="speedup-text">5.19×</text>
+    <!-- Y-Axis & Grid -->
+    <text x="-165" y="18" transform="rotate(-90)" class="axis-label" text-anchor="middle">Latency (ns)</text>
+    <text x="88" y="95" class="axis-label" text-anchor="end">20,000+</text>
+    <line x1="95" y1="90" x2="1125" y2="90" class="grid-line" />
+    <text x="88" y="135" class="axis-label" text-anchor="end">15,000</text>
+    <line x1="95" y1="130" x2="1125" y2="130" class="grid-line" />
+    <text x="88" y="175" class="axis-label" text-anchor="end">10,000</text>
+    <line x1="95" y1="170" x2="1125" y2="170" class="grid-line" />
+    <text x="88" y="217" class="axis-label" text-anchor="end">5,000</text>
+    <line x1="95" y1="212" x2="1125" y2="212" class="grid-line" />
+    <text x="88" y="260" class="axis-label" text-anchor="end">0</text>
+    <line x1="95" y1="80" x2="95" y2="255" class="axis-line" />
+    <line x1="95" y1="255" x2="1125" y2="255" class="axis-line" />
+    <!-- 1. Register 1 Singleton (cx=166.7) -->
+    <path d="M 126.2,255 V 251.5 Q 126.2,248.0 129.7,248.0 H 161.7 Q 165.2,248.0 165.2,251.5 V 255 Z" fill="url(#purpleBar)" />
+    <text x="145.7" y="242.0" class="val-purple">88.7</text>
+    <path d="M 168.2,255 V 246.5 Q 168.2,241.5 173.2,241.5 H 202.2 Q 207.2,241.5 207.2,246.5 V 255 Z" fill="url(#greyBar)" />
+    <text x="187.7" y="235.5" class="val-grey">203.7</text>
+    <text x="160.7" y="269" transform="rotate(45 160.7,269)" class="cat-label">Register 1 Singleton</text>
+    <!-- 2. Register 10 Singletons (cx=270.0) -->
+    <path d="M 229.5,255 V 249.0 Q 229.5,244.0 234.5,244.0 H 263.5 Q 268.5,244.0 268.5,249.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="249.0" y="238.0" class="val-purple">852</text>
+    <path d="M 271.5,255 V 232.0 Q 271.5,227.0 276.5,227.0 H 305.5 Q 310.5,227.0 310.5,232.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="291.0" y="221.0" class="val-grey">4.93k</text>
+    <text x="264.0" y="269" transform="rotate(45 264.0,269)" class="cat-label">Register 10 Singletons</text>
+    <!-- 3. Register 100 Singletons (cx=373.3) -->
+    <path d="M 332.8,255 V 236.0 Q 332.8,231.0 337.8,231.0 H 366.8 Q 371.8,231.0 371.8,236.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="352.3" y="225.0" class="val-purple">8.22k</text>
+    <path d="M 374.8,255 V 192.0 Q 374.8,187.0 379.8,187.0 H 408.8 Q 413.8,187.0 413.8,192.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="394.3" y="181.0" class="val-grey">52.1k</text>
+    <text x="367.3" y="269" transform="rotate(45 367.3,269)" class="cat-label">Register 100 Singletons</text>
+    <!-- 4. Register 10 Lazy (cx=476.7) -->
+    <path d="M 436.2,255 V 249.0 Q 436.2,244.0 441.2,244.0 H 470.2 Q 475.2,244.0 475.2,249.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="455.7" y="238.0" class="val-purple">808</text>
+    <path d="M 478.2,255 V 234.0 Q 478.2,229.0 483.2,229.0 H 512.2 Q 517.2,229.0 517.2,234.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="497.7" y="223.0" class="val-grey">4.60k</text>
+    <text x="470.7" y="269" transform="rotate(45 470.7,269)" class="cat-label">Register 10 Lazy</text>
+    <!-- 5. Register 10 Factories (cx=580.0) -->
+    <path d="M 539.5,255 V 249.0 Q 539.5,244.0 544.5,244.0 H 573.5 Q 578.5,244.0 578.5,249.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="559.0" y="238.0" class="val-purple">813</text>
+    <path d="M 581.5,255 V 234.0 Q 581.5,229.0 586.5,229.0 H 615.5 Q 620.5,229.0 620.5,234.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="601.0" y="223.0" class="val-grey">4.54k</text>
+    <text x="574.0" y="269" transform="rotate(45 574.0,269)" class="cat-label">Register 10 Factories</text>
+    <!-- 6. Scoped Lifecycle (cx=683.3) -->
+    <path d="M 642.8,255 V 250.0 Q 642.8,246.0 646.8,246.0 H 677.8 Q 681.8,246.0 681.8,250.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="662.3" y="240.0" class="val-purple">585</text>
+    <path d="M 684.8,255 V 243.0 Q 684.8,238.0 689.8,238.0 H 718.8 Q 723.8,238.0 723.8,243.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="704.3" y="232.0" class="val-grey">1.30k</text>
+    <text x="677.3" y="269" transform="rotate(45 677.3,269)" class="cat-label">Scoped Lifecycle</text>
+    <!-- 7. Weak-Ref Factory (cx=786.7) -->
+    <path d="M 746.2,255 V 252.5 Q 746.2,250.0 748.7,250.0 H 782.7 Q 785.2,250.0 785.2,252.5 V 255 Z" fill="url(#purpleBar)" />
+    <text x="765.7" y="244.0" class="val-purple">13.7</text>
+    <path d="M 788.2,255 V 242.0 Q 788.2,237.0 793.2,237.0 H 822.2 Q 827.2,237.0 827.2,242.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="807.7" y="231.0" class="val-grey">373.1</text>
+    <text x="780.7" y="269" transform="rotate(45 780.7,269)" class="cat-label">Weak-Ref Factory</text>
+    <!-- 8. 1,000 Scaling (1k) (cx=890.0) -->
+    <path d="M 849.5,255 V 233.0 Q 849.5,228.0 854.5,228.0 H 883.5 Q 888.5,228.0 888.5,233.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="869.0" y="222.0" class="val-purple">86.3k</text>
+    <path d="M 891.5,255 V 188.0 Q 891.5,183.0 896.5,183.0 H 925.5 Q 930.5,183.0 930.5,188.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="911.0" y="177.0" class="val-grey">529k</text>
+    <text x="884.0" y="269" transform="rotate(45 884.0,269)" class="cat-label">1,000 Scaling (1k)</text>
+    <!-- 9. 10,000 Scaling (10k) (cx=993.3) -->
+    <path d="M 952.8,255 V 214.0 Q 952.8,209.0 957.8,209.0 H 986.8 Q 991.8,209.0 991.8,214.0 V 255 Z" fill="url(#purpleBar)" />
+    <text x="972.3" y="203.0" class="val-purple">1.49M</text>
+    <path d="M 994.8,255 V 104.0 Q 994.8,99.0 999.8,99.0 H 1028.8 Q 1033.8,99.0 1033.8,104.0 V 255 Z" fill="url(#greyBar)" />
+    <text x="1014.3" y="93.0" class="val-grey">7.74M</text>
+    <text x="987.3" y="269" transform="rotate(45 987.3,269)" class="cat-label">10,000 Scaling (10k)</text>
+  </g>
+
+
+  <!-- AOT Summary Card -->
+  <g transform="translate(25, 1005)">
+    <rect width="1150" height="90" class="card" />
+    <text x="24" y="38" font-size="24">🚀</text>
+    <text x="64" y="27" class="card-title">AOT OVERALL PERFORMANCE</text>
+    <text x="64" y="44" class="card-sub">Geometric mean speedup vs get_it 9.3.0 across 21 benchmarks</text>
+    <text x="64" y="76" class="big-metric-aot">6.67× <tspan font-size="19" font-weight="700">faster overall</tspan></text>
+
+    <line x1="560" y1="16" x2="560" y2="74" stroke="#cbd5e1" stroke-width="1.5" />
+    <text x="585" y="28" class="card-sub" font-weight="700">Fastest Resolution</text>
+    <text x="585" y="52" class="mid-metric" fill="#0353a4">27.71×</text>
+    <text x="585" y="70" class="card-sub">Pre-registered singleton (13.0 ns vs 361.5 ns)</text>
+
+    <line x1="870" y1="16" x2="870" y2="74" stroke="#cbd5e1" stroke-width="1.5" />
+    <text x="895" y="28" class="card-sub" font-weight="700">Weak-Ref Factory</text>
+    <text x="895" y="52" class="mid-metric" fill="#0353a4">27.32×</text>
+    <text x="895" y="70" class="card-sub">13.7 ns vs 373.1 ns</text>
+  </g>
+
+  <!-- FOOTER -->
+  <text x="25" y="1125" class="footer">Median of 20 independent runs  ·  Dart SDK 3.13.4  ·  Windows 11 Pro  ·  16 processors  ·  AOT benchmark suite</text>
+  <text x="1175" y="1125" class="footer" text-anchor="end">dependency_box vs get_it 9.3.0</text>
+</svg>
