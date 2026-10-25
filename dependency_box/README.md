@@ -154,18 +154,6 @@ dbox.addSingleton(
 
 ---
 
-## 📂 Examples
-
-A progressive suite of 13 standalone runnable examples is available in the [`example/`](./example) directory:
-
-- **[Basic Examples](./example/basic/)**: [Simple Registration](./example/basic/simple_registration.dart), [Interface Mapping](./example/basic/interface_mapping.dart), [Keyed Dependencies](./example/basic/keyed_dependencies.dart), [Parameterized Factory](./example/basic/parameterized_factory.dart).
-- **[Intermediate Patterns](./example/intermediate/)**: [Modules & Composition](./example/intermediate/modules_and_composition.dart), [Hierarchical Scopes](./example/intermediate/hierarchical_scopes.dart), [Multi-Registrations](./example/intermediate/multi_registrations.dart), [Async Deduplication](./example/intermediate/async_and_deduplication.dart), [Weak-Reference Cache](./example/intermediate/weak_reference_cache.dart).
-- **[Advanced Architectures](./example/advanced/)**: [Clean Architecture](./example/advanced/clean_architecture.dart), [Lifecycle & Disposal](./example/advanced/lifecycle_and_disposal.dart), [Testing & Overrides](./example/advanced/testing_and_overrides.dart), [Diagnostics & Debugging](./example/advanced/diagnostics_and_debugging.dart).
-
-See [example/README.md](./example/README.md) for complete descriptions and execution instructions.
-
----
-
 ## ⚡ Performance
 
 `dependency_box` is engineered around a zero-allocation unkeyed lookup path using direct `Type` literal map keys without wrapper objects or reflection layers.
