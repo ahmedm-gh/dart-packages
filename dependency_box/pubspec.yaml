@@ -1,6 +1,6 @@
 name: dependency_box
-description: A high-performance, lightweight, and zero-dependency inversion-of-control container and dependency injection box for Dart and Flutter
-version: 0.1.0
+description: A high-performance, lightweight, and zero-dependency inversion-of-control (IoC) container and dependency injection box for Dart and Flutter
+version: 0.1.1
 repository: https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box
 issue_tracker: https://github.com/ahmedm-gh/dart-packages/issues
 documentation: https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box
@@ -17,7 +17,7 @@ topics:
   - utilities
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
 
 dev_dependencies:
   lints: ^6.0.0

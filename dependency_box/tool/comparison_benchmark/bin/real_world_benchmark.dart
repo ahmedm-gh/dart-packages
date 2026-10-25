@@ -214,6 +214,12 @@ class ScopedCheckoutWizardController {
   ScopedCheckoutWizardController(this.gateway, this.cart);
 }
 
+class HeavyScreenAsset {
+  final String assetName;
+  final List<int> buffer;
+  HeavyScreenAsset(this.assetName) : buffer = List.filled(1000, 1);
+}
+
 // ============================================================================
 // Timing Harness
 // ============================================================================
@@ -268,7 +274,7 @@ void main() {
   // Controller that depends on multiple UseCases, Repositories, and Services.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 1/5: Screen Navigation & ViewModel Graph Resolution (2M ops)... ');
+      'Running Scenario 1/6: Screen Navigation & ViewModel Graph Resolution (2M ops)... ');
   const screenNavOps = 2000000;
 
   // 1. Setup DependencyBox Container
@@ -397,11 +403,12 @@ void main() {
   // resolving 10 times during wizard flow, and destroying the scope.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 2/5: Scoped Feature Lifecycle (50,000 complete sessions)... ');
+      'Running Scenario 2/6: Scoped Feature Lifecycle (50,000 complete sessions)... ');
   const scopeLifecycles = 50000;
 
+  final rootBox2 = DependencyBox.main(name: 'root');
   final scoreBox2 = runTimed(scopeLifecycles, () {
-    final scope = DependencyBox.main();
+    final scope = rootBox2.createChild(name: 'checkout_wizard');
     scope
         .addSingleton<ScopedPaymentSession>(ScopedPaymentSession('session_99'));
     scope.addSingleton<ScopedCartState>(ScopedCartState(3));
@@ -426,7 +433,7 @@ void main() {
 
   final getItParent = GetIt.asNewInstance();
   final scoreGetIt2 = runTimed(scopeLifecycles, () {
-    getItParent.pushNewScope(scopeName: 'checkout_wizard');
+    getItParent.pushNewScope();
     getItParent.registerSingleton<ScopedPaymentSession>(
         ScopedPaymentSession('session_99'));
     getItParent.registerSingleton<ScopedCartState>(ScopedCartState(3));
@@ -460,7 +467,7 @@ void main() {
   // - 10% Parameterized queries
   // ===========================================================================
   stdout.write(
-      'Running Scenario 3/5: Interleaved Mixed Production Traffic (3M ops)... ');
+      'Running Scenario 3/6: Interleaved Mixed Production Traffic (3M ops)... ');
   const mixedOps = 3000000;
 
   // Box setup
@@ -555,11 +562,11 @@ void main() {
   // Resolving an entire middleware / plugin pipeline of 6 interceptors.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 4/5: Middleware Pipeline (getAll<T>() Resolution) (2M ops)... ');
+      'Running Scenario 4/6: Middleware Pipeline (getAll<T>() Resolution) (2M ops)... ');
   const pipelineOps = 2000000;
 
   final box4 = DependencyBox.main();
-  box4.allowMultiple({Multi<HttpInterceptor>()});
+  box4.allowMulti<HttpInterceptor>();
   box4.addSingleton<HttpInterceptor>(AuthHeaderInterceptor());
   box4.addSingleton<HttpInterceptor>(CompressionInterceptor());
   box4.addSingleton<HttpInterceptor>(RateLimitInterceptor());
@@ -602,7 +609,7 @@ void main() {
   // 5 Parameterized) + resolving the 15 critical initial startup services.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 5/5: Cold App Startup & Container Bootstrapping (5,000 app boots)... ');
+      'Running Scenario 5/6: Cold App Startup & Container Bootstrapping (5,000 app boots)... ');
   const bootCycles = 5000;
 
   final swBoxBoot = Stopwatch()..start();
@@ -740,6 +747,33 @@ void main() {
   swInjectableBoot.stop();
   final scoreInjectableBoot =
       BenchmarkScore(bootCycles, swInjectableBoot.elapsedMicroseconds);
+  stdout.writeln('Done.');
+
+  // ===========================================================================
+  // SCENARIO 6: Weak-Reference Asset Cache (addCachedFactory)
+  // Caching heavy temporary screen assets while actively referenced by the view.
+  // ===========================================================================
+  stdout.write(
+      'Running Scenario 6/6: Weak-Reference Screen Asset Cache (2M ops)... ');
+  const assetOps = 2000000;
+
+  final box6 = DependencyBox.main();
+  box6.addCachedFactory<HeavyScreenAsset>(
+      (_) => HeavyScreenAsset('screen_background'));
+  final heldAsset = box6.get<HeavyScreenAsset>(); // keep active reference
+  final scoreBox6 = runTimed(assetOps, () {
+    final asset = box6.get<HeavyScreenAsset>();
+    if (identical(asset, null)) throw StateError('');
+  });
+
+  final getIt6 = GetIt.asNewInstance();
+  getIt6.registerFactory<HeavyScreenAsset>(
+      () => HeavyScreenAsset('screen_background'));
+  final scoreGetIt6 = runTimed(assetOps, () {
+    final asset = getIt6<HeavyScreenAsset>();
+    if (identical(asset, null)) throw StateError('');
+  });
+  if (identical(heldAsset, null)) throw StateError('');
   stdout.writeln('Done.\n');
 
   // ===========================================================================
@@ -800,6 +834,8 @@ void main() {
       scoreGetItBoot,
       injectable: scoreInjectableBoot,
       isMicros: true);
+  printResult('6. Weak-Reference Screen Asset Cache (addCachedFactory)',
+      scoreBox6, scoreGetIt6);
 
   stdout.writeln(
       '*(Note: injectable code generation uses GetItHelper to configure GetIt; runtime resolution delegates directly to get_it 9.3.0).*');

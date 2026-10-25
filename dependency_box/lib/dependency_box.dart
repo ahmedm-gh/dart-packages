@@ -3,5 +3,6 @@
 library;
 
 export 'src/box_config.dart';
-export 'src/dependency.dart';
-export 'src/dependency_box_base.dart';
+export 'src/dependency_box.dart';
+export 'src/dependency_ref.dart';
+export 'src/multi_registration.dart';

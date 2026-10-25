@@ -1,4 +1,6 @@
-## 0.1.0
+# Changelog
+
+## 0.1.1
 
 - Initial beta release of `dependency_box`.
 - Fast, zero-dependency IoC and dependency injection container for Dart and Flutter.
@@ -11,7 +13,7 @@
 - Test override support via `box.replaceSingleton<T>()` for clean mock injection without triggering duplicate registration asserts.
 - Modular feature composition via `DependencyModule` and `box.install()`.
 - Container introspection via `contains<T>()`, `registeredKeys`, `length`, `isEmpty`, and `isNotEmpty`.
-- Centralized compile-time configuration constants via `BoxConfig`.
+- Centralized compile-time configuration constants via `DependencyBox`.
 - Multiple instance registrations with `allowMulti<T>()` and `allowMultiple` supporting 4 resolution strategies (`first`, `last`, `at(index)`, `key(key)`).
 - Automatic lifecycle management and disposal via `DependencyDisposable` with identity-based deduplication (`Set.identity`).
 - Robust container lifecycle invariants preventing leaks or stale resolution across disposed root and child containers.

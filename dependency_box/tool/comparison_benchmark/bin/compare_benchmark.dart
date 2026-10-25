@@ -88,7 +88,7 @@ void main() {
   // ---------------------------------------------------------------------------
   // 1. Singleton Resolution (Unkeyed / Default)
   // ---------------------------------------------------------------------------
-  stdout.write('Running Test 1/8: Singleton Resolution (5M ops)... ');
+  stdout.write('Running Test 1/10: Singleton Resolution (5M ops)... ');
   final box1 = DependencyBox.main();
   box1.addSingleton<ConfigService>(ConfigService());
   final scoreBox1 = runTimed(hotPathCount, () {
@@ -107,7 +107,7 @@ void main() {
   // ---------------------------------------------------------------------------
   // 2. Keyed / Named Singleton Resolution
   // ---------------------------------------------------------------------------
-  stdout.write('Running Test 2/8: Keyed / Named Resolution (5M ops)... ');
+  stdout.write('Running Test 2/10: Keyed / Named Resolution (5M ops)... ');
   final box2 = DependencyBox.main();
   box2.addSingleton<ConfigService>(ConfigService(), key: 'primary');
   final scoreBox2 = runTimed(hotPathCount, () {
@@ -128,7 +128,7 @@ void main() {
   // 3. Cached Lazy Singleton Resolution
   // ---------------------------------------------------------------------------
   stdout
-      .write('Running Test 3/8: Cached LazySingleton Resolution (5M ops)... ');
+      .write('Running Test 3/10: Cached LazySingleton Resolution (5M ops)... ');
   final box3 = DependencyBox.main();
   box3.addLazySingleton<ConfigService>((_) {
     return ConfigService();
@@ -153,7 +153,7 @@ void main() {
   // ---------------------------------------------------------------------------
   // 4. Factory Resolution (Fresh Object Instantiation)
   // ---------------------------------------------------------------------------
-  stdout.write('Running Test 4/8: Factory Creation (2M ops)... ');
+  stdout.write('Running Test 4/10: Factory Creation (2M ops)... ');
   final box4 = DependencyBox.main();
   box4.addFactory<ConfigService>((_) {
     return ConfigService();
@@ -176,7 +176,7 @@ void main() {
   // ---------------------------------------------------------------------------
   // 5. Parameterized Factory Resolution
   // ---------------------------------------------------------------------------
-  stdout.write('Running Test 5/8: Parameterized Factory (2M ops)... ');
+  stdout.write('Running Test 5/10: Parameterized Factory (2M ops)... ');
   final box5 = DependencyBox.main();
   box5.addFactoryWith<QueryEngine, String>((container, query) {
     return QueryEngine(query);
@@ -199,8 +199,8 @@ void main() {
   // ---------------------------------------------------------------------------
   // 6. Deep Hierarchy Graph Resolution (5-level nested graph)
   // ---------------------------------------------------------------------------
-  stdout
-      .write('Running Test 6/8: Deep Dependency Graph Resolution (5M ops)... ');
+  stdout.write(
+      'Running Test 6/10: Deep Dependency Graph Resolution (5M ops)... ');
   final box6 = DependencyBox.main();
   box6.addSingleton<ConfigService>(ConfigService());
   box6.addSingleton<DatabaseService>(
@@ -233,7 +233,7 @@ void main() {
   // 7. Injectable (GetItHelper) vs DependencyBox Registration Overhead
   // ---------------------------------------------------------------------------
   stdout.write(
-      'Running Test 7/8: Setup Overhead via Injectable GetItHelper (2,000 setups of 100 deps)... ');
+      'Running Test 7/10: Setup Overhead via Injectable GetItHelper (2,000 setups of 100 deps)... ');
   const setupCountInjectable = 2000;
   final swBoxInjectable = Stopwatch()..start();
   for (var r = 0; r < setupCountInjectable; r++) {
@@ -275,7 +275,8 @@ void main() {
   // ---------------------------------------------------------------------------
   // 8. Mass Setup: Create Container + 1,000 Keyed Singletons
   // ---------------------------------------------------------------------------
-  stdout.write('Running Test 8/8: Mass Setup (2,000 setups of 1,000 deps)... ');
+  stdout
+      .write('Running Test 8/10: Mass Setup (2,000 setups of 1,000 deps)... ');
   final swBoxMass = Stopwatch()..start();
   for (var r = 0; r < setupRuns; r++) {
     final box = DependencyBox.main();
@@ -296,6 +297,52 @@ void main() {
   swGetItMass.stop();
   final scoreGetItMass =
       BenchmarkScore(setupRuns, swGetItMass.elapsedMicroseconds);
+  stdout.writeln('Done.');
+
+  // ---------------------------------------------------------------------------
+  // 9. Cached Weak-Reference Factory (Auto-Expiring Singleton)
+  // ---------------------------------------------------------------------------
+  stdout.write('Running Test 9/10: Cached Weak-Reference Factory (5M ops)... ');
+  final box9 = DependencyBox.main();
+  box9.addCachedFactory<ConfigService>((_) => ConfigService());
+  // Keep reference alive in caller so weak-reference cache stays warm
+  final heldInstance = box9.get<ConfigService>();
+  final scoreBox9 = runTimed(hotPathCount, () {
+    final res = box9.get<ConfigService>();
+    if (identical(res, null)) throw StateError('');
+  });
+
+  // GetIt lacks weak-reference factories; standard factory is closest comparison
+  final getIt9 = GetIt.asNewInstance();
+  getIt9.registerFactory<ConfigService>(() => ConfigService());
+  final scoreGetIt9 = runTimed(hotPathCount, () {
+    final res = getIt9<ConfigService>();
+    if (identical(res, null)) throw StateError('');
+  });
+  if (identical(heldInstance, null)) throw StateError('');
+  stdout.writeln('Done.');
+
+  // ---------------------------------------------------------------------------
+  // 10. Hierarchical Child Scope with Shared Root Singleton
+  // ---------------------------------------------------------------------------
+  stdout.write(
+      'Running Test 10/10: Hierarchical Child Scope Shared Resolution (5M ops)... ');
+  final rootBox10 = DependencyBox.main(name: 'root');
+  final childBox10 = rootBox10.createChild(name: 'child_scope');
+  childBox10.addSharedSingleton<ConfigService>(ConfigService());
+  final scoreBox10 = runTimed(hotPathCount, () {
+    final res = childBox10.get<ConfigService>();
+    if (identical(res, null)) throw StateError('');
+  });
+
+  final getIt10 = GetIt.asNewInstance();
+  getIt10.registerSingleton<ConfigService>(ConfigService());
+  getIt10.pushNewScope(scopeName: 'child_scope');
+  final scoreGetIt10 = runTimed(hotPathCount, () {
+    final res = getIt10<ConfigService>();
+    if (identical(res, null)) throw StateError('');
+  });
+  getIt10.popScope();
   stdout.writeln('Done.\n');
 
   // ===========================================================================
@@ -338,6 +385,10 @@ void main() {
       injectable: scoreInjectableSetup);
   printComparison('8. Mass Setup: Create Container + 1,000 Keyed Singletons',
       scoreBoxMass, scoreGetItMass);
+  printComparison('9. Cached Weak-Reference Factory (Auto-Expiring Singleton)',
+      scoreBox9, scoreGetIt9);
+  printComparison('10. Hierarchical Child Scope Shared Resolution', scoreBox10,
+      scoreGetIt10);
 
   stdout.writeln(
       '*(Note: injectable delegates resolution at runtime to get_it, so its resolution latency is identical to get_it 9.3.0).*');

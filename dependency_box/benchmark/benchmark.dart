@@ -183,7 +183,7 @@ Future<void> main() async {
   // ---------------------------------------------------------------------------
   {
     final box = DependencyBox.main();
-    box.allowMultiple({const Multi<Plugin>.last()});
+    box.allowMultiple({const MultiRegistration<Plugin>.last()});
     box.addSingleton<Plugin>(AuthPlugin());
     box.addSingleton<Plugin>(LoggingPlugin());
     box.addSingleton<Plugin>(MetricsPlugin());
@@ -200,7 +200,7 @@ Future<void> main() async {
   // ---------------------------------------------------------------------------
   {
     final box = DependencyBox.main();
-    box.allowMultiple({const Multi<Plugin>.first()});
+    box.allowMultiple({const MultiRegistration<Plugin>.first()});
     box.addSingleton<Plugin>(AuthPlugin());
     box.addSingleton<Plugin>(LoggingPlugin());
     box.addSingleton<Plugin>(MetricsPlugin());
@@ -217,7 +217,7 @@ Future<void> main() async {
   // ---------------------------------------------------------------------------
   {
     final box = DependencyBox.main();
-    box.allowMultiple({Multi<Plugin>.at(1)});
+    box.allowMultiple({MultiRegistration<Plugin>.at(1)});
     box.addSingleton<Plugin>(AuthPlugin());
     box.addSingleton<Plugin>(LoggingPlugin());
     box.addSingleton<Plugin>(MetricsPlugin());
@@ -234,7 +234,7 @@ Future<void> main() async {
   // ---------------------------------------------------------------------------
   {
     final box = DependencyBox.main();
-    box.allowMultiple({Multi<Plugin>.key('logging')});
+    box.allowMultiple({MultiRegistration<Plugin>.key('logging')});
     box.addSingleton<Plugin>(AuthPlugin(), key: 'auth');
     box.addSingleton<Plugin>(LoggingPlugin(), key: 'logging');
     box.addSingleton<Plugin>(MetricsPlugin(), key: 'metrics');
@@ -251,7 +251,7 @@ Future<void> main() async {
   // ---------------------------------------------------------------------------
   {
     final box = DependencyBox.main();
-    box.allowMultiple({const Multi<Plugin>.last()});
+    box.allowMultiple({const MultiRegistration<Plugin>.last()});
     box.addSingleton<Plugin>(AuthPlugin());
     box.addSingleton<Plugin>(LoggingPlugin());
     box.addSingleton<Plugin>(MetricsPlugin());
