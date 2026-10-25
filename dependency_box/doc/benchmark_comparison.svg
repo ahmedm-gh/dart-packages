@@ -21,8 +21,7 @@
       .axis-label { font-size: 13.5px; fill: #64748b; font-weight: 600; }
       .grid-line { stroke: #e2e8f0; stroke-width: 1; }
       .axis-line { stroke: #475569; stroke-width: 1.5; }
-      .pill-green { fill: #129468; rx: 14; }
-      .pill-text { font-size: 14px; font-weight: 800; fill: #ffffff; text-anchor: middle; }
+      .speedup-text { font-size: 15px; font-weight: 800; fill: #047857; text-anchor: middle; letter-spacing: -0.2px; }
       .val-purple { font-size: 13.5px; font-weight: 800; fill: #4338ca; text-anchor: middle; }
       .val-grey { font-size: 13.5px; font-weight: 800; fill: #334155; text-anchor: middle; }
       .cat-label { font-size: 14px; font-weight: 700; fill: #334155; text-anchor: start; }
@@ -61,21 +60,19 @@
   <g transform="translate(25, 125)">
     <rect width="1150" height="410" class="panel" />
     <text x="25" y="32" class="panel-title">JIT · RESOLUTION WORKLOADS</text>
-    <!-- Speedup Pills -->
-    <g transform="translate(0, 44)">
-      <rect x="123.8" y="0" width="60" height="28" class="pill-green" /><text x="153.8" y="19" class="pill-text">16.51×</text>
-      <rect x="201.2" y="0" width="60" height="28" class="pill-green" /><text x="231.2" y="19" class="pill-text">13.15×</text>
-      <rect x="278.8" y="0" width="60" height="28" class="pill-green" /><text x="308.8" y="19" class="pill-text">12.45×</text>
-      <rect x="356.2" y="0" width="60" height="28" class="pill-green" /><text x="386.2" y="19" class="pill-text">12.95×</text>
-      <rect x="433.8" y="0" width="60" height="28" class="pill-green" /><text x="463.8" y="19" class="pill-text">11.59×</text>
-      <rect x="511.2" y="0" width="60" height="28" class="pill-green" /><text x="541.2" y="19" class="pill-text">9.00×</text>
-      <rect x="588.8" y="0" width="60" height="28" class="pill-green" /><text x="618.8" y="19" class="pill-text">15.03×</text>
-      <rect x="666.2" y="0" width="60" height="28" class="pill-green" /><text x="696.2" y="19" class="pill-text">12.76×</text>
-      <rect x="743.8" y="0" width="60" height="28" class="pill-green" /><text x="773.8" y="19" class="pill-text">15.90×</text>
-      <rect x="821.2" y="0" width="60" height="28" class="pill-green" /><text x="851.2" y="19" class="pill-text">14.79×</text>
-      <rect x="898.8" y="0" width="60" height="28" class="pill-green" /><text x="928.8" y="19" class="pill-text">1.88×</text>
-      <rect x="976.2" y="0" width="60" height="28" class="pill-green" /><text x="1006.2" y="19" class="pill-text">1.68×</text>
-    </g>
+    <!-- Speedup Values (Clean green text) -->
+    <text x="153.8" y="62" class="speedup-text">16.51×</text>
+    <text x="231.2" y="62" class="speedup-text">13.15×</text>
+    <text x="308.8" y="62" class="speedup-text">12.45×</text>
+    <text x="386.2" y="62" class="speedup-text">12.95×</text>
+    <text x="463.8" y="62" class="speedup-text">11.59×</text>
+    <text x="541.2" y="62" class="speedup-text">9.00×</text>
+    <text x="618.8" y="62" class="speedup-text">15.03×</text>
+    <text x="696.2" y="62" class="speedup-text">12.76×</text>
+    <text x="773.8" y="62" class="speedup-text">15.90×</text>
+    <text x="851.2" y="62" class="speedup-text">14.79×</text>
+    <text x="928.8" y="62" class="speedup-text">1.88×</text>
+    <text x="1006.2" y="62" class="speedup-text">1.68×</text>
     <!-- Y-Axis & Grid -->
     <text x="-165" y="18" transform="rotate(-90)" class="axis-label" text-anchor="middle">Latency (ns)</text>
     <text x="88" y="100" class="axis-label" text-anchor="end">3,000+</text>
@@ -165,18 +162,16 @@
   <g transform="translate(25, 565)">
     <rect width="1150" height="410" class="panel" />
     <text x="25" y="32" class="panel-title">JIT · REGISTRATION / LIFECYCLE / SCALING</text>
-    <!-- Speedup Pills -->
-    <g transform="translate(0, 44)">
-      <rect x="132.7" y="0" width="68" height="28" class="pill-green" /><text x="166.7" y="19" class="pill-text">2.57×</text>
-      <rect x="236.0" y="0" width="68" height="28" class="pill-green" /><text x="270.0" y="19" class="pill-text">4.34×</text>
-      <rect x="339.3" y="0" width="68" height="28" class="pill-green" /><text x="373.3" y="19" class="pill-text">4.55×</text>
-      <rect x="442.7" y="0" width="68" height="28" class="pill-green" /><text x="476.7" y="19" class="pill-text">4.30×</text>
-      <rect x="546.0" y="0" width="68" height="28" class="pill-green" /><text x="580.0" y="19" class="pill-text">4.36×</text>
-      <rect x="649.3" y="0" width="68" height="28" class="pill-green" /><text x="683.3" y="19" class="pill-text">1.89×</text>
-      <rect x="752.7" y="0" width="68" height="28" class="pill-green" /><text x="786.7" y="19" class="pill-text">12.88×</text>
-      <rect x="856.0" y="0" width="68" height="28" class="pill-green" /><text x="890.0" y="19" class="pill-text">4.82×</text>
-      <rect x="959.3" y="0" width="68" height="28" class="pill-green" /><text x="993.3" y="19" class="pill-text">3.93×</text>
-    </g>
+    <!-- Speedup Values (Clean green text) -->
+    <text x="166.7" y="62" class="speedup-text">2.57×</text>
+    <text x="270.0" y="62" class="speedup-text">4.34×</text>
+    <text x="373.3" y="62" class="speedup-text">4.55×</text>
+    <text x="476.7" y="62" class="speedup-text">4.30×</text>
+    <text x="580.0" y="62" class="speedup-text">4.36×</text>
+    <text x="683.3" y="62" class="speedup-text">1.89×</text>
+    <text x="786.7" y="62" class="speedup-text">12.88×</text>
+    <text x="890.0" y="62" class="speedup-text">4.82×</text>
+    <text x="993.3" y="62" class="speedup-text">3.93×</text>
     <!-- Y-Axis & Grid -->
     <text x="-165" y="18" transform="rotate(-90)" class="axis-label" text-anchor="middle">Latency (ns)</text>
     <text x="88" y="95" class="axis-label" text-anchor="end">20,000+</text>
@@ -250,21 +245,19 @@
   <g transform="translate(25, 1005)">
     <rect width="1150" height="410" class="panel" />
     <text x="25" y="32" class="panel-title">AOT · RESOLUTION WORKLOADS</text>
-    <!-- Speedup Pills -->
-    <g transform="translate(0, 44)">
-      <rect x="123.8" y="0" width="60" height="28" class="pill-green" /><text x="153.8" y="19" class="pill-text">27.71×</text>
-      <rect x="201.2" y="0" width="60" height="28" class="pill-green" /><text x="231.2" y="19" class="pill-text">27.29×</text>
-      <rect x="278.8" y="0" width="60" height="28" class="pill-green" /><text x="308.8" y="19" class="pill-text">19.28×</text>
-      <rect x="356.2" y="0" width="60" height="28" class="pill-green" /><text x="386.2" y="19" class="pill-text">19.49×</text>
-      <rect x="433.8" y="0" width="60" height="28" class="pill-green" /><text x="463.8" y="19" class="pill-text">17.15×</text>
-      <rect x="511.2" y="0" width="60" height="28" class="pill-green" /><text x="541.2" y="19" class="pill-text">1.65×</text>
-      <rect x="588.8" y="0" width="60" height="28" class="pill-green" /><text x="618.8" y="19" class="pill-text">15.72×</text>
-      <rect x="666.2" y="0" width="60" height="28" class="pill-green" /><text x="696.2" y="19" class="pill-text">13.87×</text>
-      <rect x="743.8" y="0" width="60" height="28" class="pill-green" /><text x="773.8" y="19" class="pill-text">14.00×</text>
-      <rect x="821.2" y="0" width="60" height="28" class="pill-green" /><text x="851.2" y="19" class="pill-text">19.74×</text>
-      <rect x="898.8" y="0" width="60" height="28" class="pill-green" /><text x="928.8" y="19" class="pill-text">2.38×</text>
-      <rect x="976.2" y="0" width="60" height="28" class="pill-green" /><text x="1006.2" y="19" class="pill-text">1.73×</text>
-    </g>
+    <!-- Speedup Values (Clean green text) -->
+    <text x="153.8" y="62" class="speedup-text">27.71×</text>
+    <text x="231.2" y="62" class="speedup-text">27.29×</text>
+    <text x="308.8" y="62" class="speedup-text">19.28×</text>
+    <text x="386.2" y="62" class="speedup-text">19.49×</text>
+    <text x="463.8" y="62" class="speedup-text">17.15×</text>
+    <text x="541.2" y="62" class="speedup-text">1.65×</text>
+    <text x="618.8" y="62" class="speedup-text">15.72×</text>
+    <text x="696.2" y="62" class="speedup-text">13.87×</text>
+    <text x="773.8" y="62" class="speedup-text">14.00×</text>
+    <text x="851.2" y="62" class="speedup-text">19.74×</text>
+    <text x="928.8" y="62" class="speedup-text">2.38×</text>
+    <text x="1006.2" y="62" class="speedup-text">1.73×</text>
     <!-- Y-Axis & Grid -->
     <text x="-165" y="18" transform="rotate(-90)" class="axis-label" text-anchor="middle">Latency (ns)</text>
     <text x="88" y="95" class="axis-label" text-anchor="end">4,000+</text>
@@ -356,18 +349,16 @@
   <g transform="translate(25, 1445)">
     <rect width="1150" height="410" class="panel" />
     <text x="25" y="32" class="panel-title">AOT · REGISTRATION / LIFECYCLE / SCALING</text>
-    <!-- Speedup Pills -->
-    <g transform="translate(0, 44)">
-      <rect x="132.7" y="0" width="68" height="28" class="pill-green" /><text x="166.7" y="19" class="pill-text">2.30×</text>
-      <rect x="236.0" y="0" width="68" height="28" class="pill-green" /><text x="270.0" y="19" class="pill-text">5.79×</text>
-      <rect x="339.3" y="0" width="68" height="28" class="pill-green" /><text x="373.3" y="19" class="pill-text">6.35×</text>
-      <rect x="442.7" y="0" width="68" height="28" class="pill-green" /><text x="476.7" y="19" class="pill-text">5.70×</text>
-      <rect x="546.0" y="0" width="68" height="28" class="pill-green" /><text x="580.0" y="19" class="pill-text">5.58×</text>
-      <rect x="649.3" y="0" width="68" height="28" class="pill-green" /><text x="683.3" y="19" class="pill-text">2.22×</text>
-      <rect x="752.7" y="0" width="68" height="28" class="pill-green" /><text x="786.7" y="19" class="pill-text">27.32×</text>
-      <rect x="856.0" y="0" width="68" height="28" class="pill-green" /><text x="890.0" y="19" class="pill-text">6.13×</text>
-      <rect x="959.3" y="0" width="68" height="28" class="pill-green" /><text x="993.3" y="19" class="pill-text">5.19×</text>
-    </g>
+    <!-- Speedup Values (Clean green text) -->
+    <text x="166.7" y="62" class="speedup-text">2.30×</text>
+    <text x="270.0" y="62" class="speedup-text">5.79×</text>
+    <text x="373.3" y="62" class="speedup-text">6.35×</text>
+    <text x="476.7" y="62" class="speedup-text">5.70×</text>
+    <text x="580.0" y="62" class="speedup-text">5.58×</text>
+    <text x="683.3" y="62" class="speedup-text">2.22×</text>
+    <text x="786.7" y="62" class="speedup-text">27.32×</text>
+    <text x="890.0" y="62" class="speedup-text">6.13×</text>
+    <text x="993.3" y="62" class="speedup-text">5.19×</text>
     <!-- Y-Axis & Grid -->
     <text x="-165" y="18" transform="rotate(-90)" class="axis-label" text-anchor="middle">Latency (ns)</text>
     <text x="88" y="95" class="axis-label" text-anchor="end">20,000+</text>
