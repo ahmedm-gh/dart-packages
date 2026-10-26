@@ -137,9 +137,9 @@ featureBox.addSingleton(CheckoutState());
 featureBox.addSharedSingleton(SharedAnalyticsSession());
 
 // Scope hierarchy inspection:
-print(featureBox.name);    // 'checkout_feature'
-print(featureBox.parent);  // appBox
-print(featureBox.root);    // appBox (topmost root across any nesting depth)
+print(featureBox.name); // 'checkout_feature'
+print(featureBox.parent); // appBox
+print(featureBox.root); // appBox (topmost root across any nesting depth)
 
 // Dispose scope and clean up scoped dependencies
 featureBox.dispose();
@@ -230,7 +230,7 @@ final Interceptor active = box.get(); // Resolves LoggingInterceptor (last)
 
 // 3. Or batch-configure multiple types at once:
 box.allowMultiple({
-  const MultiRegistration<Interceptor>(resolution: MultiResolution.last),
+  const MultiRegistration<Interceptor>.last(),
   const MultiRegistration<Validator>(),
 });
 ```
