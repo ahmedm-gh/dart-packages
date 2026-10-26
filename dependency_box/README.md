@@ -111,7 +111,7 @@ dbox.addAsyncSingleton((dbox) async {
 });
 ```
 
-### 2. Hierarchical Child Scopes & Shared Bindings
+### 2. Hierarchical Child Scopes & Scoping Properties
 
 Child scopes inherit dependencies from their parent while keeping local registrations isolated. When the child scope is disposed, its local resources are cleaned up without affecting the parent:
 
@@ -119,16 +119,26 @@ Child scopes inherit dependencies from their parent while keeping local registra
 final appBox = DependencyBox.main(name: 'app_root');
 appBox.addSingleton(GlobalConfig());
 
-// Create an isolated feature scope
+// Create an isolated feature scope with an optional diagnostic name
 final featureBox = appBox.createChild(name: 'checkout_feature');
 featureBox.addSingleton(CheckoutState());
 
 // Register a shared singleton anchored to root from within the child scope
 featureBox.addSharedSingleton(SharedAnalyticsSession());
 
+// Scope hierarchy inspection:
+print(featureBox.name);    // 'checkout_feature'
+print(featureBox.parent);  // appBox
+print(featureBox.root);    // appBox (topmost root across any nesting depth)
+
 // Dispose scope and clean up scoped dependencies
 featureBox.dispose();
 ```
+
+- **`createChild({String? name})`**: *Importance:* Creates an isolated sub-container (e.g. for user sessions, HTTP requests, or navigation flows) that inherits parent dependencies. When the child scope is disposed, its scoped resources are torn down without affecting the parent.
+- **`name`**: *Importance:* An optional human-readable identifier displayed in logs, error traces, and diagnostic inspection (`printContainer()`) to distinguish scopes.
+- **`parent`**: *Importance:* Gives direct access to the immediate parent container (or `null` if root), enabling scope boundary inspection.
+- **`root`**: *Importance:* Resolves the topmost root container across any nesting depth, ensuring direct access to global application singletons from deeply nested scopes.
 
 ### 3. Lifecycle Cleanup with `DependencyDisposable`
 
@@ -151,6 +161,67 @@ dbox.addSingleton(
   onDispose: (controller) => controller.close(),
 );
 ```
+
+### 4. Modular Feature Registration (`install` & `installAll`)
+
+Package related registrations into cohesive modules implementing `DependencyModule`:
+
+```dart
+class NetworkModule implements DependencyModule {
+  @override
+  void register(DependencyBox box) {
+    box.addSingleton(HttpClient());
+    box.addLazySingleton((b) => ApiService(b.get()));
+  }
+}
+
+class AuthModule implements DependencyModule {
+  @override
+  void register(DependencyBox box) {
+    box.addSingleton(AuthTokenStorage());
+  }
+}
+
+final box = DependencyBox.main();
+
+// Install a single module:
+box.install(NetworkModule());
+
+// Or batch-install multiple modules at the composition root:
+box.installAll([NetworkModule(), AuthModule()]);
+```
+
+- **`install(module)`**: *Importance:* Enables modular, decoupled architecture by organizing feature dependencies into dedicated classes rather than maintaining a monolithic composition root.
+- **`installAll(modules)`**: *Importance:* Streamlines application startup sequences by cleanly registering multiple feature modules in a single call.
+
+### 5. Multi-Registrations (`allowMulti` & `allowMultiple`)
+
+By default, duplicate registrations throw an assertion to catch accidental overwrites. When multiple implementations of a type are intentionally needed (e.g. plugins, interceptors, middleware), enable multi-registration:
+
+```dart
+abstract interface class Interceptor {
+  void intercept(String request);
+}
+
+// 1. Enable multiple registrations for a type with a resolution strategy
+box.allowMulti<Interceptor>(resolution: MultiResolution.last);
+
+box.addSingleton<Interceptor>(AuthInterceptor());
+box.addSingleton<Interceptor>(LoggingInterceptor());
+
+// 2. Resolve all instances or the default instance
+final List<Interceptor> all = box.getAll<Interceptor>().toList();
+final Interceptor active = box.get(); // Resolves LoggingInterceptor (last)
+
+// 3. Or batch-configure multiple types at once:
+box.allowMultiple({
+  const MultiRegistration<Interceptor>(resolution: MultiResolution.last),
+  const MultiRegistration<Validator>(),
+});
+```
+
+- **`allowMulti<T>({resolution})`**: *Importance:* Safely opts type `T` into multiple registrations and defines how `get<T>()` resolves (`first`, `last`, `at(index)`, `key(key)`), while `getAll<T>()` retrieves the full collection of instances.
+- **`allowMultiple(types)`**: *Importance:* Declaratively configures multi-registration for multiple types in a single call using compile-time `MultiRegistration` descriptors.
 
 ---
 
