@@ -2227,6 +2227,112 @@ void main() {
           throwsA(isA<StateError>()));
     });
   });
+
+  group('DependencyDisposable interface contract', () {
+    test('synchronous dispose completes and cleans up resource', () async {
+      final box = DependencyBox.main();
+      var disposed = false;
+      final disposable = _CustomDisposable(() => disposed = true);
+
+      box.addSingleton<_CustomDisposable>(disposable);
+      expect(disposed, isFalse);
+
+      await box.dispose();
+      expect(disposed, isTrue);
+    });
+
+    test('asynchronous Future<void> dispose is properly awaited', () async {
+      final box = DependencyBox.main();
+      final disposable = _TestDisposable();
+
+      box.addSingleton<_TestDisposable>(disposable);
+      expect(disposable.disposed, isFalse);
+
+      await box.dispose();
+      expect(disposable.disposed, isTrue);
+    });
+
+    test('disposes upon remove when dispose is true', () async {
+      final box = DependencyBox.main();
+      final disposable = _TestDisposable();
+
+      box.addSingleton<_TestDisposable>(disposable);
+      final removed = await box.remove<_TestDisposable>(dispose: true);
+
+      expect(removed, isTrue);
+      expect(disposable.disposed, isTrue);
+      await box.dispose();
+    });
+
+    test(
+        'preserves instance without disposal upon remove when dispose is false',
+        () async {
+      final box = DependencyBox.main();
+      final disposable = _TestDisposable();
+
+      box.addSingleton<_TestDisposable>(disposable);
+      final removed = await box.remove<_TestDisposable>(dispose: false);
+
+      expect(removed, isTrue);
+      expect(disposable.disposed, isFalse);
+      await box.dispose();
+    });
+
+    test(
+        'child container disposal only disposes child scoped DependencyDisposable',
+        () async {
+      final root = DependencyBox.main();
+      final rootDisposable = _TestDisposable();
+      root.addSingleton<_TestDisposable>(rootDisposable, key: 'root');
+
+      final child = root.createChild();
+      final childDisposable = _TestDisposable();
+      child.addSingleton<_TestDisposable>(childDisposable, key: 'child');
+
+      await child.dispose();
+      expect(childDisposable.disposed, isTrue);
+      expect(rootDisposable.disposed, isFalse);
+
+      await root.dispose();
+      expect(rootDisposable.disposed, isTrue);
+    });
+  });
+
+  group('DependencyModule interface contract', () {
+    test('install executes register(box) on the target container', () {
+      final box = DependencyBox.main();
+      final module = _AuthModule();
+
+      box.install(module);
+      expect(box.get<String>(key: 'auth_endpoint'),
+          equals('https://auth.example.com'));
+      expect(box.get<int>(key: 'token_timeout'), equals(3600));
+    });
+
+    test('installAll executes register for all modules in iterable', () {
+      final box = DependencyBox.main();
+      box.installAll([_AuthModule(), _DatabaseModule()]);
+
+      expect(box.get<String>(key: 'auth_endpoint'),
+          equals('https://auth.example.com'));
+      expect(box.get<String>(key: 'db_host'), equals('localhost'));
+    });
+
+    test('installAll with empty iterable completes without error', () {
+      final box = DependencyBox.main();
+      expect(() => box.installAll([]), returnsNormally);
+      expect(box.isEmpty, isTrue);
+    });
+
+    test('installs modules into scoped child containers', () {
+      final root = DependencyBox.main();
+      final child = root.createChild();
+
+      child.install(_AuthModule());
+      expect(child.contains<String>(key: 'auth_endpoint'), isTrue);
+      expect(root.contains<String>(key: 'auth_endpoint'), isFalse);
+    });
+  });
 }
 
 enum _TestEnv { prod, dev, staging }

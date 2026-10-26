@@ -31,7 +31,11 @@ Add `dependency_box` to your `pubspec.yaml`:
 
 ```bash
 dart pub add dependency_box
-# or for Flutter
+```
+
+or for Flutter
+
+```bash
 flutter pub add dependency_box
 ```
 
@@ -66,10 +70,10 @@ class UserRepository {
   String getUser(String id) => 'User $id from ${client.config.baseUrl}';
 }
 
-void main() {
-  // Root Container (creates the primary container instance)
-  final dbox = DependencyBox.main();
+// Root Container (creates the primary container instance)
+final dbox = DependencyBox.main();
 
+void main() {
   // 1. Inferred Registrations: No <Type> brackets needed!
   dbox.addSingleton(const ApiConfig('https://api.example.com'));
   dbox.addLazySingleton((dbox) => ApiClient(dbox.get()));
@@ -172,6 +176,8 @@ dbox.addSingleton(
 );
 ```
 
+- **`DependencyDisposable`**: *Importance:* Standard lifecycle contract (`FutureOr<void> dispose()`). When a container is disposed or a dependency is removed, `DependencyBox` automatically invokes `dispose()` on any active registered instance implementing this interface.
+
 ### 4. Modular Feature Registration (`install` & `installAll`)
 
 Package related registrations into cohesive modules implementing `DependencyModule`:
@@ -202,6 +208,7 @@ box.install(NetworkModule());
 box.installAll([NetworkModule(), AuthModule()]);
 ```
 
+- **`DependencyModule`**: *Importance:* Modular feature registration contract (`void register(DependencyBox box)`). Encapsulates related dependencies into cohesive, reusable architectural units.
 - **`install(module)`**: *Importance:* Enables modular, decoupled architecture by organizing feature dependencies into dedicated classes rather than maintaining a monolithic composition root.
 - **`installAll(modules)`**: *Importance:* Streamlines application startup sequences by cleanly registering multiple feature modules in a single call.
 
