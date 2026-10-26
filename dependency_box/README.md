@@ -67,6 +67,7 @@ class UserRepository {
 }
 
 void main() {
+  // Root Container (creates the primary container instance)
   final dbox = DependencyBox.main();
 
   // 1. Inferred Registrations: No <Type> brackets needed!
@@ -117,14 +118,22 @@ dbox.addAsyncSingleton((dbox) async {
 Child scopes inherit dependencies from their parent while keeping local registrations isolated. When the child scope is disposed, its local resources are cleaned up without affecting the parent:
 
 ```dart
+// Root Container (creates the primary container instance)
 final appBox = DependencyBox.main(name: 'app_root');
+
+// Eager Singleton on root
 appBox.addSingleton(GlobalConfig());
 
-// Create an isolated feature scope with an optional diagnostic name
+// Create an isolated child scope (via convenience method)
 final featureBox = appBox.createChild(name: 'checkout_feature');
+
+// Or create a child container (via explicit parent constructor)
+final childBox = DependencyBox.child(parent: appBox, name: 'child_scope');
+
+// Scoped Singleton (isolated to child scope)
 featureBox.addSingleton(CheckoutState());
 
-// Register a shared singleton anchored to root from within the child scope
+// Shared Singleton (anchored to root from within the child scope)
 featureBox.addSharedSingleton(SharedAnalyticsSession());
 
 // Scope hierarchy inspection:
@@ -183,6 +192,7 @@ class AuthModule implements DependencyModule {
   }
 }
 
+// Root Container (creates the primary container instance)
 final box = DependencyBox.main();
 
 // Install a single module:
@@ -204,9 +214,13 @@ abstract interface class Interceptor {
   void intercept(String request);
 }
 
+// Root Container (creates the primary container instance)
+final box = DependencyBox.main();
+
 // 1. Enable multiple registrations for a type with a resolution strategy
 box.allowMulti<Interceptor>(resolution: MultiResolution.last);
 
+// Register multiple implementations of the same type
 box.addSingleton<Interceptor>(AuthInterceptor());
 box.addSingleton<Interceptor>(LoggingInterceptor());
 
