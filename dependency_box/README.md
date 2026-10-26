@@ -87,6 +87,7 @@ void main() {
 ### 1. Registration Lifetimes
 
 ```dart
+// Root Container (creates the primary container instance)
 final dbox = DependencyBox.main();
 
 // Eager Singleton (instantiated immediately)
