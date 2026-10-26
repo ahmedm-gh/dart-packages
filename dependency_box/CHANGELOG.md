@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- **Documentation**: Enhanced documentation for `DependencyDisposable` lifecycle contracts and `DependencyModule` feature modularity in `README.md`.
+- **Testing**: Added comprehensive unit test suites validating `DependencyDisposable` contracts (sync/async disposal, removal flags, child container isolation) and `DependencyModule` installation workflows.
+
 ## 1.0.0
 
 - **First Stable Release**: Production-ready, zero-dependency Inversion-of-Control (IoC) container and service locator for Dart and Flutter applications.
