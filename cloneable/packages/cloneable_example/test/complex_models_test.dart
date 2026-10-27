@@ -43,10 +43,7 @@ void main() {
       expect(updatedRole.metadata?['level'], equals('Senior'));
 
       // 2. Clear nullable nested address and metadata
-      final clearedNested = employee.copyWith(
-        address: null,
-        metadata: null,
-      );
+      final clearedNested = employee.copyWith(address: null, metadata: null);
       expect(clearedNested.address, isNull);
       expect(clearedNested.metadata, isNull);
       expect(clearedNested.name, equals('Sarah Connor'));

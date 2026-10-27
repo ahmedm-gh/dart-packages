@@ -16,25 +16,27 @@ void main() {
       ConfigLoader.clearCache();
     });
 
-    test('falls back to CloneableDefaults.instance when no in-code defaults',
-        () {
-      final config = ConfigLoader.resolveDefaults();
-      expect(config.output, equals(CloneableOutput.auto));
-      expect(config.strategy, equals(CloneableStrategy.auto));
-      expect(config.sentinel, equals(CloneableSentinel.auto));
-      expect(config.deepCopyCollections, isFalse);
-      expect(config.ignoreNull, isFalse);
-      expect(config.active, isTrue);
-      expect(config.cleanup, equals(CloneableCleanup.none));
-      expect(config.fieldsConflict, equals(CloneableFieldsConflict.error));
-      expect(config.method, equals(CloneableNaming.defaultMethod));
-      expect(config.mixin.prefix, equals(r'_$'));
-      expect(config.mixin.suffix, equals('Cloneable'));
-      expect(config.extension.prefix, equals(r'$'));
-      expect(config.extension.suffix, equals('Extension'));
-      expect(config.file.prefix, equals(''));
-      expect(config.file.suffix, equals('.cloneable.g'));
-    });
+    test(
+      'falls back to CloneableDefaults.instance when no in-code defaults',
+      () {
+        final config = ConfigLoader.resolveDefaults();
+        expect(config.output, equals(CloneableOutput.auto));
+        expect(config.strategy, equals(CloneableStrategy.auto));
+        expect(config.sentinel, equals(CloneableSentinel.auto));
+        expect(config.deepCopyCollections, isFalse);
+        expect(config.ignoreNull, isFalse);
+        expect(config.active, isTrue);
+        expect(config.cleanup, equals(CloneableCleanup.none));
+        expect(config.fieldsConflict, equals(CloneableFieldsConflict.error));
+        expect(config.method, equals(CloneableNaming.defaultMethod));
+        expect(config.mixin.prefix, equals(r'_$'));
+        expect(config.mixin.suffix, equals('Cloneable'));
+        expect(config.extension.prefix, equals(r'$'));
+        expect(config.extension.suffix, equals('Extension'));
+        expect(config.file.prefix, equals(''));
+        expect(config.file.suffix, equals('.cloneable.g'));
+      },
+    );
   });
 
   group('ConfigLoader In-Code Discovery (Modern Dart 3+ Alternatives)', () {
@@ -67,8 +69,9 @@ class Person {
 
       await resolveSource(source, (resolver) async {
         final libraries = await resolver.libraries.toList();
-        final library =
-            libraries.firstWhere((lib) => lib.getClass('Person') != null);
+        final library = libraries.firstWhere(
+          (lib) => lib.getClass('Person') != null,
+        );
 
         final config = ConfigLoader.resolveDefaults(library: library);
         expect(config.output, equals(CloneableOutput.inClass));
@@ -119,9 +122,10 @@ class Widget {
       });
     });
 
-    test('discovers defaults from top-level const CloneableDefaults variable',
-        () async {
-      const source = '''
+    test(
+      'discovers defaults from top-level const CloneableDefaults variable',
+      () async {
+        const source = '''
 library const_var_lib;
 
 import 'package:cloneable/cloneable.dart';
@@ -139,16 +143,17 @@ class Model {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('const_var_lib');
-        expect(library, isNotNull);
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('const_var_lib');
+          expect(library, isNotNull);
 
-        final config = ConfigLoader.resolveDefaults(library: library);
-        expect(config.output, equals(CloneableOutput.inLibrary));
-        expect(config.ignoreNull, isTrue);
-        expect(config.method, equals('clone'));
-      });
-    });
+          final config = ConfigLoader.resolveDefaults(library: library);
+          expect(config.output, equals(CloneableOutput.inLibrary));
+          expect(config.ignoreNull, isTrue);
+          expect(config.method, equals('clone'));
+        });
+      },
+    );
   });
 
   group('ConfigLoader Partial Affix Overrides', () {
@@ -236,9 +241,7 @@ import 'package:cloneable/cloneable.dart';
       ConfigLoader.clearCache();
     });
 
-    test(
-        'class annotation @Cloneable overrides library @Cloneable.defaults settings',
-        () async {
+    test('class annotation @Cloneable overrides library @Cloneable.defaults settings', () async {
       const source = '''
 @Cloneable.defaults(
   strategy: CloneableStrategy.extension,
@@ -278,7 +281,9 @@ class CustomUser {
         );
         expect(defaultOutput, contains(r'DefaultUser Function({'));
         expect(
-            defaultOutput, contains(r'get projectMethod => _projectMethod;'));
+          defaultOutput,
+          contains(r'get projectMethod => _projectMethod;'),
+        );
 
         // CustomUser overrides projectMethod with classMethod:
         final customClass = library.getClass('CustomUser')!;
@@ -295,9 +300,7 @@ class CustomUser {
       });
     });
 
-    test(
-        'class-level partial affix preserves defaults and generates custom extension',
-        () async {
+    test('class-level partial affix preserves defaults and generates custom extension', () async {
       const source = '''
 library class_affix_lib;
 
@@ -332,9 +335,7 @@ class Device {
       });
     });
 
-    test(
-        'SSOT defaults sentinel is respected when CloneableNaming without sentinel is used on class',
-        () async {
+    test('SSOT defaults sentinel is respected when CloneableNaming without sentinel is used on class', () async {
       const source = r'''
 @Cloneable.defaults(
   sentinel: CloneableSentinel.private,

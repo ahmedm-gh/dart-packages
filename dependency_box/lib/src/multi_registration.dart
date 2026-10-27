@@ -38,7 +38,7 @@ final class LastResolution extends MultiResolution {
 final class IndexResolution extends MultiResolution {
   /// Creates a strategy that resolves the instance registered at [index].
   const IndexResolution(this.index)
-      : assert(index >= 0, 'Index must be non-negative');
+    : assert(index >= 0, 'Index must be non-negative');
 
   /// The 0-based index of the registered instance to resolve.
   final int index;
@@ -136,7 +136,7 @@ final class _DefaultMultiRegistration<T extends Object>
   final MultiResolution resolution;
 
   const _DefaultMultiRegistration([this.resolution = MultiResolution.last])
-      : super._();
+    : super._();
 }
 
 final class _FirstMultiRegistration<T extends Object>
@@ -160,8 +160,8 @@ final class _IndexMultiRegistration<T extends Object>
   final int index;
 
   const _IndexMultiRegistration(this.index)
-      : assert(index >= 0, 'Index must be non-negative'),
-        super._();
+    : assert(index >= 0, 'Index must be non-negative'),
+      super._();
 
   @override
   MultiResolution get resolution => IndexResolution(index);

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:dependency_box/dependency_box.dart';
 import 'package:get_it/get_it.dart';
 
@@ -55,8 +56,10 @@ class TelemetryInterceptor implements HttpInterceptor {
 class AppConfig {
   final String env;
   final String apiBaseUrl;
-  AppConfig(
-      {this.env = 'production', this.apiBaseUrl = 'https://api.store.com'});
+  AppConfig({
+    this.env = 'production',
+    this.apiBaseUrl = 'https://api.store.com',
+  });
 }
 
 class SecureTokenStorage {
@@ -149,7 +152,11 @@ class ProcessCheckoutUseCase {
   final SessionManager sessionManager;
   final TelemetryLogger logger;
   ProcessCheckoutUseCase(
-      this.userRepo, this.orderRepo, this.sessionManager, this.logger);
+    this.userRepo,
+    this.orderRepo,
+    this.sessionManager,
+    this.logger,
+  );
 }
 
 class DynamicQueryEngine {
@@ -259,13 +266,17 @@ BenchmarkScore runTimed(int iterations, void Function() fn) {
 
 void main() {
   stdout.writeln(
-      '=========================================================================================');
+    '=========================================================================================',
+  );
   stdout.writeln(
-      '  REAL-WORLD SCENARIOS BENCHMARK: dependency_box vs get_it 9.3.0');
+    '  REAL-WORLD SCENARIOS BENCHMARK: dependency_box vs get_it 9.3.0',
+  );
   stdout.writeln(
-      '  Dart SDK: ${Platform.version.split(' ').first} (${Platform.operatingSystem})');
+    '  Dart SDK: ${Platform.version.split(' ').first} (${Platform.operatingSystem})',
+  );
   stdout.writeln(
-      '=========================================================================================\n');
+    '=========================================================================================\n',
+  );
 
   // ===========================================================================
   // SCENARIO 1: Clean Architecture Screen Navigation & ViewModel Resolution
@@ -273,7 +284,8 @@ void main() {
   // Controller that depends on multiple UseCases, Repositories, and Services.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 1/6: Screen Navigation & ViewModel Graph Resolution (2M ops)... ');
+    'Running Scenario 1/6: Screen Navigation & ViewModel Graph Resolution (2M ops)... ',
+  );
   const screenNavOps = 2000000;
 
   // 1. Setup DependencyBox Container
@@ -283,8 +295,11 @@ void main() {
   box1.addSingleton<TelemetryLogger>(TelemetryLogger());
   box1.addSingleton<LocalDatabase>(LocalDatabase());
   box1.addLazySingleton<ApiClient>((c) {
-    return ApiClient(c.get<AppConfig>(), c.get<SecureTokenStorage>(),
-        c.get<TelemetryLogger>());
+    return ApiClient(
+      c.get<AppConfig>(),
+      c.get<SecureTokenStorage>(),
+      c.get<TelemetryLogger>(),
+    );
   });
   box1.addLazySingleton<UserRemoteDataSource>((c) {
     return UserRemoteDataSource(c.get<ApiClient>());
@@ -296,26 +311,35 @@ void main() {
     return OrderRemoteDataSource(c.get<ApiClient>());
   });
   box1.addLazySingleton<UserRepository>((c) {
-    return UserRepository(c.get<UserRemoteDataSource>(),
-        c.get<UserLocalDataSource>(), c.get<TelemetryLogger>());
+    return UserRepository(
+      c.get<UserRemoteDataSource>(),
+      c.get<UserLocalDataSource>(),
+      c.get<TelemetryLogger>(),
+    );
   });
   box1.addLazySingleton<OrderRepository>((c) {
     return OrderRepository(
-        c.get<OrderRemoteDataSource>(), c.get<TelemetryLogger>());
+      c.get<OrderRemoteDataSource>(),
+      c.get<TelemetryLogger>(),
+    );
   });
   box1.addLazySingleton<SessionManager>((c) {
     return SessionManager(c.get<SecureTokenStorage>(), c.get<UserRepository>());
   });
   box1.addLazySingleton<AuthenticateUserUseCase>((c) {
-    return AuthenticateUserUseCase(c.get<UserRepository>(),
-        c.get<SessionManager>(), c.get<TelemetryLogger>());
+    return AuthenticateUserUseCase(
+      c.get<UserRepository>(),
+      c.get<SessionManager>(),
+      c.get<TelemetryLogger>(),
+    );
   });
   box1.addLazySingleton<ProcessCheckoutUseCase>((c) {
     return ProcessCheckoutUseCase(
-        c.get<UserRepository>(),
-        c.get<OrderRepository>(),
-        c.get<SessionManager>(),
-        c.get<TelemetryLogger>());
+      c.get<UserRepository>(),
+      c.get<OrderRepository>(),
+      c.get<SessionManager>(),
+      c.get<TelemetryLogger>(),
+    );
   });
   box1.addFactory<CheckoutScreenController>((c) {
     return CheckoutScreenController(
@@ -342,8 +366,11 @@ void main() {
   getIt1.registerSingleton<TelemetryLogger>(TelemetryLogger());
   getIt1.registerSingleton<LocalDatabase>(LocalDatabase());
   getIt1.registerLazySingleton<ApiClient>(() {
-    return ApiClient(getIt1<AppConfig>(), getIt1<SecureTokenStorage>(),
-        getIt1<TelemetryLogger>());
+    return ApiClient(
+      getIt1<AppConfig>(),
+      getIt1<SecureTokenStorage>(),
+      getIt1<TelemetryLogger>(),
+    );
   });
   getIt1.registerLazySingleton<UserRemoteDataSource>(() {
     return UserRemoteDataSource(getIt1<ApiClient>());
@@ -355,27 +382,38 @@ void main() {
     return OrderRemoteDataSource(getIt1<ApiClient>());
   });
   getIt1.registerLazySingleton<UserRepository>(() {
-    return UserRepository(getIt1<UserRemoteDataSource>(),
-        getIt1<UserLocalDataSource>(), getIt1<TelemetryLogger>());
+    return UserRepository(
+      getIt1<UserRemoteDataSource>(),
+      getIt1<UserLocalDataSource>(),
+      getIt1<TelemetryLogger>(),
+    );
   });
   getIt1.registerLazySingleton<OrderRepository>(() {
     return OrderRepository(
-        getIt1<OrderRemoteDataSource>(), getIt1<TelemetryLogger>());
+      getIt1<OrderRemoteDataSource>(),
+      getIt1<TelemetryLogger>(),
+    );
   });
   getIt1.registerLazySingleton<SessionManager>(() {
     return SessionManager(
-        getIt1<SecureTokenStorage>(), getIt1<UserRepository>());
+      getIt1<SecureTokenStorage>(),
+      getIt1<UserRepository>(),
+    );
   });
   getIt1.registerLazySingleton<AuthenticateUserUseCase>(() {
-    return AuthenticateUserUseCase(getIt1<UserRepository>(),
-        getIt1<SessionManager>(), getIt1<TelemetryLogger>());
+    return AuthenticateUserUseCase(
+      getIt1<UserRepository>(),
+      getIt1<SessionManager>(),
+      getIt1<TelemetryLogger>(),
+    );
   });
   getIt1.registerLazySingleton<ProcessCheckoutUseCase>(() {
     return ProcessCheckoutUseCase(
-        getIt1<UserRepository>(),
-        getIt1<OrderRepository>(),
-        getIt1<SessionManager>(),
-        getIt1<TelemetryLogger>());
+      getIt1<UserRepository>(),
+      getIt1<OrderRepository>(),
+      getIt1<SessionManager>(),
+      getIt1<TelemetryLogger>(),
+    );
   });
   getIt1.registerFactory<CheckoutScreenController>(() {
     return CheckoutScreenController(
@@ -402,23 +440,29 @@ void main() {
   // resolving 10 times during wizard flow, and destroying the scope.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 2/6: Scoped Feature Lifecycle (50,000 complete sessions)... ');
+    'Running Scenario 2/6: Scoped Feature Lifecycle (50,000 complete sessions)... ',
+  );
   const scopeLifecycles = 50000;
 
   final rootBox2 = DependencyBox.main(name: 'root');
   final scoreBox2 = runTimed(scopeLifecycles, () {
     final scope = rootBox2.createChild(name: 'checkout_wizard');
-    scope
-        .addSingleton<ScopedPaymentSession>(ScopedPaymentSession('session_99'));
+    scope.addSingleton<ScopedPaymentSession>(
+      ScopedPaymentSession('session_99'),
+    );
     scope.addSingleton<ScopedCartState>(ScopedCartState(3));
     scope.addSingleton<ScopedBillingValidator>(ScopedBillingValidator());
     scope.addLazySingleton<ScopedPaymentGateway>((c) {
       return ScopedPaymentGateway(
-          c.get<ScopedPaymentSession>(), c.get<ScopedBillingValidator>());
+        c.get<ScopedPaymentSession>(),
+        c.get<ScopedBillingValidator>(),
+      );
     });
     scope.addFactory<ScopedCheckoutWizardController>((c) {
       return ScopedCheckoutWizardController(
-          c.get<ScopedPaymentGateway>(), c.get<ScopedCartState>());
+        c.get<ScopedPaymentGateway>(),
+        c.get<ScopedCartState>(),
+      );
     });
 
     for (var i = 0; i < 10; i++) {
@@ -434,17 +478,23 @@ void main() {
   final scoreGetIt2 = runTimed(scopeLifecycles, () {
     getItParent.pushNewScope();
     getItParent.registerSingleton<ScopedPaymentSession>(
-        ScopedPaymentSession('session_99'));
+      ScopedPaymentSession('session_99'),
+    );
     getItParent.registerSingleton<ScopedCartState>(ScopedCartState(3));
-    getItParent
-        .registerSingleton<ScopedBillingValidator>(ScopedBillingValidator());
+    getItParent.registerSingleton<ScopedBillingValidator>(
+      ScopedBillingValidator(),
+    );
     getItParent.registerLazySingleton<ScopedPaymentGateway>(() {
-      return ScopedPaymentGateway(getItParent<ScopedPaymentSession>(),
-          getItParent<ScopedBillingValidator>());
+      return ScopedPaymentGateway(
+        getItParent<ScopedPaymentSession>(),
+        getItParent<ScopedBillingValidator>(),
+      );
     });
     getItParent.registerFactory<ScopedCheckoutWizardController>(() {
       return ScopedCheckoutWizardController(
-          getItParent<ScopedPaymentGateway>(), getItParent<ScopedCartState>());
+        getItParent<ScopedPaymentGateway>(),
+        getItParent<ScopedCartState>(),
+      );
     });
 
     for (var i = 0; i < 10; i++) {
@@ -466,26 +516,39 @@ void main() {
   // - 10% Parameterized queries
   // ===========================================================================
   stdout.write(
-      'Running Scenario 3/6: Interleaved Mixed Production Traffic (3M ops)... ');
+    'Running Scenario 3/6: Interleaved Mixed Production Traffic (3M ops)... ',
+  );
   const mixedOps = 3000000;
 
   // Box setup
   final box3 = DependencyBox.main();
   box3.addSingleton<AppConfig>(AppConfig());
   box3.addSingleton<TelemetryLogger>(TelemetryLogger());
-  box3.addSingleton<LocalDatabase>(LocalDatabase(path: '/data/primary.db'),
-      key: 'primary');
-  box3.addSingleton<LocalDatabase>(LocalDatabase(path: '/data/analytics.db'),
-      key: 'analytics');
+  box3.addSingleton<LocalDatabase>(
+    LocalDatabase(path: '/data/primary.db'),
+    key: 'primary',
+  );
+  box3.addSingleton<LocalDatabase>(
+    LocalDatabase(path: '/data/analytics.db'),
+    key: 'analytics',
+  );
   box3.addFactory<CatalogScreenController>((c) {
     return CatalogScreenController(
-        LoadCatalogUseCase(
-            ProductRepository(
-                ProductRemoteDataSource(ApiClient(AppConfig(),
-                    SecureTokenStorage(), c.get<TelemetryLogger>())),
-                ProductLocalDataSource(LocalDatabase())),
-            c.get<TelemetryLogger>()),
-        c.get<TelemetryLogger>());
+      LoadCatalogUseCase(
+        ProductRepository(
+          ProductRemoteDataSource(
+            ApiClient(
+              AppConfig(),
+              SecureTokenStorage(),
+              c.get<TelemetryLogger>(),
+            ),
+          ),
+          ProductLocalDataSource(LocalDatabase()),
+        ),
+        c.get<TelemetryLogger>(),
+      ),
+      c.get<TelemetryLogger>(),
+    );
   });
   box3.addFactoryWith<DynamicQueryEngine, String>((c, q) {
     return DynamicQueryEngine(q);
@@ -496,20 +559,30 @@ void main() {
   getIt3.registerSingleton<AppConfig>(AppConfig());
   getIt3.registerSingleton<TelemetryLogger>(TelemetryLogger());
   getIt3.registerSingleton<LocalDatabase>(
-      LocalDatabase(path: '/data/primary.db'),
-      instanceName: 'primary');
+    LocalDatabase(path: '/data/primary.db'),
+    instanceName: 'primary',
+  );
   getIt3.registerSingleton<LocalDatabase>(
-      LocalDatabase(path: '/data/analytics.db'),
-      instanceName: 'analytics');
+    LocalDatabase(path: '/data/analytics.db'),
+    instanceName: 'analytics',
+  );
   getIt3.registerFactory<CatalogScreenController>(() {
     return CatalogScreenController(
-        LoadCatalogUseCase(
-            ProductRepository(
-                ProductRemoteDataSource(ApiClient(AppConfig(),
-                    SecureTokenStorage(), getIt3<TelemetryLogger>())),
-                ProductLocalDataSource(LocalDatabase())),
-            getIt3<TelemetryLogger>()),
-        getIt3<TelemetryLogger>());
+      LoadCatalogUseCase(
+        ProductRepository(
+          ProductRemoteDataSource(
+            ApiClient(
+              AppConfig(),
+              SecureTokenStorage(),
+              getIt3<TelemetryLogger>(),
+            ),
+          ),
+          ProductLocalDataSource(LocalDatabase()),
+        ),
+        getIt3<TelemetryLogger>(),
+      ),
+      getIt3<TelemetryLogger>(),
+    );
   });
   getIt3.registerFactoryParam<DynamicQueryEngine, String, dynamic>((q, _) {
     return DynamicQueryEngine(q);
@@ -561,7 +634,8 @@ void main() {
   // Resolving an entire middleware / plugin pipeline of 6 interceptors.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 4/6: Middleware Pipeline (getAll<T>() Resolution) (2M ops)... ');
+    'Running Scenario 4/6: Middleware Pipeline (getAll<T>() Resolution) (2M ops)... ',
+  );
   const pipelineOps = 2000000;
 
   final box4 = DependencyBox.main();
@@ -581,18 +655,30 @@ void main() {
   });
 
   final getIt4 = GetIt.asNewInstance();
-  getIt4.registerSingleton<HttpInterceptor>(AuthHeaderInterceptor(),
-      instanceName: 'i1');
-  getIt4.registerSingleton<HttpInterceptor>(CompressionInterceptor(),
-      instanceName: 'i2');
-  getIt4.registerSingleton<HttpInterceptor>(RateLimitInterceptor(),
-      instanceName: 'i3');
-  getIt4.registerSingleton<HttpInterceptor>(LoggingInterceptor(),
-      instanceName: 'i4');
-  getIt4.registerSingleton<HttpInterceptor>(RetryInterceptor(),
-      instanceName: 'i5');
-  getIt4.registerSingleton<HttpInterceptor>(TelemetryInterceptor(),
-      instanceName: 'i6');
+  getIt4.registerSingleton<HttpInterceptor>(
+    AuthHeaderInterceptor(),
+    instanceName: 'i1',
+  );
+  getIt4.registerSingleton<HttpInterceptor>(
+    CompressionInterceptor(),
+    instanceName: 'i2',
+  );
+  getIt4.registerSingleton<HttpInterceptor>(
+    RateLimitInterceptor(),
+    instanceName: 'i3',
+  );
+  getIt4.registerSingleton<HttpInterceptor>(
+    LoggingInterceptor(),
+    instanceName: 'i4',
+  );
+  getIt4.registerSingleton<HttpInterceptor>(
+    RetryInterceptor(),
+    instanceName: 'i5',
+  );
+  getIt4.registerSingleton<HttpInterceptor>(
+    TelemetryInterceptor(),
+    instanceName: 'i6',
+  );
 
   final scoreGetIt4 = runTimed(pipelineOps, () {
     final interceptors = getIt4.getAll<HttpInterceptor>();
@@ -608,7 +694,8 @@ void main() {
   // 5 Parameterized) + resolving the 15 critical initial startup services.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 5/6: Cold App Startup & Container Bootstrapping (5,000 app boots)... ');
+    'Running Scenario 5/6: Cold App Startup & Container Bootstrapping (5,000 app boots)... ',
+  );
   const bootCycles = 5000;
 
   final swBoxBoot = Stopwatch()..start();
@@ -652,8 +739,10 @@ void main() {
     }
   }
   swBoxBoot.stop();
-  final scoreBoxBoot =
-      BenchmarkScore(bootCycles, swBoxBoot.elapsedMicroseconds);
+  final scoreBoxBoot = BenchmarkScore(
+    bootCycles,
+    swBoxBoot.elapsedMicroseconds,
+  );
 
   final swGetItBoot = Stopwatch()..start();
   for (var b = 0; b < bootCycles; b++) {
@@ -696,8 +785,10 @@ void main() {
     }
   }
   swGetItBoot.stop();
-  final scoreGetItBoot =
-      BenchmarkScore(bootCycles, swGetItBoot.elapsedMicroseconds);
+  final scoreGetItBoot = BenchmarkScore(
+    bootCycles,
+    swGetItBoot.elapsedMicroseconds,
+  );
 
   stdout.writeln('Done.');
 
@@ -706,12 +797,14 @@ void main() {
   // Caching heavy temporary screen assets while actively referenced by the view.
   // ===========================================================================
   stdout.write(
-      'Running Scenario 6/6: Weak-Reference Screen Asset Cache (2M ops)... ');
+    'Running Scenario 6/6: Weak-Reference Screen Asset Cache (2M ops)... ',
+  );
   const assetOps = 2000000;
 
   final box6 = DependencyBox.main();
   box6.addCachedFactory<HeavyScreenAsset>(
-      (_) => HeavyScreenAsset('screen_background'));
+    (_) => HeavyScreenAsset('screen_background'),
+  );
   final heldAsset = box6.get<HeavyScreenAsset>(); // keep active reference
   final scoreBox6 = runTimed(assetOps, () {
     final asset = box6.get<HeavyScreenAsset>();
@@ -720,7 +813,8 @@ void main() {
 
   final getIt6 = GetIt.asNewInstance();
   getIt6.registerFactory<HeavyScreenAsset>(
-      () => HeavyScreenAsset('screen_background'));
+    () => HeavyScreenAsset('screen_background'),
+  );
   final scoreGetIt6 = runTimed(assetOps, () {
     final asset = getIt6<HeavyScreenAsset>();
     if (identical(asset, null)) throw StateError('');
@@ -732,15 +826,20 @@ void main() {
   // Formatted Results Output
   // ===========================================================================
 
-  void printResult(String title, BenchmarkScore box, BenchmarkScore getIt,
-      {bool isMicros = false}) {
+  void printResult(
+    String title,
+    BenchmarkScore box,
+    BenchmarkScore getIt, {
+    bool isMicros = false,
+  }) {
     final speedup = isMicros
         ? (getIt.microsPerOp / box.microsPerOp)
         : (getIt.nsPerOp / box.nsPerOp);
     final diffPercent = isMicros
         ? (((getIt.microsPerOp - box.microsPerOp) / getIt.microsPerOp) * 100.0)
         : (((getIt.nsPerOp - box.nsPerOp) / getIt.nsPerOp) * 100.0);
-    final winner = (isMicros
+    final winner =
+        (isMicros
             ? box.microsPerOp < getIt.microsPerOp
             : box.nsPerOp < getIt.nsPerOp)
         ? 'dependency_box is ${speedup.toStringAsFixed(2)}x faster (${diffPercent.toStringAsFixed(1)}% less time)'
@@ -751,39 +850,53 @@ void main() {
     stdout.writeln('|:---|:---:|:---:|:---|');
     if (isMicros) {
       stdout.writeln(
-          '| **Latency / Boot** | **${box.microsPerOp.toStringAsFixed(2)} µs** | ${getIt.microsPerOp.toStringAsFixed(2)} µs | **$winner** |');
+        '| **Latency / Boot** | **${box.microsPerOp.toStringAsFixed(2)} µs** | ${getIt.microsPerOp.toStringAsFixed(2)} µs | **$winner** |',
+      );
       stdout.writeln(
-          '| **Boot Throughput** | **${box.opsPerSec.toStringAsFixed(0)} boots/s** | ${getIt.opsPerSec.toStringAsFixed(0)} boots/s | |');
+        '| **Boot Throughput** | **${box.opsPerSec.toStringAsFixed(0)} boots/s** | ${getIt.opsPerSec.toStringAsFixed(0)} boots/s | |',
+      );
     } else {
       stdout.writeln(
-          '| **Latency** | **${box.nsPerOp.toStringAsFixed(2)} ns/op** | ${getIt.nsPerOp.toStringAsFixed(2)} ns/op | **$winner** |');
+        '| **Latency** | **${box.nsPerOp.toStringAsFixed(2)} ns/op** | ${getIt.nsPerOp.toStringAsFixed(2)} ns/op | **$winner** |',
+      );
       stdout.writeln(
-          '| **Throughput** | **${box.opsPerSec.toStringAsFixed(0)} ops/s** | ${getIt.opsPerSec.toStringAsFixed(0)} ops/s | |');
+        '| **Throughput** | **${box.opsPerSec.toStringAsFixed(0)} ops/s** | ${getIt.opsPerSec.toStringAsFixed(0)} ops/s | |',
+      );
     }
     stdout.writeln('');
   }
 
   stdout.writeln('## Real-World Production Architecture Scenarios\n');
-  printResult('1. Clean Architecture Screen Navigation & ViewModel Resolution',
-      scoreBox1, scoreGetIt1);
   printResult(
-      '2. Scoped Feature / Wizard Session Flow (Create, Register, Use, Destroy)',
-      scoreBox2,
-      scoreGetIt2,
-      isMicros: true);
+    '1. Clean Architecture Screen Navigation & ViewModel Resolution',
+    scoreBox1,
+    scoreGetIt1,
+  );
   printResult(
-      '3. Interleaved Mixed Production Traffic (50% Singletons, 25% Factory, 15% Keyed, 10% Param)',
-      scoreBox3,
-      scoreGetIt3);
+    '2. Scoped Feature / Wizard Session Flow (Create, Register, Use, Destroy)',
+    scoreBox2,
+    scoreGetIt2,
+    isMicros: true,
+  );
   printResult(
-      '4. Plugin / Interceptor Pipeline Resolution (getAll<T>() across 6 handlers)',
-      scoreBox4,
-      scoreGetIt4);
+    '3. Interleaved Mixed Production Traffic (50% Singletons, 25% Factory, 15% Keyed, 10% Param)',
+    scoreBox3,
+    scoreGetIt3,
+  );
   printResult(
-      '5. Cold App Startup & Container Bootstrapping (50 Services Registered + 15 Resolved)',
-      scoreBoxBoot,
-      scoreGetItBoot,
-      isMicros: true);
-  printResult('6. Weak-Reference Screen Asset Cache (addCachedFactory)',
-      scoreBox6, scoreGetIt6);
+    '4. Plugin / Interceptor Pipeline Resolution (getAll<T>() across 6 handlers)',
+    scoreBox4,
+    scoreGetIt4,
+  );
+  printResult(
+    '5. Cold App Startup & Container Bootstrapping (50 Services Registered + 15 Resolved)',
+    scoreBoxBoot,
+    scoreGetItBoot,
+    isMicros: true,
+  );
+  printResult(
+    '6. Weak-Reference Screen Asset Cache (addCachedFactory)',
+    scoreBox6,
+    scoreGetIt6,
+  );
 }

@@ -2,11 +2,7 @@ import 'package:cloneable/cloneable.dart';
 
 part 'complex_models.g.dart';
 
-enum Role {
-  developer,
-  designer,
-  manager,
-}
+enum Role { developer, designer, manager }
 
 @Cloneable()
 class Address with _$AddressCloneable {
@@ -14,11 +10,7 @@ class Address with _$AddressCloneable {
   final String city;
   final String? zipCode;
 
-  const Address({
-    required this.street,
-    required this.city,
-    this.zipCode,
-  });
+  const Address({required this.street, required this.city, this.zipCode});
 }
 
 @Cloneable()

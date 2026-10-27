@@ -323,11 +323,7 @@ abstract final class EnumParser {
 
     // High-performance path for very large lists: delegate to EnumIndex
     final index = EnumIndex<T>(values, mode: mode);
-    return index.parseList(
-      items,
-      converter: converter,
-      fallback: fallback,
-    );
+    return index.parseList(items, converter: converter, fallback: fallback);
   }
 
   /// Parses each item in [src] using strict matching ([EnumParserMode.strict]).
@@ -337,15 +333,14 @@ abstract final class EnumParser {
     String separator = ',',
     T? Function(Object src, Iterable<T> values)? converter,
     List<T> fallback = const [],
-  }) =>
-      parseList<T>(
-        src,
-        values: values,
-        mode: EnumParserMode.strict,
-        separator: separator,
-        converter: converter,
-        fallback: fallback,
-      );
+  }) => parseList<T>(
+    src,
+    values: values,
+    mode: EnumParserMode.strict,
+    separator: separator,
+    converter: converter,
+    fallback: fallback,
+  );
 
   /// Parses each item in [src] using simple matching ([EnumParserMode.simple]).
   static List<T> parseListSimple<T extends Enum>(
@@ -354,15 +349,14 @@ abstract final class EnumParser {
     String separator = ',',
     T? Function(Object src, Iterable<T> values)? converter,
     List<T> fallback = const [],
-  }) =>
-      parseList<T>(
-        src,
-        values: values,
-        mode: EnumParserMode.simple,
-        separator: separator,
-        converter: converter,
-        fallback: fallback,
-      );
+  }) => parseList<T>(
+    src,
+    values: values,
+    mode: EnumParserMode.simple,
+    separator: separator,
+    converter: converter,
+    fallback: fallback,
+  );
 
   /// Parses each item in [src] using loose matching ([EnumParserMode.loose]).
   static List<T> parseListLoose<T extends Enum>(
@@ -371,15 +365,14 @@ abstract final class EnumParser {
     String separator = ',',
     T? Function(Object src, Iterable<T> values)? converter,
     List<T> fallback = const [],
-  }) =>
-      parseList<T>(
-        src,
-        values: values,
-        mode: EnumParserMode.loose,
-        separator: separator,
-        converter: converter,
-        fallback: fallback,
-      );
+  }) => parseList<T>(
+    src,
+    values: values,
+    mode: EnumParserMode.loose,
+    separator: separator,
+    converter: converter,
+    fallback: fallback,
+  );
 
   /// Normalizes [source] by stripping type prefixes (`'Enum.name'`),
   /// removing delimiters (whitespace, underscores, hyphens), and converting to lowercase.
@@ -547,8 +540,9 @@ abstract final class EnumParser {
 
     while (start <= sLen) {
       final nextSep = s.indexOf(separator, start);
-      final seg =
-          (nextSep == -1) ? s.substring(start) : s.substring(start, nextSep);
+      final seg = (nextSep == -1)
+          ? s.substring(start)
+          : s.substring(start, nextSep);
       final item = isStrict ? seg : seg.trim();
       if (item.isNotEmpty) {
         items.add(item);
@@ -577,8 +571,8 @@ abstract final class EnumParser {
 final class EnumIndex<T extends Enum> {
   /// Creates an [EnumIndex] over [values] for the specified [mode].
   EnumIndex(Iterable<T> values, {this.mode = EnumParserMode.loose})
-      : values = List<T>.unmodifiable(values),
-        _nameMap = _buildNameMap(values, mode);
+    : values = List<T>.unmodifiable(values),
+      _nameMap = _buildNameMap(values, mode);
 
   /// The immutable snapshot of enum values indexed by this instance.
   final List<T> values;

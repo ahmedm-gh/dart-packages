@@ -68,26 +68,32 @@ class ResolvedCloneableConfig {
       sentinelName: defaults.naming.sentinel,
       directory: defaults.naming.directory,
       mixin: CloneableAffix(
-        prefix: defaults.naming.mixin.prefix ??
+        prefix:
+            defaults.naming.mixin.prefix ??
             CloneableNaming.defaultMixin.prefix ??
             '',
-        suffix: defaults.naming.mixin.suffix ??
+        suffix:
+            defaults.naming.mixin.suffix ??
             CloneableNaming.defaultMixin.suffix ??
             '',
       ),
       extension: CloneableAffix(
-        prefix: defaults.naming.extension.prefix ??
+        prefix:
+            defaults.naming.extension.prefix ??
             CloneableNaming.defaultExtension.prefix ??
             '',
-        suffix: defaults.naming.extension.suffix ??
+        suffix:
+            defaults.naming.extension.suffix ??
             CloneableNaming.defaultExtension.suffix ??
             '',
       ),
       file: CloneableAffix(
-        prefix: defaults.naming.file.prefix ??
+        prefix:
+            defaults.naming.file.prefix ??
             CloneableNaming.defaultFile.prefix ??
             '',
-        suffix: defaults.naming.file.suffix ??
+        suffix:
+            defaults.naming.file.suffix ??
             CloneableNaming.defaultFile.suffix ??
             '',
       ),
@@ -120,11 +126,12 @@ class ResolvedCloneableConfig {
     CloneableAffix? inLibrary,
     CloneableAffix? inClass,
   }) {
-    final effectiveActiveness = activeness ??
+    final effectiveActiveness =
+        activeness ??
         (active != null
             ? (active
-                ? CloneableActiveness.active
-                : CloneableActiveness.inactive)
+                  ? CloneableActiveness.active
+                  : CloneableActiveness.inactive)
             : this.activeness);
 
     return ResolvedCloneableConfig(
@@ -175,7 +182,9 @@ class ResolvedCloneableConfig {
   }
 
   static CloneableAffix mergeAffix(
-      CloneableAffix base, CloneableAffix? override) {
+    CloneableAffix base,
+    CloneableAffix? override,
+  ) {
     if (override == null) return base;
     return CloneableAffix(
       prefix: override.prefix ?? base.prefix ?? '',
@@ -271,34 +280,34 @@ class AstConfigReader {
   }
 
   static CloneableSentinel? parseSentinel(String? name) => switch (name) {
-        'auto' => CloneableSentinel.auto,
-        'private' => CloneableSentinel.private,
-        'package' => CloneableSentinel.package,
-        _ => null,
-      };
+    'auto' => CloneableSentinel.auto,
+    'private' => CloneableSentinel.private,
+    'package' => CloneableSentinel.package,
+    _ => null,
+  };
 
   static CloneableOutput? parseOutput(String? name) => switch (name) {
-        'auto' => CloneableOutput.auto,
-        'part' => CloneableOutput.part,
-        'standalone' => CloneableOutput.standalone,
-        'inLibrary' => CloneableOutput.inLibrary,
-        'inClass' => CloneableOutput.inClass,
-        _ => null,
-      };
+    'auto' => CloneableOutput.auto,
+    'part' => CloneableOutput.part,
+    'standalone' => CloneableOutput.standalone,
+    'inLibrary' => CloneableOutput.inLibrary,
+    'inClass' => CloneableOutput.inClass,
+    _ => null,
+  };
 
   static CloneableStrategy? parseStrategy(String? name) => switch (name) {
-        'auto' => CloneableStrategy.auto,
-        'extension' => CloneableStrategy.extension,
-        'mixin' => CloneableStrategy.mixin,
-        _ => null,
-      };
+    'auto' => CloneableStrategy.auto,
+    'extension' => CloneableStrategy.extension,
+    'mixin' => CloneableStrategy.mixin,
+    _ => null,
+  };
 
   static CloneableCleanup? parseCleanup(String? name) => switch (name) {
-        'none' => CloneableCleanup.none,
-        'deactivate' => CloneableCleanup.deactivate,
-        'remove' => CloneableCleanup.remove,
-        _ => null,
-      };
+    'none' => CloneableCleanup.none,
+    'deactivate' => CloneableCleanup.deactivate,
+    'remove' => CloneableCleanup.remove,
+    _ => null,
+  };
 
   static CloneableFieldsConflict? parseFieldsConflict(String? name) =>
       switch (name) {
@@ -310,12 +319,12 @@ class AstConfigReader {
       };
 
   static CloneableActiveness? parseActiveness(String? name) => switch (name) {
-        'active' => CloneableActiveness.active,
-        'inactive' => CloneableActiveness.inactive,
-        'forceActive' => CloneableActiveness.forceActive,
-        'forceInactive' => CloneableActiveness.forceInactive,
-        _ => null,
-      };
+    'active' => CloneableActiveness.active,
+    'inactive' => CloneableActiveness.inactive,
+    'forceActive' => CloneableActiveness.forceActive,
+    'forceInactive' => CloneableActiveness.forceInactive,
+    _ => null,
+  };
 
   static bool? parseBool(AstNode? expr) {
     if (expr == null) return null;
@@ -358,7 +367,8 @@ class AstConfigReader {
   }
 
   static Map<String, AstNode> extractNamedArguments(
-      ArgumentList? argumentList) {
+    ArgumentList? argumentList,
+  ) {
     final map = <String, AstNode>{};
     if (argumentList == null) return map;
     for (final arg in argumentList.arguments) {
@@ -375,9 +385,12 @@ class AstConfigReader {
   }
 
   static RawCloneableConfig parseFromInstanceCreationAst(
-      InstanceCreationExpression expr) {
+    InstanceCreationExpression expr,
+  ) {
     return parseFromArguments(
-        expr.argumentList, expr.constructorName.toSource());
+      expr.argumentList,
+      expr.constructorName.toSource(),
+    );
   }
 
   static RawCloneableConfig parseFromArguments(
@@ -398,8 +411,9 @@ class AstConfigReader {
     final strategy = parseStrategy(readIdent(args['strategy']));
     final sentinel = parseSentinel(readIdent(args['sentinel']));
     final cleanup = parseCleanup(readIdent(args['cleanup']));
-    final fieldsConflict =
-        parseFieldsConflict(readIdent(args['fieldsConflict']));
+    final fieldsConflict = parseFieldsConflict(
+      readIdent(args['fieldsConflict']),
+    );
     final activeness = parseActiveness(readIdent(args['activeness']));
     final active = parseBool(args['active']);
     final deepCopy = parseBool(args['deepCopyCollections']);
@@ -501,7 +515,8 @@ class ConfigLoader {
     TypeChecker.typeNamedLiterally('CloneableDefaults', inPackage: 'cloneable'),
     TypeChecker.typeNamedLiterally('Cloneable', inPackage: 'cloneable'),
     TypeChecker.fromUrl(
-        'package:cloneable/src/annotations.dart#CloneableDefaults'),
+      'package:cloneable/src/annotations.dart#CloneableDefaults',
+    ),
     TypeChecker.fromUrl('package:cloneable/cloneable.dart#CloneableDefaults'),
   ]);
 
@@ -574,8 +589,9 @@ class ConfigLoader {
   static RawCloneableConfig? findProjectSsotDefaults(String? startPath) {
     if (startPath == null || startPath.isEmpty) return null;
     try {
-      var currentDir =
-          File(startPath).existsSync() ? p.dirname(startPath) : startPath;
+      var currentDir = File(startPath).existsSync()
+          ? p.dirname(startPath)
+          : startPath;
 
       for (var i = 0; i < 15; i++) {
         final candidate1 = p.join(currentDir, 'lib', 'cloneable_defaults.dart');
@@ -617,8 +633,10 @@ class ConfigLoader {
 
     // 1. Check library directive metadata (e.g. @Cloneable.defaults(...) library;)
     try {
-      if (_defaultsTypeChecker.firstAnnotationOf(library,
-              throwOnUnresolved: false)
+      if (_defaultsTypeChecker.firstAnnotationOf(
+            library,
+            throwOnUnresolved: false,
+          )
           case final obj?) {
         defaultsReader = ConstantReader(obj);
       }
@@ -637,7 +655,8 @@ class ConfigLoader {
             if (constructor is ConstructorElement) {
               final enclosing = constructor.enclosingElement;
               final isCloneableDefaults = enclosing.name == 'CloneableDefaults';
-              final isCloneableNamedDefaults = enclosing.name == 'Cloneable' &&
+              final isCloneableNamedDefaults =
+                  enclosing.name == 'Cloneable' &&
                   constructor.name == 'defaults';
               if (isCloneableDefaults || isCloneableNamedDefaults) {
                 if (meta.computeConstantValue() case final obj?) {
@@ -863,12 +882,14 @@ class ConfigLoader {
       CloneableDefaults.instance,
     );
 
-    final effectiveLib = library ??
+    final effectiveLib =
+        library ??
         (element is LibraryElement
             ? element
             : (element?.library ?? classElement?.library));
 
-    final effectivePath = filePath ??
+    final effectivePath =
+        filePath ??
         searchDirectory ??
         effectiveLib?.firstFragment.source.fullName;
 

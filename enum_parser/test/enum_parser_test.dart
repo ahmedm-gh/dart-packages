@@ -3,19 +3,9 @@
 import 'package:enum_parser/enum_parser.dart';
 import 'package:test/test.dart';
 
-enum Status {
-  pendingPayment,
-  inProgress,
-  completed,
-  failed;
-}
+enum Status { pendingPayment, inProgress, completed, failed }
 
-enum SimpleStatus {
-  idle,
-  running,
-  finished,
-  errorState,
-}
+enum SimpleStatus { idle, running, finished, errorState }
 
 void main() {
   group('EnumParserMode', () {
@@ -117,8 +107,10 @@ void main() {
 
     test('supports another Enum input with matching name', () {
       expect(
-        EnumParser.parseStrict(SimpleStatus.idle,
-            values: [Status.pendingPayment]),
+        EnumParser.parseStrict(
+          SimpleStatus.idle,
+          values: [Status.pendingPayment],
+        ),
         isNull,
       );
     });
@@ -174,8 +166,10 @@ void main() {
         equals(Status.failed),
       );
       expect(
-        EnumParser.parseLoose('SimpleStatus.errorState',
-            values: SimpleStatus.values),
+        EnumParser.parseLoose(
+          'SimpleStatus.errorState',
+          values: SimpleStatus.values,
+        ),
         equals(SimpleStatus.errorState),
       );
     });
@@ -198,12 +192,16 @@ void main() {
 
     test('fast path: returns typed List<T> or converts Iterable<T>', () {
       final list = [Status.pendingPayment, Status.inProgress];
-      expect(EnumParser.parseList<Status>(list, values: Status.values),
-          same(list));
+      expect(
+        EnumParser.parseList<Status>(list, values: Status.values),
+        same(list),
+      );
 
       final iterable = Status.values.take(2);
-      final parsed =
-          EnumParser.parseList<Status>(iterable, values: Status.values);
+      final parsed = EnumParser.parseList<Status>(
+        iterable,
+        values: Status.values,
+      );
       expect(parsed, equals([Status.pendingPayment, Status.inProgress]));
     });
 
@@ -235,32 +233,32 @@ void main() {
 
     test('handles single-item, small-batch, and large-batch optimizations', () {
       // 1 item
-      final one =
-          EnumParser.parseList('pending_payment', values: Status.values);
+      final one = EnumParser.parseList(
+        'pending_payment',
+        values: Status.values,
+      );
       expect(one, equals([Status.pendingPayment]));
 
       // 3 items (<= 4 items)
-      final three = EnumParser.parseList(
-        ['pending_payment', 'in-progress', Status.completed],
-        values: Status.values,
-      );
+      final three = EnumParser.parseList([
+        'pending_payment',
+        'in-progress',
+        Status.completed,
+      ], values: Status.values);
       expect(
         three,
         equals([Status.pendingPayment, Status.inProgress, Status.completed]),
       );
 
       // > 4 items (large batch)
-      final large = EnumParser.parseList(
-        [
-          'pending_payment',
-          'in-progress',
-          'completed',
-          'failed',
-          'pendingPayment',
-          'unknown'
-        ],
-        values: Status.values,
-      );
+      final large = EnumParser.parseList([
+        'pending_payment',
+        'in-progress',
+        'completed',
+        'failed',
+        'pendingPayment',
+        'unknown',
+      ], values: Status.values);
       expect(
         large,
         equals([
@@ -304,23 +302,30 @@ void main() {
     });
 
     test('supports strict and simple modes in EnumIndex', () {
-      final strictIndex =
-          Status.values.toEnumIndex(mode: EnumParserMode.strict);
+      final strictIndex = Status.values.toEnumIndex(
+        mode: EnumParserMode.strict,
+      );
       expect(
-          strictIndex.parse('pendingPayment'), equals(Status.pendingPayment));
+        strictIndex.parse('pendingPayment'),
+        equals(Status.pendingPayment),
+      );
       expect(strictIndex.parse('pending_payment'), isNull);
 
-      final simpleIndex =
-          Status.values.toEnumIndex(mode: EnumParserMode.simple);
+      final simpleIndex = Status.values.toEnumIndex(
+        mode: EnumParserMode.simple,
+      );
       expect(
-          simpleIndex.parse('PENDINGPAYMENT'), equals(Status.pendingPayment));
+        simpleIndex.parse('PENDINGPAYMENT'),
+        equals(Status.pendingPayment),
+      );
       expect(simpleIndex.parse('pending_payment'), isNull);
     });
 
     test('EnumIndex.parseList resolves multiple items efficiently', () {
       final index = Status.values.toEnumIndex(mode: EnumParserMode.loose);
-      final list =
-          index.parseList('pending_payment, in-progress, Status.completed');
+      final list = index.parseList(
+        'pending_payment, in-progress, Status.completed',
+      );
       expect(
         list,
         equals([Status.pendingPayment, Status.inProgress, Status.completed]),
@@ -343,14 +348,8 @@ void main() {
         Status.values.parseStrict('inProgress'),
         equals(Status.inProgress),
       );
-      expect(
-        Status.values.parseSimple('COMPLETED'),
-        equals(Status.completed),
-      );
-      expect(
-        Status.values.parseLoose('Status.failed'),
-        equals(Status.failed),
-      );
+      expect(Status.values.parseSimple('COMPLETED'), equals(Status.completed));
+      expect(Status.values.parseLoose('Status.failed'), equals(Status.failed));
     });
 
     test('provides fluent list parsing methods on Iterable<Enum>', () {
@@ -387,10 +386,7 @@ void main() {
         Status.values.parse(SourceStatus.COMPLETED),
         equals(Status.completed),
       );
-      expect(
-        Status.values.parse(SourceStatus.FAILED),
-        equals(Status.failed),
-      );
+      expect(Status.values.parse(SourceStatus.FAILED), equals(Status.failed));
     });
 
     test('batch maps List of source enums to target enums', () {
@@ -402,20 +398,13 @@ void main() {
       final targetList = Status.values.parseList(sourceList);
       expect(
         targetList,
-        equals([
-          Status.pendingPayment,
-          Status.inProgress,
-          Status.failed,
-        ]),
+        equals([Status.pendingPayment, Status.inProgress, Status.failed]),
       );
     });
 
     test('maps source enum via EnumIndex in O(1)', () {
       final index = Status.values.toEnumIndex(mode: EnumParserMode.loose);
-      expect(
-        index.parse(SourceStatus.COMPLETED),
-        equals(Status.completed),
-      );
+      expect(index.parse(SourceStatus.COMPLETED), equals(Status.completed));
     });
 
     test('maps between enums with identical member names in strict mode', () {
@@ -427,9 +416,7 @@ void main() {
   });
 
   group('Normalization Collisions & Deterministic Resolution', () {
-    test(
-        'linear scan, EnumIndex, and parseList deterministically pick first match',
-        () {
+    test('linear scan, EnumIndex, and parseList deterministically pick first match', () {
       // 1. Linear scalar parse
       final linearMatch = EnumParser.parseLoose(
         'foo-bar',
@@ -438,22 +425,26 @@ void main() {
       expect(linearMatch, equals(CollidingEnum.fooBar));
 
       // 2. EnumIndex pre-indexed lookup
-      final index =
-          CollidingEnum.values.toEnumIndex(mode: EnumParserMode.loose);
+      final index = CollidingEnum.values.toEnumIndex(
+        mode: EnumParserMode.loose,
+      );
       expect(index.parse('foo-bar'), equals(CollidingEnum.fooBar));
 
       // 3. parseList small batch (<= 4 items)
-      final smallBatch = EnumParser.parseList(
-        ['foo-bar', 'other'],
-        values: CollidingEnum.values,
-      );
+      final smallBatch = EnumParser.parseList([
+        'foo-bar',
+        'other',
+      ], values: CollidingEnum.values);
       expect(smallBatch.first, equals(CollidingEnum.fooBar));
 
       // 4. parseList large batch (> 4 items)
-      final largeBatch = EnumParser.parseList(
-        ['foo-bar', 'other', 'other', 'other', 'other'],
-        values: CollidingEnum.values,
-      );
+      final largeBatch = EnumParser.parseList([
+        'foo-bar',
+        'other',
+        'other',
+        'other',
+        'other',
+      ], values: CollidingEnum.values);
       expect(largeBatch.first, equals(CollidingEnum.fooBar));
     });
   });
@@ -508,23 +499,26 @@ void main() {
     });
 
     test(
-        'returns ungrowable list consistently across 1 item and multi-item paths',
-        () {
-      final one =
-          EnumParser.parseList('pending_payment', values: Status.values);
-      final multi = EnumParser.parseList(
-        'pending_payment, in_progress',
-        values: Status.values,
-      );
-      final large = EnumParser.parseList(
-        'pending_payment, in_progress, completed, failed, pending_payment',
-        values: Status.values,
-      );
+      'returns ungrowable list consistently across 1 item and multi-item paths',
+      () {
+        final one = EnumParser.parseList(
+          'pending_payment',
+          values: Status.values,
+        );
+        final multi = EnumParser.parseList(
+          'pending_payment, in_progress',
+          values: Status.values,
+        );
+        final large = EnumParser.parseList(
+          'pending_payment, in_progress, completed, failed, pending_payment',
+          values: Status.values,
+        );
 
-      expect(() => one.add(Status.failed), throwsUnsupportedError);
-      expect(() => multi.add(Status.failed), throwsUnsupportedError);
-      expect(() => large.add(Status.failed), throwsUnsupportedError);
-    });
+        expect(() => one.add(Status.failed), throwsUnsupportedError);
+        expect(() => multi.add(Status.failed), throwsUnsupportedError);
+        expect(() => large.add(Status.failed), throwsUnsupportedError);
+      },
+    );
   });
 
   group('Unicode & Non-ASCII Delimiter Edge Cases', () {
@@ -547,9 +541,7 @@ void main() {
       );
     });
 
-    test(
-        'direct and indexed parsing yield identical results for unicode delimiter inputs',
-        () {
+    test('direct and indexed parsing yield identical results for unicode delimiter inputs', () {
       final inputs = [
         'pending\u00A0payment',
         'in\u2000progress',
@@ -563,8 +555,11 @@ void main() {
       for (final input in inputs) {
         final direct = EnumParser.parseLoose(input, values: Status.values);
         final indexed = index.parse(input);
-        expect(direct, equals(indexed),
-            reason: 'Mismatch between direct and indexed parsing on "$input"');
+        expect(
+          direct,
+          equals(indexed),
+          reason: 'Mismatch between direct and indexed parsing on "$input"',
+        );
       }
     });
   });
@@ -588,54 +583,47 @@ void main() {
         for (final q in queries) {
           final direct = EnumParser.parse(q, values: Status.values, mode: mode);
           final indexed = index.parse(q);
-          expect(direct, equals(indexed),
-              reason: 'Mode $mode mismatch for query "$q"');
+          expect(
+            direct,
+            equals(indexed),
+            reason: 'Mode $mode mismatch for query "$q"',
+          );
         }
       }
     });
 
-    test('parseList returns identical results between linear and indexed paths',
-        () {
-      // Test lists spanning <= 16 and > 16 items
-      final batch10 = [
-        'pending_payment',
-        'in-progress',
-        'completed',
-        'failed',
-        'unknown',
-        'Status.pendingPayment',
-        'IN_PROGRESS',
-        'completed',
-        'failed',
-        'missing',
-      ];
-      final batch20 = [...batch10, ...batch10];
+    test(
+      'parseList returns identical results between linear and indexed paths',
+      () {
+        // Test lists spanning <= 16 and > 16 items
+        final batch10 = [
+          'pending_payment',
+          'in-progress',
+          'completed',
+          'failed',
+          'unknown',
+          'Status.pendingPayment',
+          'IN_PROGRESS',
+          'completed',
+          'failed',
+          'missing',
+        ];
+        final batch20 = [...batch10, ...batch10];
 
-      final linear10 = EnumParser.parseList(batch10, values: Status.values);
-      final indexed10 = Status.values.toEnumIndex().parseList(batch10);
-      expect(linear10, equals(indexed10));
+        final linear10 = EnumParser.parseList(batch10, values: Status.values);
+        final indexed10 = Status.values.toEnumIndex().parseList(batch10);
+        expect(linear10, equals(indexed10));
 
-      final linear20 = EnumParser.parseList(batch20, values: Status.values);
-      final indexed20 = Status.values.toEnumIndex().parseList(batch20);
-      expect(linear20, equals(indexed20));
-    });
+        final linear20 = EnumParser.parseList(batch20, values: Status.values);
+        final indexed20 = Status.values.toEnumIndex().parseList(batch20);
+        expect(linear20, equals(indexed20));
+      },
+    );
   });
 }
 
-enum CollidingEnum {
-  fooBar,
-  foo_bar,
-  other,
-}
+enum CollidingEnum { fooBar, foo_bar, other }
 
-enum SourceStatus {
-  PENDING_PAYMENT,
-  IN_PROGRESS,
-  COMPLETED,
-  FAILED,
-}
+enum SourceStatus { PENDING_PAYMENT, IN_PROGRESS, COMPLETED, FAILED }
 
-enum OtherStatus {
-  idle,
-  running,
-}
+enum OtherStatus { idle, running }

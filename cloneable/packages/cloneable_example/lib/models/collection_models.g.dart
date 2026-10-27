@@ -11,7 +11,8 @@ mixin _$DeepCopyModelCloneable {
     List<String>? optionalTags,
     Map<String, int>? optionalScores,
     List<String> shallowList,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   DeepCopyModel _copyWith({
     Object? tags = $undefined,
@@ -35,13 +36,13 @@ mixin _$DeepCopyModelCloneable {
       optionalTags: identical(optionalTags, $undefined)
           ? (self.optionalTags == null ? null : List.of(self.optionalTags!))
           : (optionalTags == null
-              ? null
-              : List.of(optionalTags as List<String>)),
+                ? null
+                : List.of(optionalTags as List<String>)),
       optionalScores: identical(optionalScores, $undefined)
           ? (self.optionalScores == null ? null : Map.of(self.optionalScores!))
           : (optionalScores == null
-              ? null
-              : Map.of(optionalScores as Map<String, int>)),
+                ? null
+                : Map.of(optionalScores as Map<String, int>)),
       shallowList: identical(shallowList, $undefined)
           ? self.shallowList
           : shallowList as List<String>,
@@ -55,7 +56,8 @@ mixin _$SelectiveDeepCopyModelCloneable {
     List<String> defaultTags,
     List<String> deepTags,
     Map<String, String>? deepMap,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   SelectiveDeepCopyModel _copyWith({
     Object? defaultTags = $undefined,

@@ -19,7 +19,8 @@ mixin _$ImportedAccountCloneable {
     Duration sessionDuration,
     List<ExternalAddress> branchLocations,
     Map<String, ExternalStatus> statusHistory,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   ImportedAccount _copyWith({
     Object? id = $undefined,
@@ -90,7 +91,8 @@ mixin _$PrefixedImportModelCloneable {
     ext.ExternalStatus status,
     ext.ExternalAddress address,
     ext.ExternalConfig config,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   PrefixedImportModel _copyWith({
     Object? label = $undefined,
@@ -121,7 +123,8 @@ extension $ExtensionImportedProductExtension on ExtensionImportedProduct {
     ExternalStatus status,
     List<ExternalAddress> hubs,
     ExternalConfig? customConfig,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   ExtensionImportedProduct _copyWith({
     Object? sku = $undefined,
@@ -150,7 +153,8 @@ mixin _$IgnoreNullImportedModelCloneable {
   IgnoreNullImportedModel Function({
     ExternalStatus? status,
     ExternalAddress? address,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   IgnoreNullImportedModel _copyWith({
     Object? status = $undefined,
@@ -171,7 +175,7 @@ mixin _$IgnoreNullImportedModelCloneable {
 /// Generated cloneable mixin for [SelectiveImportedModel].
 mixin _$SelectiveImportedModelCloneable {
   SelectiveImportedModel Function({String title, ExternalStatus status})
-      get copyWith => _copyWith;
+  get copyWith => _copyWith;
 
   SelectiveImportedModel _copyWith({
     Object? title = $undefined,

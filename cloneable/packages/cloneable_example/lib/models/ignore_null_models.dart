@@ -10,10 +10,7 @@ class IgnoreNullModel with _$IgnoreNullModelCloneable {
   @CloneableField(ignoreNull: true)
   final String? ignoredNullField;
 
-  const IgnoreNullModel({
-    required this.normalField,
-    this.ignoredNullField,
-  });
+  const IgnoreNullModel({required this.normalField, this.ignoredNullField});
 }
 
 /// Demonstrates class-level [Cloneable.ignoreNull].
@@ -23,9 +20,5 @@ class ClassLevelIgnoreNullModel with _$ClassLevelIgnoreNullModelCloneable {
   final String? bio;
   final int? score;
 
-  const ClassLevelIgnoreNullModel({
-    required this.name,
-    this.bio,
-    this.score,
-  });
+  const ClassLevelIgnoreNullModel({required this.name, this.bio, this.score});
 }

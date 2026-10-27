@@ -24,7 +24,7 @@ mixin _$CoordinateCloneable {
 /// Generated cloneable mixin for [ServiceConfig].
 mixin _$ServiceConfigCloneable {
   ServiceConfig Function({String host, int port, bool? enableSsl})
-      get copyWith => _copyWith;
+  get copyWith => _copyWith;
 
   ServiceConfig _copyWith({
     Object? host = $undefined,

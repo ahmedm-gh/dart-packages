@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:get_it/get_it.dart';
+
 import '../models/fixtures.dart';
 import 'adapter.dart';
 
@@ -16,18 +18,18 @@ class GetItAdapter extends BenchmarkAdapter {
 
   @override
   Set<DiCapability> get capabilities => {
-        DiCapability.singleton,
-        DiCapability.lazySingleton,
-        DiCapability.factory,
-        DiCapability.cachedWeakReferenceFactory,
-        DiCapability.interfaceMapping,
-        DiCapability.keyedNamedRegistration,
-        DiCapability.parameterizedFactory,
-        DiCapability.asyncSingleton,
-        DiCapability.stackBasedScopes,
-        DiCapability.targetedRemoval,
-        DiCapability.testOverrideReplacement,
-      };
+    DiCapability.singleton,
+    DiCapability.lazySingleton,
+    DiCapability.factory,
+    DiCapability.cachedWeakReferenceFactory,
+    DiCapability.interfaceMapping,
+    DiCapability.keyedNamedRegistration,
+    DiCapability.parameterizedFactory,
+    DiCapability.asyncSingleton,
+    DiCapability.stackBasedScopes,
+    DiCapability.targetedRemoval,
+    DiCapability.testOverrideReplacement,
+  };
 
   @override
   void reset() {
@@ -220,10 +222,8 @@ class GetItAdapter extends BenchmarkAdapter {
   }
 
   @override
-  Object resolveParameterized() => _getIt.get<ParameterizedService>(
-        param1: 'tenant_benchmark',
-        param2: 42,
-      );
+  Object resolveParameterized() =>
+      _getIt.get<ParameterizedService>(param1: 'tenant_benchmark', param2: 42);
 
   @override
   void setupShallowGraphResolution() {

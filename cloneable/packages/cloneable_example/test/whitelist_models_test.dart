@@ -3,9 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('Whitelist fields Models Tests', () {
-    test(
-        'WhitelistAnnotationUser copyWith only allows name and nickname, preserves id',
-        () {
+    test('WhitelistAnnotationUser copyWith only allows name and nickname, preserves id', () {
       const user = WhitelistAnnotationUser(
         id: 'usr_123',
         name: 'Ahmed',
@@ -23,9 +21,7 @@ void main() {
       expect(cleared.nickname, isNull);
     });
 
-    test(
-        'WhitelistGetterUser copyWith only allows name and nickname from in-class cloneableFields getter',
-        () {
+    test('WhitelistGetterUser copyWith only allows name and nickname from in-class cloneableFields getter', () {
       const user = WhitelistGetterUser(
         id: 'usr_456',
         name: 'Alice',
@@ -43,26 +39,16 @@ void main() {
       expect(cleared.nickname, isNull);
     });
 
-    test(
-        'WhitelistMixinUser copyWith with mixin only allows name from in-class copyWithFields getter',
-        () {
-      const user = WhitelistMixinUser(
-        id: 'usr_789',
-        name: 'Charlie',
-      );
+    test('WhitelistMixinUser copyWith with mixin only allows name from in-class copyWithFields getter', () {
+      const user = WhitelistMixinUser(id: 'usr_789', name: 'Charlie');
 
       final updated = user.copyWith(name: 'David');
       expect(updated.id, equals('usr_789'));
       expect(updated.name, equals('David'));
     });
 
-    test(
-        'WhitelistCustomGetterUser copyWith only allows name from in-class supportedProps getter',
-        () {
-      const user = WhitelistCustomGetterUser(
-        id: 'usr_101',
-        name: 'Eve',
-      );
+    test('WhitelistCustomGetterUser copyWith only allows name from in-class supportedProps getter', () {
+      const user = WhitelistCustomGetterUser(id: 'usr_101', name: 'Eve');
 
       final updated = user.copyWith(name: 'Frank');
       expect(updated.id, equals('usr_101'));

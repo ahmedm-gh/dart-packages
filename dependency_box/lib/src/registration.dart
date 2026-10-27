@@ -75,7 +75,7 @@ sealed class DependencyBoxRegistration<T extends Object, A> {
   Object? get currentInstance;
 
   /// Disposes the held instance and executes any configured [onDispose] callbacks.
-  Future<void> dispose();
+  FutureOr<void> dispose();
 }
 
 final class _SingletonRegistration<T extends Object, A>
@@ -112,13 +112,19 @@ final class _SingletonRegistration<T extends Object, A>
   }
 
   @override
-  Future<void> dispose() async {
+  FutureOr<void> dispose() {
+    FutureOr<void> r1;
     if (onDispose case final callback?) {
-      await callback(instance);
+      r1 = callback(instance);
     }
     if (instance is DependencyDisposable) {
-      await (instance as DependencyDisposable).dispose();
+      final r2 = (instance as DependencyDisposable).dispose();
+      if (r1 is Future<void> || r2 is Future<void>) {
+        return _awaitBoth(r1, r2);
+      }
+      return null;
     }
+    return r1;
   }
 }
 
@@ -178,15 +184,22 @@ final class _LazySingletonRegistration<T extends Object, A>
   }
 
   @override
-  Future<void> dispose() async {
+  FutureOr<void> dispose() {
     if (_instance case final instance?) {
+      FutureOr<void> r1;
       if (onDispose case final callback?) {
-        await callback(instance);
+        r1 = callback(instance);
       }
       if (instance is DependencyDisposable) {
-        await (instance as DependencyDisposable).dispose();
+        final r2 = (instance as DependencyDisposable).dispose();
+        if (r1 is Future<void> || r2 is Future<void>) {
+          return _awaitBoth(r1, r2);
+        }
+        return null;
       }
+      return r1;
     }
+    return null;
   }
 }
 
@@ -257,16 +270,23 @@ final class _CachedFactoryRegistration<T extends Object, A>
   }
 
   @override
-  Future<void> dispose() async {
+  FutureOr<void> dispose() {
     if (_weakRef?.target case final instance?) {
       _weakRef = null;
+      FutureOr<void> r1;
       if (onDispose case final callback?) {
-        await callback(instance);
+        r1 = callback(instance);
       }
       if (instance is DependencyDisposable) {
-        await (instance as DependencyDisposable).dispose();
+        final r2 = (instance as DependencyDisposable).dispose();
+        if (r1 is Future<void> || r2 is Future<void>) {
+          return _awaitBoth(r1, r2);
+        }
+        return null;
       }
+      return r1;
     }
+    return null;
   }
 }
 
@@ -296,7 +316,7 @@ final class _FactoryRegistration<T extends Object, A>
   }
 
   @override
-  Future<void> dispose() async {}
+  FutureOr<void> dispose() => null;
 }
 
 final class _FactoryWithRegistration<T extends Object, A>
@@ -339,7 +359,7 @@ final class _FactoryWithRegistration<T extends Object, A>
   }
 
   @override
-  Future<void> dispose() async {}
+  FutureOr<void> dispose() => null;
 }
 
 final class _AsyncSingletonRegistration<T extends Object, A>
@@ -408,9 +428,11 @@ final class _AsyncSingletonRegistration<T extends Object, A>
     if (DependencyBoxConfig.isDebug &&
         currentChain != null &&
         currentChain.contains(id)) {
-      final cyclePath = [...currentChain, id].map((e) {
-        return e.toString();
-      }).join(' -> ');
+      final cyclePath = [...currentChain, id]
+          .map((e) {
+            return e.toString();
+          })
+          .join(' -> ');
       return Future<T>.error(
         DependencyBox.createError(
           'Circular dependency detected in async resolution: $cyclePath',
@@ -427,69 +449,79 @@ final class _AsyncSingletonRegistration<T extends Object, A>
     final completer = Completer<T>();
     _completer = completer;
 
-    final nextChain =
-        DependencyBoxConfig.isDebug ? [...?currentChain, id] : null;
+    final nextChain = DependencyBoxConfig.isDebug
+        ? [...?currentChain, id]
+        : null;
 
-    runZoned(
-      () async {
-        try {
-          final instance = await factory(container);
-          if (DependencyBoxConfig.isDebug && identical(instance, null)) {
-            DependencyBox.throwError(
-              'Async factory for $T returned null, but $T is non-nullable.',
-              DependencyBoxError.notFound,
+    runZoned(() async {
+      try {
+        final instance = await factory(container);
+        if (DependencyBoxConfig.isDebug && identical(instance, null)) {
+          DependencyBox.throwError(
+            'Async factory for $T returned null, but $T is non-nullable.',
+            DependencyBoxError.notFound,
+          );
+        }
+
+        if (container.isDisposed) {
+          _completer = null;
+          if (onDispose case final callback?) {
+            await callback(instance);
+          }
+          if (instance is DependencyDisposable) {
+            await instance.dispose();
+          }
+          if (!completer.isCompleted) {
+            completer.completeError(
+              DependencyBox.createError(
+                'DependencyBox was disposed during initialization of $T.',
+                DependencyBoxError.disposed,
+              ),
+              StackTrace.current,
             );
           }
-
-          if (container.isDisposed) {
-            _completer = null;
-            if (onDispose case final callback?) {
-              await callback(instance);
-            }
-            if (instance is DependencyDisposable) {
-              await instance.dispose();
-            }
-            if (!completer.isCompleted) {
-              completer.completeError(
-                DependencyBox.createError(
-                  'DependencyBox was disposed during initialization of $T.',
-                  DependencyBoxError.disposed,
-                ),
-                StackTrace.current,
-              );
-            }
-            return;
-          }
-
-          _instance = instance;
-          _completer = null;
-          onCreated(instance);
-          if (!completer.isCompleted) {
-            completer.complete(instance);
-          }
-        } catch (error, stackTrace) {
-          _completer = null;
-          _instance = null;
-          if (!completer.isCompleted) {
-            completer.completeError(error, stackTrace);
-          }
+          return;
         }
-      },
-      zoneValues: nextChain != null ? {_asyncChainKey: nextChain} : null,
-    );
+
+        _instance = instance;
+        _completer = null;
+        onCreated(instance);
+        if (!completer.isCompleted) {
+          completer.complete(instance);
+        }
+      } catch (error, stackTrace) {
+        _completer = null;
+        _instance = null;
+        if (!completer.isCompleted) {
+          completer.completeError(error, stackTrace);
+        }
+      }
+    }, zoneValues: nextChain != null ? {_asyncChainKey: nextChain} : null);
 
     return completer.future;
   }
 
   @override
-  Future<void> dispose() async {
+  FutureOr<void> dispose() {
     if (_instance case final instance?) {
+      FutureOr<void> r1;
       if (onDispose case final callback?) {
-        await callback(instance);
+        r1 = callback(instance);
       }
       if (instance is DependencyDisposable) {
-        await (instance as DependencyDisposable).dispose();
+        final r2 = (instance as DependencyDisposable).dispose();
+        if (r1 is Future<void> || r2 is Future<void>) {
+          return _awaitBoth(r1, r2);
+        }
+        return null;
       }
+      return r1;
     }
+    return null;
   }
+}
+
+Future<void> _awaitBoth(FutureOr<void> r1, FutureOr<void> r2) async {
+  if (r1 is Future<void>) await r1;
+  if (r2 is Future<void>) await r2;
 }

@@ -7,10 +7,7 @@ void main() {
       const coord = Coordinate(10.5, 20.0, 30.5);
 
       // Update x and clear z
-      final updated = coord.copyWith(
-        x: 99.0,
-        z: null,
-      );
+      final updated = coord.copyWith(x: 99.0, z: null);
 
       expect(updated.x, equals(99.0));
       expect(updated.y, equals(20.0)); // Preserved
@@ -42,9 +39,7 @@ void main() {
       expect(devConfig.enableSsl, isNull);
     });
 
-    test(
-        'AuditedEntity with @CloneableField(ignore: true) preserves ignored field',
-        () {
+    test('AuditedEntity with @CloneableField(ignore: true) preserves ignored field', () {
       final now = DateTime(2026, 1, 1, 12, 0);
       final entity = AuditedEntity(
         id: 'ENT-42',
@@ -52,14 +47,14 @@ void main() {
         createdAt: now,
       );
 
-      final updated = entity.copyWith(
-        title: 'Updated Title',
-      );
+      final updated = entity.copyWith(title: 'Updated Title');
 
       expect(updated.id, equals('ENT-42'));
       expect(updated.title, equals('Updated Title'));
-      expect(updated.createdAt,
-          equals(now)); // Ignored field preserved automatically!
+      expect(
+        updated.createdAt,
+        equals(now),
+      ); // Ignored field preserved automatically!
     });
   });
 }

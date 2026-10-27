@@ -8,11 +8,7 @@ class Coordinate with _$CoordinateCloneable {
   final double y;
   final double? z;
 
-  const Coordinate(
-    this.x,
-    this.y, [
-    this.z,
-  ]);
+  const Coordinate(this.x, this.y, [this.z]);
 }
 
 @Cloneable(constructor: 'create')

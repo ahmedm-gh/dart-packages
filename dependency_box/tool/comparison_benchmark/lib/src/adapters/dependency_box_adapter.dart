@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:dependency_box/dependency_box.dart';
+
 import '../models/fixtures.dart';
 import 'adapter.dart';
 
@@ -17,22 +19,22 @@ class DependencyBoxAdapter extends BenchmarkAdapter {
 
   @override
   Set<DiCapability> get capabilities => {
-        DiCapability.singleton,
-        DiCapability.lazySingleton,
-        DiCapability.factory,
-        DiCapability.cachedWeakReferenceFactory,
-        DiCapability.interfaceMapping,
-        DiCapability.keyedNamedRegistration,
-        DiCapability.nonStringKeys,
-        DiCapability.parameterizedFactory,
-        DiCapability.asyncSingleton,
-        DiCapability.hierarchicalContainerInstances,
-        DiCapability.multiRegistrationList,
-        DiCapability.circularDependencyDetection,
-        DiCapability.targetedRemoval,
-        DiCapability.testOverrideReplacement,
-        DiCapability.containerIntrospection,
-      };
+    DiCapability.singleton,
+    DiCapability.lazySingleton,
+    DiCapability.factory,
+    DiCapability.cachedWeakReferenceFactory,
+    DiCapability.interfaceMapping,
+    DiCapability.keyedNamedRegistration,
+    DiCapability.nonStringKeys,
+    DiCapability.parameterizedFactory,
+    DiCapability.asyncSingleton,
+    DiCapability.hierarchicalContainerInstances,
+    DiCapability.multiRegistrationList,
+    DiCapability.circularDependencyDetection,
+    DiCapability.targetedRemoval,
+    DiCapability.testOverrideReplacement,
+    DiCapability.containerIntrospection,
+  };
 
   @override
   void reset() {

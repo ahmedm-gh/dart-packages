@@ -5,7 +5,7 @@ part of 'whitelist_models.dart';
 /// Generated cloneable extension for [WhitelistAnnotationUser].
 extension $WhitelistAnnotationUserExtension on WhitelistAnnotationUser {
   WhitelistAnnotationUser Function({String name, String? nickname})
-      get copyWith => _copyWith;
+  get copyWith => _copyWith;
 
   WhitelistAnnotationUser _copyWith({
     Object? name = $undefined,
@@ -15,8 +15,9 @@ extension $WhitelistAnnotationUserExtension on WhitelistAnnotationUser {
     return WhitelistAnnotationUser(
       id: self.id,
       name: identical(name, $undefined) ? self.name : name as String,
-      nickname:
-          identical(nickname, $undefined) ? self.nickname : nickname as String?,
+      nickname: identical(nickname, $undefined)
+          ? self.nickname
+          : nickname as String?,
     );
   }
 }
@@ -34,8 +35,9 @@ extension $WhitelistGetterUserExtension on WhitelistGetterUser {
     return WhitelistGetterUser(
       id: self.id,
       name: identical(name, $undefined) ? self.name : name as String,
-      nickname:
-          identical(nickname, $undefined) ? self.nickname : nickname as String?,
+      nickname: identical(nickname, $undefined)
+          ? self.nickname
+          : nickname as String?,
     );
   }
 }

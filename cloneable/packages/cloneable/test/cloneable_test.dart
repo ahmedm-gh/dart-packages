@@ -19,30 +19,32 @@ void main() {
   });
 
   group('Cloneable Annotations', () {
-    test('Cloneable constructor defaults to null for unassigned properties',
-        () {
-      const annotation = Cloneable();
-      expect(annotation.constructor, isNull);
-      expect(annotation.deepCopyCollections, isNull);
-      expect(annotation.strategy, isNull);
-      expect(annotation.ignoreNull, isNull);
-      expect(annotation.sentinel, isNull);
-      expect(annotation.active, isNull);
-      expect(annotation.cleanup, isNull);
-      expect(annotation.output, isNull);
-      expect(annotation.fields, isNull);
-      expect(annotation.cloneableFieldsGetter, isNull);
-      expect(annotation.fieldsConflict, isNull);
-      expect(annotation.naming, isNull);
-      expect(CloneableNaming.defaultDirectory, isNull);
-      expect(CloneableNaming.defaults, equals(const CloneableNaming()));
-      expect(CloneableNaming.defaultSentinel, equals(r'_$undefined'));
-      expect($undefined, isNotNull);
-      expect(
-        Cloneable.defaultCloneableFieldsGetters,
-        equals(['cloneableFields', 'copyWithFields']),
-      );
-    });
+    test(
+      'Cloneable constructor defaults to null for unassigned properties',
+      () {
+        const annotation = Cloneable();
+        expect(annotation.constructor, isNull);
+        expect(annotation.deepCopyCollections, isNull);
+        expect(annotation.strategy, isNull);
+        expect(annotation.ignoreNull, isNull);
+        expect(annotation.sentinel, isNull);
+        expect(annotation.active, isNull);
+        expect(annotation.cleanup, isNull);
+        expect(annotation.output, isNull);
+        expect(annotation.fields, isNull);
+        expect(annotation.cloneableFieldsGetter, isNull);
+        expect(annotation.fieldsConflict, isNull);
+        expect(annotation.naming, isNull);
+        expect(CloneableNaming.defaultDirectory, isNull);
+        expect(CloneableNaming.defaults, equals(const CloneableNaming()));
+        expect(CloneableNaming.defaultSentinel, equals(r'_$undefined'));
+        expect($undefined, isNotNull);
+        expect(
+          Cloneable.defaultCloneableFieldsGetters,
+          equals(['cloneableFields', 'copyWithFields']),
+        );
+      },
+    );
 
     test('CloneableDefaults SSOT default values', () {
       const defaults = CloneableDefaults();
@@ -85,9 +87,13 @@ void main() {
         cleanup: CloneableCleanup.remove,
       );
       expect(
-          CloneableDefaults.instance.output, equals(CloneableOutput.inLibrary));
+        CloneableDefaults.instance.output,
+        equals(CloneableOutput.inLibrary),
+      );
       expect(
-          CloneableDefaults.instance.cleanup, equals(CloneableCleanup.remove));
+        CloneableDefaults.instance.cleanup,
+        equals(CloneableCleanup.remove),
+      );
 
       // Reset back to standard defaults
       CloneableDefaults.setDefaults(const CloneableDefaults());
@@ -97,24 +103,18 @@ void main() {
     test('Cloneable named constructors', () {
       const inClass = Cloneable.inClass(
         cleanup: CloneableCleanup.remove,
-        naming: CloneableNaming(
-          method: 'clone',
-        ),
+        naming: CloneableNaming(method: 'clone'),
       );
       expect(inClass.output, equals(CloneableOutput.inClass));
       expect(inClass.strategy, isNull);
       expect(inClass.cleanup, equals(CloneableCleanup.remove));
       expect(inClass.naming?.method, equals('clone'));
 
-      const inLibrary = Cloneable.inLibrary(
-        strategy: CloneableStrategy.mixin,
-      );
+      const inLibrary = Cloneable.inLibrary(strategy: CloneableStrategy.mixin);
       expect(inLibrary.output, equals(CloneableOutput.inLibrary));
       expect(inLibrary.strategy, equals(CloneableStrategy.mixin));
 
-      const part = Cloneable.part(
-        deepCopyCollections: true,
-      );
+      const part = Cloneable.part(deepCopyCollections: true);
       expect(part.output, equals(CloneableOutput.part));
       expect(part.deepCopyCollections, isTrue);
 
@@ -124,22 +124,23 @@ void main() {
     });
 
     test(
-        'CloneableAffix partial overrides preserve null for unspecified affixes',
-        () {
-      const prefixOnly = CloneableAffix(prefix: 'Pre');
-      expect(prefixOnly.prefix, equals('Pre'));
-      expect(prefixOnly.suffix, isNull);
+      'CloneableAffix partial overrides preserve null for unspecified affixes',
+      () {
+        const prefixOnly = CloneableAffix(prefix: 'Pre');
+        expect(prefixOnly.prefix, equals('Pre'));
+        expect(prefixOnly.suffix, isNull);
 
-      const suffixOnly = CloneableAffix(suffix: 'Suf');
-      expect(suffixOnly.prefix, isNull);
-      expect(suffixOnly.suffix, equals('Suf'));
+        const suffixOnly = CloneableAffix(suffix: 'Suf');
+        expect(suffixOnly.prefix, isNull);
+        expect(suffixOnly.suffix, equals('Suf'));
 
-      const explicitEmpty = CloneableAffix(prefix: 'Pre', suffix: '');
-      expect(explicitEmpty.prefix, equals('Pre'));
-      expect(explicitEmpty.suffix, equals(''));
+        const explicitEmpty = CloneableAffix(prefix: 'Pre', suffix: '');
+        expect(explicitEmpty.prefix, equals('Pre'));
+        expect(explicitEmpty.suffix, equals(''));
 
-      expect(CloneableNaming.defaultFile.suffix, equals('.cloneable.g'));
-    });
+        expect(CloneableNaming.defaultFile.suffix, equals('.cloneable.g'));
+      },
+    );
 
     test('Cloneables map configuration', () {
       const cloneables = Cloneables({

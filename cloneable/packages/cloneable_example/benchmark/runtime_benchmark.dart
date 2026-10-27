@@ -2,6 +2,7 @@ import 'package:cloneable_example/models/benchmark_models.dart';
 import 'package:cloneable_example/models/clean_models.dart';
 import 'package:cloneable_example/models/generic_models.dart';
 import 'package:cloneable_example/user.dart';
+
 import 'models_handwritten.dart';
 
 class BenchmarkResult {
@@ -70,23 +71,31 @@ BenchmarkResult measure(
 
 void main() {
   print(
-      '========================================================================================');
+    '========================================================================================',
+  );
   print(
-      '                    CLONEABLE RUNTIME PERFORMANCE BENCHMARK                              ');
+    '                    CLONEABLE RUNTIME PERFORMANCE BENCHMARK                              ',
+  );
   print(
-      '========================================================================================');
+    '========================================================================================',
+  );
   print(
-      '${'Implementation'.padRight(22)} | ${'Scenario'.padRight(22)} | ${'Median'.padLeft(8)}    | ${'Ops/sec'.padLeft(12)}       | Variability [Min - Max]');
+    '${'Implementation'.padRight(22)} | ${'Scenario'.padRight(22)} | ${'Median'.padLeft(8)}    | ${'Ops/sec'.padLeft(12)}       | Variability [Min - Max]',
+  );
   print(
-      '----------------------------------------------------------------------------------------');
+    '----------------------------------------------------------------------------------------',
+  );
 
   final results = <BenchmarkResult>[];
 
   // 1. Small Model - Preserved (Omitted argument)
   const cloneableUser = User(name: 'Ahmed', age: 25, nickname: 'Dev');
   const extensionUser = ExtensionUser(name: 'Ahmed', age: 25, nickname: 'Dev');
-  const handwrittenUser =
-      HandwrittenUser(name: 'Ahmed', age: 25, nickname: 'Dev');
+  const handwrittenUser = HandwrittenUser(
+    name: 'Ahmed',
+    age: 25,
+    nickname: 'Dev',
+  );
   const freezedUser = FreezedStyleUser(name: 'Ahmed', age: 25, nickname: 'Dev');
   const mapUser = MapBasedUser({'name': 'Ahmed', 'age': 25, 'nickname': 'Dev'});
 
@@ -100,26 +109,35 @@ void main() {
   print(rMixinPreserved);
 
   // B. Cloneable (Extension) - Preserved
-  final rExtPreserved =
-      measure('Cloneable (Extension)', 'Small: Preserved', () {
-    sink = extensionUser.copyWith(name: 'Mohamed');
-  });
+  final rExtPreserved = measure(
+    'Cloneable (Extension)',
+    'Small: Preserved',
+    () {
+      sink = extensionUser.copyWith(name: 'Mohamed');
+    },
+  );
   results.add(rExtPreserved);
   print(rExtPreserved);
 
   // C. Handwritten - Preserved
-  final rHandwrittenPreserved =
-      measure('Handwritten Sentinel', 'Small: Preserved', () {
-    sink = handwrittenUser.copyWith(name: 'Mohamed');
-  });
+  final rHandwrittenPreserved = measure(
+    'Handwritten Sentinel',
+    'Small: Preserved',
+    () {
+      sink = handwrittenUser.copyWith(name: 'Mohamed');
+    },
+  );
   results.add(rHandwrittenPreserved);
   print(rHandwrittenPreserved);
 
   // D. Freezed-Style (Wrapper) - Preserved
-  final rFreezedPreserved =
-      measure('Freezed-Style (Alloc)', 'Small: Preserved', () {
-    sink = freezedUser.copyWith(name: 'Mohamed');
-  });
+  final rFreezedPreserved = measure(
+    'Freezed-Style (Alloc)',
+    'Small: Preserved',
+    () {
+      sink = freezedUser.copyWith(name: 'Mohamed');
+    },
+  );
   results.add(rFreezedPreserved);
   print(rFreezedPreserved);
 
@@ -130,7 +148,8 @@ void main() {
   results.add(rMapPreserved);
   print(rMapPreserved);
   print(
-      '----------------------------------------------------------------------------------------');
+    '----------------------------------------------------------------------------------------',
+  );
 
   // 2. Small Model - Explicit Null
   // A. Cloneable (Mixin) - Explicit Null
@@ -168,7 +187,8 @@ void main() {
   results.add(rNull4);
   print(rNull4);
   print(
-      '----------------------------------------------------------------------------------------');
+    '----------------------------------------------------------------------------------------',
+  );
 
   // 3. Medium Model (10 fields)
   const cloneableMedium = MediumModel(
@@ -208,7 +228,8 @@ void main() {
   results.add(rMed2);
   print(rMed2);
   print(
-      '----------------------------------------------------------------------------------------');
+    '----------------------------------------------------------------------------------------',
+  );
 
   // 4. Large Model (25 fields)
   const cloneableLarge = LargeModel(
@@ -267,24 +288,36 @@ void main() {
   );
 
   final rLarge1 = measure('Cloneable (Generated)', 'Large: 25 fields', () {
-    sink =
-        cloneableLarge.copyWith(s1: 'new', opt1: null, opt3: null, b1: false);
+    sink = cloneableLarge.copyWith(
+      s1: 'new',
+      opt1: null,
+      opt3: null,
+      b1: false,
+    );
   });
   results.add(rLarge1);
   print(rLarge1);
 
   final rLarge2 = measure('Handwritten Sentinel', 'Large: 25 fields', () {
-    sink =
-        handwrittenLarge.copyWith(s1: 'new', opt1: null, opt3: null, b1: false);
+    sink = handwrittenLarge.copyWith(
+      s1: 'new',
+      opt1: null,
+      opt3: null,
+      b1: false,
+    );
   });
   results.add(rLarge2);
   print(rLarge2);
   print(
-      '----------------------------------------------------------------------------------------');
+    '----------------------------------------------------------------------------------------',
+  );
 
   // 5. Generic Model (Box<int>)
-  const cloneableBox =
-      Box<int>(value: 42, optionalValue: 100, tag: 'benchmark');
+  const cloneableBox = Box<int>(
+    value: 42,
+    optionalValue: 100,
+    tag: 'benchmark',
+  );
   final rGen = measure('Cloneable (Generated)', 'Generic: Box<int>', () {
     sink = cloneableBox.copyWith(value: 84, optionalValue: null);
   });
@@ -292,7 +325,8 @@ void main() {
   print(rGen);
 
   print(
-      '========================================================================================');
+    '========================================================================================',
+  );
   // Prevent dead code elimination
   if (sink == null) {
     print('Sink is null (never reached)');

@@ -3,10 +3,7 @@ import 'package:comparison_benchmark/src/adapters/adapters.dart';
 import 'package:comparison_benchmark/src/models/fixtures.dart';
 
 void main() {
-  final adapters = <BenchmarkAdapter>[
-    DependencyBoxAdapter(),
-    GetItAdapter(),
-  ];
+  final adapters = <BenchmarkAdapter>[DependencyBoxAdapter(), GetItAdapter()];
 
   for (final adapter in adapters) {
     group('Conformance Suite: ${adapter.name} (${adapter.version})', () {

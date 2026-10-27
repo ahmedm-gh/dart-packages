@@ -38,10 +38,7 @@ class WhitelistMixinUser with _$WhitelistMixinUserCloneable {
   final String id;
   final String name;
 
-  const WhitelistMixinUser({
-    required this.id,
-    required this.name,
-  });
+  const WhitelistMixinUser({required this.id, required this.name});
 
   List<Object?> get copyWithFields => [name];
 }
@@ -52,10 +49,7 @@ class WhitelistCustomGetterUser {
   final String id;
   final String name;
 
-  const WhitelistCustomGetterUser({
-    required this.id,
-    required this.name,
-  });
+  const WhitelistCustomGetterUser({required this.id, required this.name});
 
   List<Object?> get supportedProps => [name];
 }

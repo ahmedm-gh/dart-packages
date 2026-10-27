@@ -15,7 +15,8 @@ extension $StandaloneOrderExtension on StandaloneOrder {
     ExternalAddress address,
     ExternalConfig config,
     List<ExternalAddress> locations,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   StandaloneOrder _copyWith({
     Object? id = $undefined,
@@ -54,7 +55,8 @@ extension $StandalonePrefixedCustomerExtension on StandalonePrefixedCustomer {
     ext.ExternalStatus status,
     ext.ExternalAddress address,
     ext.ExternalConfig config,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   StandalonePrefixedCustomer _copyWith({
     Object? id = $undefined,
@@ -81,7 +83,7 @@ extension $StandalonePrefixedCustomerExtension on StandalonePrefixedCustomer {
 /// Generated cloneable extension for [StandaloneCustomProfile].
 extension CustomStandaloneCustomProfileExtension on StandaloneCustomProfile {
   StandaloneCustomProfile Function({String username, String? bio})
-      get copyWith => _copyWith;
+  get copyWith => _copyWith;
 
   StandaloneCustomProfile _copyWith({
     Object? username = $undefined,
@@ -89,8 +91,9 @@ extension CustomStandaloneCustomProfileExtension on StandaloneCustomProfile {
   }) {
     final self = this;
     return StandaloneCustomProfile(
-      username:
-          identical(username, $undefined) ? self.username : username as String,
+      username: identical(username, $undefined)
+          ? self.username
+          : username as String,
       bio: identical(bio, $undefined) ? self.bio : bio as String?,
     );
   }

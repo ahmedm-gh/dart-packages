@@ -1,9 +1,14 @@
 # Changelog
 
-## 1.0.1
+## 1.1.0
 
-- **Documentation**: Enhanced documentation for `DependencyDisposable` lifecycle contracts and `DependencyModule` feature modularity in `README.md`.
-- **Testing**: Added comprehensive unit test suites validating `DependencyDisposable` contracts (sync/async disposal, removal flags, child container isolation) and `DependencyModule` installation workflows.
+- **Hierarchy Boundary Resolution (`LookupScope`)**: Introduced the `LookupScope` enum (`inherited`, `local`, `parent`, `ancestors`, `root`) across `get()`, `tryGet()`, `getAsync()`, `tryGetAsync()`, `contains()`, `getAll()`, and `getAllAsync()`. Enables pinpoint resolution boundaries with zero heap allocation overhead, preserving sub-15ns hot paths.
+- **Hierarchy Introspection**: Added `depth` (0-based scope depth level), `findOwner<T>()` (locates the container holding a registration for targeted replacement/removal), and `isShadowed<T>()` (detects if a child registration shadows an ancestor).
+- **Child Container Lifecycle & Scoping**: Added direct-child scope tracking via `children`, recursive cascading downward disposal with pre-emptive ownership transfer to eliminate `ConcurrentModificationError`, and clean self-detachment on child scope disposal.
+- **Performance Optimization**: Implemented hybrid synchronous fast-path container disposal with zero-allocation iteration, reducing scope teardown latency by up to 3.3× and achieving **16.96× faster** scoped feature wizard lifecycles than `get_it 9.3.0`.
+- **Comparative Benchmarks & Visuals**: Added consolidated comparison chart (`doc/benchmark_comparison.svg`) and comprehensive performance report (`doc/benchmarks.md`) evaluating 27 workloads across JIT and Native AOT against `get_it 9.3.0`.
+- **Documentation**: Comprehensive documentation for `LookupScope`, scope boundaries, `depth`, `findOwner`, and `isShadowed` in `README.md`.
+- **Testing**: Added comprehensive unit test suites covering all `LookupScope` boundaries, companion methods, and child lifecycle contracts.
 
 ## 1.0.0
 
@@ -36,7 +41,7 @@
 - Modular feature composition via `DependencyModule` and `box.install()`.
 - Container introspection via `contains<T>()`, `registeredKeys`, `length`, `isEmpty`, and `isNotEmpty`.
 - Centralized compile-time configuration constants via `DependencyBox`.
-- Multiple instance registrations with `allowMulti<T>()` and `allowMultiple` supporting 4 resolution strategies (`first`, `last`, `at(index)`, `key(key)`).
+- Multiple instance registrations with `allowMulti<T>()` and `allowMultiAll` supporting 4 resolution strategies (`first`, `last`, `at(index)`, `key(key)`).
 - Automatic lifecycle management and disposal via `DependencyDisposable` with identity-based deduplication (`Set.identity`).
 - Robust container lifecycle invariants preventing leaks or stale resolution across disposed root and child containers.
 - Circular dependency detection across both synchronous lazy singletons and asynchronous singletons.

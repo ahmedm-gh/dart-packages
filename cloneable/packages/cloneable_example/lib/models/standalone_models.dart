@@ -43,16 +43,11 @@ class StandalonePrefixedCustomer {
 /// Standalone model demonstrating custom prefix in the non-part approach.
 @Cloneable(
   strategy: CloneableStrategy.extension,
-  naming: CloneableNaming(
-    extension: CloneableAffix(prefix: 'Custom'),
-  ),
+  naming: CloneableNaming(extension: CloneableAffix(prefix: 'Custom')),
 )
 class StandaloneCustomProfile {
   final String username;
   final String? bio;
 
-  const StandaloneCustomProfile({
-    required this.username,
-    this.bio,
-  });
+  const StandaloneCustomProfile({required this.username, this.bio});
 }

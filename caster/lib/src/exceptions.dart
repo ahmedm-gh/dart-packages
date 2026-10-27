@@ -16,10 +16,8 @@ abstract class CasterException implements Exception {
   }) = CasterArgumentException;
 
   /// Factory constructor creating a [CasterTypeException].
-  const factory CasterException.type(
-    String message, {
-    StackTrace? stackTrace,
-  }) = CasterTypeException;
+  const factory CasterException.type(String message, {StackTrace? stackTrace}) =
+      CasterTypeException;
 }
 
 /// Exception thrown when a type parameter [T] is not properly specified (e.g. [Object]).

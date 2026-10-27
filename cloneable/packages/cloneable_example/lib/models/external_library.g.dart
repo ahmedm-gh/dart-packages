@@ -13,8 +13,9 @@ mixin _$ExternalProfileCloneable {
   }) {
     final self = this as ExternalProfile;
     return ExternalProfile(
-      username:
-          identical(username, $undefined) ? self.username : username as String,
+      username: identical(username, $undefined)
+          ? self.username
+          : username as String,
       email: identical(email, $undefined) ? self.email : email as String,
     );
   }

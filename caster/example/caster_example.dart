@@ -30,13 +30,12 @@ void main() {
   print('Safe cast or null: $maybeInt'); // null
 
   print('\n--- 2. Custom Type Defaults ---');
-  Caster.registerDefaultValues({
-    User: const User(id: 0, name: 'Guest'),
-  });
+  Caster.registerDefaultValues({User: const User(id: 0, name: 'Guest')});
 
   final guestUser = safeCast<User>('corrupted_user_data');
   print(
-      'Resolved custom default: $guestUser'); // User(id: 0, name: "Guest", isAdmin: false)
+    'Resolved custom default: $guestUser',
+  ); // User(id: 0, name: "Guest", isAdmin: false)
 
   print('\n--- 3. MapCaster Extensions for Untrusted Payloads ---');
   final apiResponse = <String, dynamic>{
@@ -52,21 +51,25 @@ void main() {
   final role = apiResponse.safeCast<String>('role', fallback: 'standard_user');
   final maybeToken = apiResponse.safeCastOrNull<String>('auth_token');
   print(
-      'Extracted userId: $userId, name: $userName, role: $role, token: $maybeToken');
+    'Extracted userId: $userId, name: $userName, role: $role, token: $maybeToken',
+  );
 
   // Key fallbacks (e.g., legacy or alternative API key names)
-  final displayName = apiResponse.safeCastFirst<String>(
-    ['nickname', 'display_name', 'user_name'],
-    fallback: 'Anonymous',
-  );
+  final displayName = apiResponse.safeCastFirst<String>([
+    'nickname',
+    'display_name',
+    'user_name',
+  ], fallback: 'Anonymous');
   print('Display name (fallback chain): $displayName');
 
   // Filtering collections safely
   final validScores = apiResponse.safeCastList<int>('scores');
   print('Filtered valid scores: $validScores'); // [95, 87, 100]
 
-  final scoresWithDefault =
-      apiResponse.safeCastList<int>('scores', fallback: 0);
+  final scoresWithDefault = apiResponse.safeCastList<int>(
+    'scores',
+    fallback: 0,
+  );
   print('Scores with element fallback: $scoresWithDefault'); // [95, 87, 0, 100]
 
   // Value converters

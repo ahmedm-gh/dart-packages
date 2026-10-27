@@ -97,15 +97,20 @@ void main() {
         );
       });
 
-      test('explicit fallback takes precedence over custom registered default',
-          () {
-        const defaultUser = CustomUser('RegisteredDefault');
-        const fallbackUser = CustomUser('ExplicitFallback');
-        Caster.registerDefaultValues({CustomUser: defaultUser});
+      test(
+        'explicit fallback takes precedence over custom registered default',
+        () {
+          const defaultUser = CustomUser('RegisteredDefault');
+          const fallbackUser = CustomUser('ExplicitFallback');
+          Caster.registerDefaultValues({CustomUser: defaultUser});
 
-        final result = safeCast<CustomUser>('invalid', fallback: fallbackUser);
-        expect(result, equals(fallbackUser));
-      });
+          final result = safeCast<CustomUser>(
+            'invalid',
+            fallback: fallbackUser,
+          );
+          expect(result, equals(fallbackUser));
+        },
+      );
 
       test('respects useDefaults flag for custom registered defaults', () {
         const defaultUser = CustomUser('Admin');
@@ -122,9 +127,7 @@ void main() {
         );
       });
 
-      test(
-          'registerDefaultValue and unregisterDefaultValues single/multiple registration',
-          () {
+      test('registerDefaultValue and unregisterDefaultValues single/multiple registration', () {
         const defaultUser = CustomUser('SingleGuest');
         Caster.registerDefaultValue<CustomUser>(defaultUser);
 
@@ -201,7 +204,9 @@ void main() {
           equals(<String, Object?>{}),
         );
         expect(
-            safeCast<Map<String, String>>('bad'), equals(<String, String>{}));
+          safeCast<Map<String, String>>('bad'),
+          equals(<String, String>{}),
+        );
       });
 
       test('respects useDefaults: false for built-in type defaults', () {
@@ -234,15 +239,14 @@ void main() {
     });
 
     test(
-        'returns null for uncastable input when T is nullable and has no default',
-        () {
-      expect(safeCast<CustomUser?>('bad'), isNull);
-      expect(safeCast<DateTime?>('not a date'), isNull);
-    });
+      'returns null for uncastable input when T is nullable and has no default',
+      () {
+        expect(safeCast<CustomUser?>('bad'), isNull);
+        expect(safeCast<DateTime?>('not a date'), isNull);
+      },
+    );
 
-    test(
-        'throws CasterTypeException when input cannot be cast and no default exists',
-        () {
+    test('throws CasterTypeException when input cannot be cast and no default exists', () {
       expect(
         () => safeCast<CustomUser>('bad'),
         throwsA(
@@ -257,14 +261,8 @@ void main() {
 
     test('executes safely when Caster.debug is true', () {
       Caster.debug = true;
-      expect(
-        safeCast<int>('abc', fallback: 42),
-        equals(42),
-      );
-      expect(
-        safeCast<int>('bad'),
-        equals(0),
-      );
+      expect(safeCast<int>('abc', fallback: 42), equals(42));
+      expect(safeCast<int>('bad'), equals(0));
     });
   });
 
@@ -322,24 +320,30 @@ void main() {
         throwsA(isA<CasterTypeException>()),
       );
       expect(
-        () => map
-            .safeCastFirst<int>(['missing1', 'missing2'], useDefaults: false),
+        () => map.safeCastFirst<int>([
+          'missing1',
+          'missing2',
+        ], useDefaults: false),
         throwsA(isA<CasterTypeException>()),
       );
     });
 
-    test('safeCastOrNull returns value or null on mismatch without throwing',
-        () {
-      expect(map.safeCastOrNull<int>('age'), equals(25));
-      expect(map.safeCastOrNull<int>('name'), isNull);
-      expect(map.safeCastOrNull<int>('missing_key'), isNull);
-    });
+    test(
+      'safeCastOrNull returns value or null on mismatch without throwing',
+      () {
+        expect(map.safeCastOrNull<int>('age'), equals(25));
+        expect(map.safeCastOrNull<int>('name'), isNull);
+        expect(map.safeCastOrNull<int>('missing_key'), isNull);
+      },
+    );
 
     test('safeCastFirst evaluates keys in order', () {
       expect(map.safeCastFirst<int>(['missing', 'age']), equals(25));
       expect(
-        map.safeCastFirst<String>(['firstMissing', 'secondMissing'],
-            fallback: 'def'),
+        map.safeCastFirst<String>([
+          'firstMissing',
+          'secondMissing',
+        ], fallback: 'def'),
         equals('def'),
       );
       expect(map.safeCastFirst<String?>(['nullField']), isNull);
@@ -353,16 +357,20 @@ void main() {
       expect(map.safeCastList<int>('name'), equals([])); // not an iterable
     });
 
-    test('safeCastListOrNull returns collection or null if absent/non-iterable',
-        () {
-      expect(map.safeCastListOrNull<int>('scores'), equals([90, 80, 70]));
-      expect(map.safeCastListOrNull<int>('mixed'), equals([1, 3]));
-      expect(
-          map.safeCastListOrNull<int>('mixed', fallback: 0), equals([1, 0, 3]));
-      expect(map.safeCastListOrNull<int>('non_existent'), isNull);
-      expect(map.safeCastListOrNull<int>('name'), isNull); // not an iterable
-      expect(map.safeCastListOrNull<int>('nullField'), isNull);
-    });
+    test(
+      'safeCastListOrNull returns collection or null if absent/non-iterable',
+      () {
+        expect(map.safeCastListOrNull<int>('scores'), equals([90, 80, 70]));
+        expect(map.safeCastListOrNull<int>('mixed'), equals([1, 3]));
+        expect(
+          map.safeCastListOrNull<int>('mixed', fallback: 0),
+          equals([1, 0, 3]),
+        );
+        expect(map.safeCastListOrNull<int>('non_existent'), isNull);
+        expect(map.safeCastListOrNull<int>('name'), isNull); // not an iterable
+        expect(map.safeCastListOrNull<int>('nullField'), isNull);
+      },
+    );
 
     test('tryConvert converts value or returns fallback/null', () {
       final parsed = map.tryConvert<DateTime>(
@@ -416,67 +424,64 @@ void main() {
     });
 
     test(
-        'convertList transforms elements and filters nulls or applies fallback',
-        () {
-      final lengths = map.convertList<int>(
-        'scores',
-        converter: (v) => v is int ? v * 2 : null,
-      );
-      expect(lengths, equals([180, 160, 140]));
+      'convertList transforms elements and filters nulls or applies fallback',
+      () {
+        final lengths = map.convertList<int>(
+          'scores',
+          converter: (v) => v is int ? v * 2 : null,
+        );
+        expect(lengths, equals([180, 160, 140]));
 
-      final mixedWithFallback = map.convertList<int>(
-        'mixed',
-        converter: (v) => v is int ? v : null,
-        fallback: 0,
-      );
-      expect(mixedWithFallback, equals([1, 0, 3]));
+        final mixedWithFallback = map.convertList<int>(
+          'mixed',
+          converter: (v) => v is int ? v : null,
+          fallback: 0,
+        );
+        expect(mixedWithFallback, equals([1, 0, 3]));
 
-      final empty = map.convertList<int>(
-        'non_existent',
-        converter: (v) => 1,
-      );
-      expect(empty, isEmpty);
+        final empty = map.convertList<int>('non_existent', converter: (v) => 1);
+        expect(empty, isEmpty);
 
-      final notIterable = map.convertList<int>(
-        'age',
-        converter: (v) => 1,
-      );
-      expect(notIterable, isEmpty);
-    });
+        final notIterable = map.convertList<int>('age', converter: (v) => 1);
+        expect(notIterable, isEmpty);
+      },
+    );
 
-    test('convertListOrNull returns collection or null if absent/non-iterable',
-        () {
-      final valid = map.convertListOrNull<int>(
-        'scores',
-        converter: (v) => v is int ? v * 2 : null,
-      );
-      expect(valid, equals([180, 160, 140]));
+    test(
+      'convertListOrNull returns collection or null if absent/non-iterable',
+      () {
+        final valid = map.convertListOrNull<int>(
+          'scores',
+          converter: (v) => v is int ? v * 2 : null,
+        );
+        expect(valid, equals([180, 160, 140]));
 
-      final mixedWithFallback = map.convertListOrNull<int>(
-        'mixed',
-        converter: (v) => v is int ? v : null,
-        fallback: 0,
-      );
-      expect(mixedWithFallback, equals([1, 0, 3]));
+        final mixedWithFallback = map.convertListOrNull<int>(
+          'mixed',
+          converter: (v) => v is int ? v : null,
+          fallback: 0,
+        );
+        expect(mixedWithFallback, equals([1, 0, 3]));
 
-      final absent = map.convertListOrNull<int>(
-        'non_existent',
-        converter: (v) => 1,
-      );
-      expect(absent, isNull);
+        final absent = map.convertListOrNull<int>(
+          'non_existent',
+          converter: (v) => 1,
+        );
+        expect(absent, isNull);
 
-      final notIterable = map.convertListOrNull<int>(
-        'age',
-        converter: (v) => 1,
-      );
-      expect(notIterable, isNull);
+        final notIterable = map.convertListOrNull<int>(
+          'age',
+          converter: (v) => 1,
+        );
+        expect(notIterable, isNull);
 
-      final nullField = map.convertListOrNull<int>(
-        'nullField',
-        converter: (v) => 1,
-      );
-      expect(nullField, isNull);
-    });
+        final nullField = map.convertListOrNull<int>(
+          'nullField',
+          converter: (v) => 1,
+        );
+        expect(nullField, isNull);
+      },
+    );
   });
 
   group('Exceptions', () {
@@ -498,51 +503,42 @@ void main() {
       expect(exception, isA<CasterException>());
       expect(exception, isA<Exception>());
       expect(exception.message, equals('cannot cast'));
-      expect(
-        exception.toString(),
-        equals('CasterTypeException: cannot cast'),
-      );
+      expect(exception.toString(), equals('CasterTypeException: cannot cast'));
     });
   });
 
   group('Regression & 7-State Explicit Differentiation', () {
+    test('State 1 vs State 5: candidate key does not exist with explicit fallback (safeCastFirst)', () {
+      final result = <String, Object?>{}.safeCastFirst<int?>([
+        'primary',
+        'secondary',
+      ], fallback: 42);
+      expect(result, equals(42));
+    });
+
     test(
-        'State 1 vs State 5: candidate key does not exist with explicit fallback (safeCastFirst)',
-        () {
-      final result = <String, Object?>{}.safeCastFirst<int?>(
-        ['primary', 'secondary'],
-        fallback: 42,
-      );
-      expect(result, equals(42));
-    });
+      'State 2 vs State 3: key exists and its value is null (safeCastFirst)',
+      () {
+        final result = <String, Object?>{'primary': null}
+            .safeCastFirst<int?>(['primary', 'secondary'], fallback: 42);
+        expect(result, isNull);
+      },
+    );
 
-    test('State 2 vs State 3: key exists and its value is null (safeCastFirst)',
-        () {
-      final result = <String, Object?>{
-        'primary': null,
-      }.safeCastFirst<int?>(
-        ['primary', 'secondary'],
-        fallback: 42,
-      );
-      expect(result, isNull);
-    });
-
-    test('State 1 vs State 5: MapCaster.safeCast on missing key with fallback',
-        () {
-      final result = <String, Object?>{}.safeCast<int?>(
-        'missing',
-        fallback: 42,
-      );
-      expect(result, equals(42));
-    });
+    test(
+      'State 1 vs State 5: MapCaster.safeCast on missing key with fallback',
+      () {
+        final result = <String, Object?>{}.safeCast<int?>(
+          'missing',
+          fallback: 42,
+        );
+        expect(result, equals(42));
+      },
+    );
 
     test('State 2 vs State 3: MapCaster.safeCast on present null key', () {
-      final result = <String, Object?>{
-        'null_key': null,
-      }.safeCast<int?>(
-        'null_key',
-        fallback: 42,
-      );
+      final result = <String, Object?>{'null_key': null}
+          .safeCast<int?>('null_key', fallback: 42);
       expect(result, isNull);
     });
 
@@ -553,57 +549,88 @@ void main() {
     });
 
     test(
-        'State 7: missing key with useDefaults: false throws CasterTypeException',
-        () {
-      expect(
-        () => <String, Object?>{}.safeCast<int>('missing', useDefaults: false),
-        throwsA(isA<CasterTypeException>()),
-      );
-    });
+      'State 7: missing key with useDefaults: false throws CasterTypeException',
+      () {
+        expect(
+          () =>
+              <String, Object?>{}.safeCast<int>('missing', useDefaults: false),
+          throwsA(isA<CasterTypeException>()),
+        );
+      },
+    );
 
     test(
-        'Type validation rejects Object, dynamic, and Object? across all methods',
-        () {
-      expect(
-          () => safeCast<Object>('v'), throwsA(isA<CasterArgumentException>()));
-      expect(() => safeCast<dynamic>('v'),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => safeCast<Object?>('v'),
-          throwsA(isA<CasterArgumentException>()));
+      'Type validation rejects Object, dynamic, and Object? across all methods',
+      () {
+        expect(
+          () => safeCast<Object>('v'),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => safeCast<dynamic>('v'),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => safeCast<Object?>('v'),
+          throwsA(isA<CasterArgumentException>()),
+        );
 
-      expect(() => safeCastOrNull<Object>('v'),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => safeCastOrNull<dynamic>('v'),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => safeCastOrNull<Object?>('v'),
-          throwsA(isA<CasterArgumentException>()));
+        expect(
+          () => safeCastOrNull<Object>('v'),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => safeCastOrNull<dynamic>('v'),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => safeCastOrNull<Object?>('v'),
+          throwsA(isA<CasterArgumentException>()),
+        );
 
-      final map = <String, Object?>{'k': 123};
-      expect(() => map.safeCast<Object>('k'),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => map.safeCast<dynamic>('k'),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => map.safeCast<Object?>('k'),
-          throwsA(isA<CasterArgumentException>()));
+        final map = <String, Object?>{'k': 123};
+        expect(
+          () => map.safeCast<Object>('k'),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => map.safeCast<dynamic>('k'),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => map.safeCast<Object?>('k'),
+          throwsA(isA<CasterArgumentException>()),
+        );
 
-      expect(() => map.safeCastOrNull<Object>('k'),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => map.safeCastOrNull<dynamic>('k'),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => map.safeCastOrNull<Object?>('k'),
-          throwsA(isA<CasterArgumentException>()));
+        expect(
+          () => map.safeCastOrNull<Object>('k'),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => map.safeCastOrNull<dynamic>('k'),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => map.safeCastOrNull<Object?>('k'),
+          throwsA(isA<CasterArgumentException>()),
+        );
 
-      expect(() => map.safeCastFirst<Object>(['k']),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => map.safeCastFirst<dynamic>(['k']),
-          throwsA(isA<CasterArgumentException>()));
-      expect(() => map.safeCastFirst<Object?>(['k']),
-          throwsA(isA<CasterArgumentException>()));
-    });
+        expect(
+          () => map.safeCastFirst<Object>(['k']),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => map.safeCastFirst<dynamic>(['k']),
+          throwsA(isA<CasterArgumentException>()),
+        );
+        expect(
+          () => map.safeCastFirst<Object?>(['k']),
+          throwsA(isA<CasterArgumentException>()),
+        );
+      },
+    );
 
-    test(
-        'safeCastList returns concrete List<T> with indexability and order preserved',
-        () {
+    test('safeCastList returns concrete List<T> with indexability and order preserved', () {
       final map = <String, Object?>{
         'items': [10, 20, 'skip', 30, 20],
       };
@@ -613,8 +640,10 @@ void main() {
       expect(result[0], equals(10));
       expect(result.length, equals(4));
 
-      final List<int> withFallback =
-          map.safeCastList<int>('items', fallback: -1);
+      final List<int> withFallback = map.safeCastList<int>(
+        'items',
+        fallback: -1,
+      );
       expect(withFallback, equals([10, 20, -1, 30, 20]));
     });
 

@@ -3,30 +3,13 @@
 import 'package:enum_parser/enum_parser.dart';
 
 /// An example source enum with SCREAMING_SNAKE_CASE naming.
-enum SourceStatus {
-  PENDING_PAYMENT,
-  PROCESSING,
-  SHIPPED,
-  DELIVERED,
-  CANCELLED,
-}
+enum SourceStatus { PENDING_PAYMENT, PROCESSING, SHIPPED, DELIVERED, CANCELLED }
 
 /// Target enum with idiomatic Dart camelCase naming (e.g. domain entity or internal model).
-enum OrderStatus {
-  pendingPayment,
-  processing,
-  shipped,
-  delivered,
-  cancelled;
-}
+enum OrderStatus { pendingPayment, processing, shipped, delivered, cancelled }
 
 /// A regular enum representing task priority.
-enum Priority {
-  low,
-  medium,
-  high,
-  critical,
-}
+enum Priority { low, medium, high, critical }
 
 void main() {
   print('=== EnumParser Demonstration ===\n');
@@ -95,10 +78,12 @@ void main() {
   print('   Mixed raw inputs    -> $mixedList\n');
 
   // 7. High-Throughput Pre-Indexed Parsing with EnumIndex
-  final statusIndex =
-      OrderStatus.values.toEnumIndex(mode: EnumParserMode.loose);
+  final statusIndex = OrderStatus.values.toEnumIndex(
+    mode: EnumParserMode.loose,
+  );
   print('7. High-Throughput EnumIndex:');
   print('   O(1) parsed: ${statusIndex.parse('cancelled')}');
   print(
-      '   O(1) batch:  ${statusIndex.parseList('pending_payment, shipped, cancelled')}');
+    '   O(1) batch:  ${statusIndex.parseList('pending_payment, shipped, cancelled')}',
+  );
 }

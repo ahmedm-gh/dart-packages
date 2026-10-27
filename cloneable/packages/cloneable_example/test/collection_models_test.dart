@@ -92,9 +92,7 @@ void main() {
       expect(withNulls.optionalScores, isNull);
 
       // Passing non-null values to optional collections
-      final withValues = withNulls.copyWith(
-        optionalTags: ['newTag'],
-      );
+      final withValues = withNulls.copyWith(optionalTags: ['newTag']);
 
       expect(withValues.optionalTags, equals(['newTag']));
       expect(withValues.optionalScores, isNull);

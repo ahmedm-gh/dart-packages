@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dependency_box/dependency_box.dart';
+import 'package:dependency_box/src/dependency_box_impl.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -21,16 +22,11 @@ void main() {
       expect(box.get<String>(), equals('hello'));
     });
 
-    test(
-        'registering the same type twice throws AssertionError in debug mode when not multi-registered',
-        () {
+    test('registering the same type twice throws AssertionError in debug mode when not multi-registered', () {
       box.addSingleton<String>('first');
-      expect(
-        () {
-          box.addSingleton<String>('second');
-        },
-        throwsA(isA<AssertionError>()),
-      );
+      expect(() {
+        box.addSingleton<String>('second');
+      }, throwsA(isA<AssertionError>()));
     });
 
     test('different types do not conflict', () {
@@ -49,16 +45,11 @@ void main() {
       expect(box.get<String>(key: 'alt'), equals('named'));
     });
 
-    test(
-        'same type with same key throws AssertionError in debug mode when not multi-registered',
-        () {
+    test('same type with same key throws AssertionError in debug mode when not multi-registered', () {
       box.addSingleton<String>('first', key: 'tag');
-      expect(
-        () {
-          box.addSingleton<String>('second', key: 'tag');
-        },
-        throwsA(isA<AssertionError>()),
-      );
+      expect(() {
+        box.addSingleton<String>('second', key: 'tag');
+      }, throwsA(isA<AssertionError>()));
     });
 
     test('keyed registration does not affect keyless', () {
@@ -170,50 +161,39 @@ void main() {
 
   group('parameterizedFactory registration', () {
     test('creates a new instance using supplied args', () {
-      box.addFactoryWith<String, String>(
-        (container, name) {
-          return 'Hello, $name!';
-        },
-      );
+      box.addFactoryWith<String, String>((container, name) {
+        return 'Hello, $name!';
+      });
 
       expect(box.get<String>(args: 'Alice'), equals('Hello, Alice!'));
       expect(box.get<String>(args: 'Bob'), equals('Hello, Bob!'));
     });
 
     test('supports class as args', () {
-      box.addFactoryWith<String, ({String id, int age})>(
-        (container, args) {
-          return 'User ${args.id} is ${args.age}';
-        },
-      );
+      box.addFactoryWith<String, ({String id, int age})>((container, args) {
+        return 'User ${args.id} is ${args.age}';
+      });
 
       final result = box.get<String>(args: (id: 'u1', age: 25));
       expect(result, equals('User u1 is 25'));
     });
 
     test('works with tryGet and call', () {
-      box.addFactoryWith<int, int>(
-        (container, multiplier) {
-          return multiplier * 10;
-        },
-      );
+      box.addFactoryWith<int, int>((container, multiplier) {
+        return multiplier * 10;
+      });
 
       expect(box.tryGet<int>(args: 5), equals(50));
       expect(box.get<int>(args: 7), equals(70));
     });
 
     test('supports keys for parameterized factories', () {
-      box.addFactoryWith<String, String>(
-        (container, suffix) {
-          return 'default-$suffix';
-        },
-      );
-      box.addFactoryWith<String, String>(
-        (container, suffix) {
-          return 'keyed-$suffix';
-        },
-        key: 'custom',
-      );
+      box.addFactoryWith<String, String>((container, suffix) {
+        return 'default-$suffix';
+      });
+      box.addFactoryWith<String, String>((container, suffix) {
+        return 'keyed-$suffix';
+      }, key: 'custom');
 
       expect(box.get<String>(args: 'test'), equals('default-test'));
       expect(
@@ -223,24 +203,16 @@ void main() {
     });
 
     test('throws ArgumentError when wrong args type or null is provided', () {
-      box.addFactoryWith<String, String>(
-        (container, name) {
-          return 'Hello, $name!';
-        },
-      );
+      box.addFactoryWith<String, String>((container, name) {
+        return 'Hello, $name!';
+      });
 
-      expect(
-        () {
-          box.get<String>();
-        },
-        throwsA(isA<ArgumentError>()),
-      );
-      expect(
-        () {
-          box.get<String>(args: 123);
-        },
-        throwsA(isA<ArgumentError>()),
-      );
+      expect(() {
+        box.get<String>();
+      }, throwsA(isA<ArgumentError>()));
+      expect(() {
+        box.get<String>(args: 123);
+      }, throwsA(isA<ArgumentError>()));
     });
   });
 
@@ -296,8 +268,8 @@ void main() {
       expect(box.getAll<String>(), equals(['single']));
     });
 
-    test('returns all instances when type is in allowMultiple', () {
-      box.allowMultiple({const MultiRegistration<String>()});
+    test('returns all instances when type is in allowMultiAll', () {
+      box.allowMultiAll({const MultiRegistration<String>()});
       box.addSingleton<String>('first');
       box.addSingleton<String>('second');
       box.addSingleton<String>('third');
@@ -306,7 +278,7 @@ void main() {
     });
 
     test('get returns last instance by default (MultiResolution.last)', () {
-      box.allowMultiple({const MultiRegistration<String>()});
+      box.allowMultiAll({const MultiRegistration<String>()});
       box.addSingleton<String>('first');
       box.addSingleton<String>('second');
 
@@ -314,73 +286,82 @@ void main() {
     });
 
     test(
-        'get returns first instance when configured with MultiResolution.first',
-        () {
-      box.allowMultiple(
-          {const MultiRegistration<String>(MultiResolution.first)});
-      box.addSingleton<String>('first');
-      box.addSingleton<String>('second');
-      box.addSingleton<String>('third');
+      'get returns first instance when configured with MultiResolution.first',
+      () {
+        box.allowMultiAll({
+          const MultiRegistration<String>(MultiResolution.first),
+        });
+        box.addSingleton<String>('first');
+        box.addSingleton<String>('second');
+        box.addSingleton<String>('third');
 
-      expect(box.get<String>(), equals('first'));
-      expect(box.getAll<String>(), equals(['first', 'second', 'third']));
-    });
+        expect(box.get<String>(), equals('first'));
+        expect(box.getAll<String>(), equals(['first', 'second', 'third']));
+      },
+    );
 
     test(
-        'get returns instance at index when configured with MultiResolution.at',
-        () {
-      box.allowMultiple({MultiRegistration<String>.at(1)});
-      box.addSingleton<String>('first');
-      box.addSingleton<String>('second');
-      box.addSingleton<String>('third');
+      'get returns instance at index when configured with MultiResolution.at',
+      () {
+        box.allowMultiAll({MultiRegistration<String>.at(1)});
+        box.addSingleton<String>('first');
+        box.addSingleton<String>('second');
+        box.addSingleton<String>('third');
 
-      expect(box.get<String>(), equals('second'));
-      expect(box.getAll<String>(), equals(['first', 'second', 'third']));
-    });
+        expect(box.get<String>(), equals('second'));
+        expect(box.getAll<String>(), equals(['first', 'second', 'third']));
+      },
+    );
 
-    test('get returns instance by key when configured with MultiResolution.key',
-        () {
-      box.allowMultiple({MultiRegistration<String>.key('target')});
-      box.addSingleton<String>('other_val', key: 'other');
-      box.addSingleton<String>('target_val', key: 'target');
-      box.addSingleton<String>('more_val', key: 'more');
+    test(
+      'get returns instance by key when configured with MultiResolution.key',
+      () {
+        box.allowMultiAll({MultiRegistration<String>.key('target')});
+        box.addSingleton<String>('other_val', key: 'other');
+        box.addSingleton<String>('target_val', key: 'target');
+        box.addSingleton<String>('more_val', key: 'more');
 
-      expect(box.get<String>(), equals('target_val'));
-      expect(box.get<String>(key: 'other'), equals('other_val'));
-      expect(box.get<String>(key: 'target'), equals('target_val'));
-    });
+        expect(box.get<String>(), equals('target_val'));
+        expect(box.get<String>(key: 'other'), equals('other_val'));
+        expect(box.get<String>(key: 'target'), equals('target_val'));
+      },
+    );
 
-    test('get returns last instance when configured with MultiResolution.last',
-        () {
-      box.allowMultiple({const MultiRegistration<String>.last()});
-      box.addSingleton<String>('first');
-      box.addSingleton<String>('second');
+    test(
+      'get returns last instance when configured with MultiResolution.last',
+      () {
+        box.allowMultiAll({const MultiRegistration<String>.last()});
+        box.addSingleton<String>('first');
+        box.addSingleton<String>('second');
 
-      expect(box.get<String>(), equals('second'));
-    });
+        expect(box.get<String>(), equals('second'));
+      },
+    );
 
-    test('configures distinct MultiResolution for each type in single call',
-        () {
-      box.allowMultiple({
-        const MultiRegistration<String>(MultiResolution.first),
-        const MultiRegistration<int>(MultiResolution.last),
-      });
+    test(
+      'configures distinct MultiResolution for each type in single call',
+      () {
+        box.allowMultiAll({
+          const MultiRegistration<String>(MultiResolution.first),
+          const MultiRegistration<int>(MultiResolution.last),
+        });
 
-      box.addSingleton<String>('s1');
-      box.addSingleton<String>('s2');
+        box.addSingleton<String>('s1');
+        box.addSingleton<String>('s2');
 
-      box.addSingleton<int>(10);
-      box.addSingleton<int>(20);
+        box.addSingleton<int>(10);
+        box.addSingleton<int>(20);
 
-      expect(box.get<String>(), equals('s1'));
-      expect(box.getAll<String>(), equals(['s1', 's2']));
+        expect(box.get<String>(), equals('s1'));
+        expect(box.getAll<String>(), equals(['s1', 's2']));
 
-      expect(box.get<int>(), equals(20));
-      expect(box.getAll<int>(), equals([10, 20]));
-    });
+        expect(box.get<int>(), equals(20));
+        expect(box.getAll<int>(), equals([10, 20]));
+      },
+    );
 
     test('supports multiple factories and lazy singletons', () {
-      box.allowMultiple({const MultiRegistration<String>()});
+      box.allowMultiAll({const MultiRegistration<String>()});
       box.addFactory<String>((_) {
         return 'fact';
       });
@@ -392,26 +373,19 @@ void main() {
     });
 
     test('supports multiple parameterized factories with args', () {
-      box.allowMultiple({const MultiRegistration<String>()});
-      box.addFactoryWith<String, String>(
-        (container, prefix) {
-          return '$prefix-A';
-        },
-      );
-      box.addFactoryWith<String, String>(
-        (container, prefix) {
-          return '$prefix-B';
-        },
-      );
+      box.allowMultiAll({const MultiRegistration<String>()});
+      box.addFactoryWith<String, String>((container, prefix) {
+        return '$prefix-A';
+      });
+      box.addFactoryWith<String, String>((container, prefix) {
+        return '$prefix-B';
+      });
 
-      expect(
-        box.getAll<String>(args: 'test'),
-        equals(['test-A', 'test-B']),
-      );
+      expect(box.getAll<String>(args: 'test'), equals(['test-A', 'test-B']));
     });
 
     test('supports keys with multi-register types', () {
-      box.allowMultiple({const MultiRegistration<String>()});
+      box.allowMultiAll({const MultiRegistration<String>()});
       box.addSingleton<String>('plugin1', key: 'plugins');
       box.addSingleton<String>('plugin2', key: 'plugins');
 
@@ -421,19 +395,14 @@ void main() {
       );
     });
 
-    test(
-        'singletonAll throws AssertionError in debug mode when type is not in allowMultiple',
-        () {
-      expect(
-        () {
-          box.addSingletons<String>(['a', 'b', 'c']);
-        },
-        throwsA(isA<AssertionError>()),
-      );
+    test('singletonAll throws AssertionError in debug mode when type is not in allowMultiAll', () {
+      expect(() {
+        box.addSingletons<String>(['a', 'b', 'c']);
+      }, throwsA(isA<AssertionError>()));
     });
 
     test('singletonAll registers multiple instances when type is enabled', () {
-      box.allowMultiple({const MultiRegistration<String>()});
+      box.allowMultiAll({const MultiRegistration<String>()});
       box.addSingletons<String>(['a', 'b', 'c']);
 
       expect(box.getAll<String>(), equals(['a', 'b', 'c']));
@@ -441,26 +410,25 @@ void main() {
     });
 
     test(
-        'enabling multi-register preserves previously registered single instance',
-        () {
-      box.addSingleton<String>('single');
-      box.allowMultiple({const MultiRegistration<String>()});
-      box.addSingleton<String>('multi');
+      'enabling multi-register preserves previously registered single instance',
+      () {
+        box.addSingleton<String>('single');
+        box.allowMultiAll({const MultiRegistration<String>()});
+        box.addSingleton<String>('multi');
 
-      expect(box.getAll<String>(), equals(['single', 'multi']));
-    });
+        expect(box.getAll<String>(), equals(['single', 'multi']));
+      },
+    );
 
-    test('allowMultiple accepts a List instead of a Set', () {
-      box.allowMultiple([const MultiRegistration<String>()]);
+    test('allowMultiAll accepts a List instead of a Set', () {
+      box.allowMultiAll([const MultiRegistration<String>()]);
       box.addSingleton<String>('first');
       box.addSingleton<String>('second');
 
       expect(box.getAll<String>(), equals(['first', 'second']));
     });
 
-    test(
-        'allowMulti enables multi-registration for single type with default last resolution',
-        () {
+    test('allowMulti enables multi-registration for single type with default last resolution', () {
       box.allowMulti<String>();
       box.addSingleton<String>('one');
       box.addSingleton<String>('two');
@@ -497,19 +465,19 @@ void main() {
       expect(box.contains<String>(key: 'k'), isFalse);
     });
 
-    test('invokes dispose on singletons implementing DependencyDisposable',
-        () async {
-      final disposable = _TestDisposable();
-      box.addSingleton<_TestDisposable>(disposable);
-
-      await box.dispose();
-
-      expect(disposable.disposed, isTrue);
-    });
-
     test(
-        'invokes dispose on initialized lazySingletons implementing DependencyDisposable',
-        () async {
+      'invokes dispose on singletons implementing DependencyDisposable',
+      () async {
+        final disposable = _TestDisposable();
+        box.addSingleton<_TestDisposable>(disposable);
+
+        await box.dispose();
+
+        expect(disposable.disposed, isTrue);
+      },
+    );
+
+    test('invokes dispose on initialized lazySingletons implementing DependencyDisposable', () async {
       final disposable = _TestDisposable();
       box.addLazySingleton<_TestDisposable>((_) {
         return disposable;
@@ -553,7 +521,7 @@ void main() {
       final d1 = _TestDisposable();
       final d2 = _TestDisposable();
 
-      box.allowMultiple({const MultiRegistration<_TestDisposable>()});
+      box.allowMultiAll({const MultiRegistration<_TestDisposable>()});
       box.addSingleton<_TestDisposable>(d1);
       box.addSingleton<_TestDisposable>(d2);
 
@@ -565,14 +533,16 @@ void main() {
   });
 
   group('BoxDependencyRef', () {
-    test('instances with same type and key are equal and have same hashCode',
-        () {
-      const dep1 = BoxDependencyRef(String, key: 'test');
-      const dep2 = BoxDependencyRef(String, key: 'test');
+    test(
+      'instances with same type and key are equal and have same hashCode',
+      () {
+        const dep1 = BoxDependencyRef(String, key: 'test');
+        const dep2 = BoxDependencyRef(String, key: 'test');
 
-      expect(dep1, equals(dep2));
-      expect(dep1.hashCode, equals(dep2.hashCode));
-    });
+        expect(dep1, equals(dep2));
+        expect(dep1.hashCode, equals(dep2.hashCode));
+      },
+    );
 
     test('instances with same type and null key are equal', () {
       const dep1 = BoxDependencyRef(String);
@@ -637,8 +607,10 @@ void main() {
       const constDirectAt = MultiRegistration<String>.at(2);
       const constDirectKey = MultiRegistration<String>.key('custom');
       expect(constDirectAt.resolution, equals(const MultiResolution.at(2)));
-      expect(constDirectKey.resolution,
-          equals(const MultiResolution.key('custom')));
+      expect(
+        constDirectKey.resolution,
+        equals(const MultiResolution.key('custom')),
+      );
 
       const constM1 = MultiRegistration<String>(MultiResolution.at(2));
       const constM2 = MultiRegistration<String>(MultiResolution.key('custom'));
@@ -709,25 +681,27 @@ void main() {
             },
             'message',
             contains(
-                'Cannot synchronously resolve uninitialized async singleton'),
+              'Cannot synchronously resolve uninitialized async singleton',
+            ),
           ),
         ),
       );
     });
 
     test(
-        'sync get returns cached instance after async initialization completes',
-        () async {
-      box.addAsyncSingleton<String>((_) async {
-        return 'initialized';
-      });
+      'sync get returns cached instance after async initialization completes',
+      () async {
+        box.addAsyncSingleton<String>((_) async {
+          return 'initialized';
+        });
 
-      final asyncRes = await box.getAsync<String>();
-      final syncRes = box.get<String>();
+        final asyncRes = await box.getAsync<String>();
+        final syncRes = box.get<String>();
 
-      expect(syncRes, equals('initialized'));
-      expect(identical(asyncRes, syncRes), isTrue);
-    });
+        expect(syncRes, equals('initialized'));
+        expect(identical(asyncRes, syncRes), isTrue);
+      },
+    );
 
     test('isolated by type and key', () async {
       box.addAsyncSingleton<String>((_) async {
@@ -746,47 +720,43 @@ void main() {
     });
 
     test(
-        'tryGetAsync returns null for unregistered types and resolves registered',
-        () async {
-      expect(await box.tryGetAsync<String>(), isNull);
+      'tryGetAsync returns null for unregistered types and resolves registered',
+      () async {
+        expect(await box.tryGetAsync<String>(), isNull);
 
-      box.addAsyncSingleton<String>((_) async {
-        return 'found';
-      });
-      expect(await box.tryGetAsync<String>(), equals('found'));
-    });
-
-    test('getAsync resolves synchronous registrations as completed Future',
-        () async {
-      box.addSingleton<String>('sync-val');
-      box.addLazySingleton<int>((_) {
-        return 42;
-      });
-
-      expect(await box.getAsync<String>(), equals('sync-val'));
-      expect(await box.getAsync<int>(), equals(42));
-    });
+        box.addAsyncSingleton<String>((_) async {
+          return 'found';
+        });
+        expect(await box.tryGetAsync<String>(), equals('found'));
+      },
+    );
 
     test(
-        'getAsync propagates synchronous failure from lazy factory as rejected Future',
-        () async {
+      'getAsync resolves synchronous registrations as completed Future',
+      () async {
+        box.addSingleton<String>('sync-val');
+        box.addLazySingleton<int>((_) {
+          return 42;
+        });
+
+        expect(await box.getAsync<String>(), equals('sync-val'));
+        expect(await box.getAsync<int>(), equals(42));
+      },
+    );
+
+    test('getAsync propagates synchronous failure from lazy factory as rejected Future', () async {
       box.addLazySingleton<String>((_) {
         throw const FormatException('bad format');
       });
 
-      expect(
-        () async {
-          await box.getAsync<String>();
-        },
-        throwsA(isA<FormatException>()),
-      );
+      expect(() async {
+        await box.getAsync<String>();
+      }, throwsA(isA<FormatException>()));
     });
   });
 
   group('async concurrency & failure retry', () {
-    test(
-        'concurrent resolutions execute factory exactly once and return identical instance',
-        () async {
+    test('concurrent resolutions execute factory exactly once and return identical instance', () async {
       final completer = Completer<String>();
       var callCount = 0;
 
@@ -808,53 +778,58 @@ void main() {
       expect(identical(results[1], results[2]), isTrue);
     });
 
-    test('concurrent callers observe the same initialization failure',
-        () async {
-      final completer = Completer<String>();
-      var callCount = 0;
+    test(
+      'concurrent callers observe the same initialization failure',
+      () async {
+        final completer = Completer<String>();
+        var callCount = 0;
 
-      box.addAsyncSingleton<String>((_) async {
-        callCount++;
-        return completer.future;
-      });
+        box.addAsyncSingleton<String>((_) async {
+          callCount++;
+          return completer.future;
+        });
 
-      final f1 = box.getAsync<String>();
-      final f2 = box.getAsync<String>();
+        final f1 = box.getAsync<String>();
+        final f2 = box.getAsync<String>();
 
-      completer.completeError(const FormatException('failed to parse config'));
+        completer.completeError(
+          const FormatException('failed to parse config'),
+        );
 
-      await expectLater(f1, throwsA(isA<FormatException>()));
-      await expectLater(f2, throwsA(isA<FormatException>()));
-      expect(callCount, equals(1));
-    });
+        await expectLater(f1, throwsA(isA<FormatException>()));
+        await expectLater(f2, throwsA(isA<FormatException>()));
+        expect(callCount, equals(1));
+      },
+    );
 
     test(
-        'failed initialization allows subsequent resolution to retry and succeed',
-        () async {
-      var callCount = 0;
-      var shouldFail = true;
+      'failed initialization allows subsequent resolution to retry and succeed',
+      () async {
+        var callCount = 0;
+        var shouldFail = true;
 
-      box.addAsyncSingleton<String>((_) async {
-        callCount++;
-        if (shouldFail) {
-          throw Exception('network timeout');
-        }
-        return 'success-after-retry';
-      });
+        box.addAsyncSingleton<String>((_) async {
+          callCount++;
+          if (shouldFail) {
+            throw Exception('network timeout');
+          }
+          return 'success-after-retry';
+        });
 
-      await expectLater(box.getAsync<String>(), throwsA(isA<Exception>()));
-      expect(callCount, equals(1));
+        await expectLater(box.getAsync<String>(), throwsA(isA<Exception>()));
+        expect(callCount, equals(1));
 
-      shouldFail = false;
-      final retryResult = await box.getAsync<String>();
-      expect(retryResult, equals('success-after-retry'));
-      expect(callCount, equals(2));
+        shouldFail = false;
+        final retryResult = await box.getAsync<String>();
+        expect(retryResult, equals('success-after-retry'));
+        expect(callCount, equals(2));
 
-      // Subsequent call uses cached instance without calling factory again.
-      final thirdResult = await box.getAsync<String>();
-      expect(thirdResult, equals('success-after-retry'));
-      expect(callCount, equals(2));
-    });
+        // Subsequent call uses cached instance without calling factory again.
+        final thirdResult = await box.getAsync<String>();
+        expect(thirdResult, equals('success-after-retry'));
+        expect(callCount, equals(2));
+      },
+    );
   });
 
   group('async dependency graphs & cycle detection', () {
@@ -882,46 +857,47 @@ void main() {
       expect(result, equals('sync-200'));
     });
 
-    test('mixed multi-layer dependency graph resolves in correct order',
-        () async {
-      box.addSingleton<String>('https://api.test.com');
-      box.addAsyncSingleton<int>((_) async {
-        return 8080;
-      });
-      box.addAsyncSingleton<List<String>>((c) async {
-        final host = c.get<String>();
-        final port = await c.getAsync<int>();
-        return ['$host:$port', 'ready'];
-      });
+    test(
+      'mixed multi-layer dependency graph resolves in correct order',
+      () async {
+        box.addSingleton<String>('https://api.test.com');
+        box.addAsyncSingleton<int>((_) async {
+          return 8080;
+        });
+        box.addAsyncSingleton<List<String>>((c) async {
+          final host = c.get<String>();
+          final port = await c.getAsync<int>();
+          return ['$host:$port', 'ready'];
+        });
 
-      final result = await box.getAsync<List<String>>();
-      expect(result, equals(['https://api.test.com:8080', 'ready']));
-    });
+        final result = await box.getAsync<List<String>>();
+        expect(result, equals(['https://api.test.com:8080', 'ready']));
+      },
+    );
 
     test(
-        'detects direct circular async dependency (A -> A) and throws StateError',
-        () async {
-      box.addAsyncSingleton<String>((container) async {
-        return await container.getAsync<String>();
-      });
+      'detects direct circular async dependency (A -> A) and throws StateError',
+      () async {
+        box.addAsyncSingleton<String>((container) async {
+          return await container.getAsync<String>();
+        });
 
-      await expectLater(
-        box.getAsync<String>(),
-        throwsA(
-          isA<StateError>().having(
-            (e) {
-              return e.message;
-            },
-            'message',
-            contains('Circular dependency detected'),
+        await expectLater(
+          box.getAsync<String>(),
+          throwsA(
+            isA<StateError>().having(
+              (e) {
+                return e.message;
+              },
+              'message',
+              contains('Circular dependency detected'),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
 
-    test(
-        'detects mutual circular async dependency (A -> B -> A) and throws StateError without hanging',
-        () async {
+    test('detects mutual circular async dependency (A -> B -> A) and throws StateError without hanging', () async {
       box.addAsyncSingleton<String>((container) async {
         final b = await container.getAsync<int>();
         return 'A:$b';
@@ -946,51 +922,54 @@ void main() {
       );
     });
 
-    test('detects 3-level circular async dependency (A -> B -> C -> A)',
-        () async {
-      box.addAsyncSingleton<String>((c) async {
-        return 'str-${await c.getAsync<int>()}';
-      });
-      box.addAsyncSingleton<int>((c) async {
-        return (await c.getAsync<double>()).toInt();
-      });
-      box.addAsyncSingleton<double>((c) async {
-        final str = await c.getAsync<String>();
-        return str.length.toDouble();
-      });
+    test(
+      'detects 3-level circular async dependency (A -> B -> C -> A)',
+      () async {
+        box.addAsyncSingleton<String>((c) async {
+          return 'str-${await c.getAsync<int>()}';
+        });
+        box.addAsyncSingleton<int>((c) async {
+          return (await c.getAsync<double>()).toInt();
+        });
+        box.addAsyncSingleton<double>((c) async {
+          final str = await c.getAsync<String>();
+          return str.length.toDouble();
+        });
 
-      await expectLater(
-        box.getAsync<String>(),
-        throwsA(
-          isA<StateError>().having(
-            (e) {
-              return e.message;
-            },
-            'message',
-            contains('Circular dependency detected'),
+        await expectLater(
+          box.getAsync<String>(),
+          throwsA(
+            isA<StateError>().having(
+              (e) {
+                return e.message;
+              },
+              'message',
+              contains('Circular dependency detected'),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   });
 
   group('async lifecycle & disposal', () {
     test(
-        'disposes initialized async singleton implementing DependencyDisposable',
-        () async {
-      var disposed = false;
-      box.addAsyncSingleton<_CustomDisposable>((_) async {
-        return _CustomDisposable(() {
-          disposed = true;
+      'disposes initialized async singleton implementing DependencyDisposable',
+      () async {
+        var disposed = false;
+        box.addAsyncSingleton<_CustomDisposable>((_) async {
+          return _CustomDisposable(() {
+            disposed = true;
+          });
         });
-      });
 
-      await box.getAsync<_CustomDisposable>();
-      expect(disposed, isFalse);
+        await box.getAsync<_CustomDisposable>();
+        expect(disposed, isFalse);
 
-      await box.dispose();
-      expect(disposed, isTrue);
-    });
+        await box.dispose();
+        expect(disposed, isTrue);
+      },
+    );
 
     test('does not dispose uninitialized async singleton', () async {
       var disposed = false;
@@ -1004,47 +983,51 @@ void main() {
       expect(disposed, isFalse);
     });
 
-    test('failed initialization does not dispose a nonexistent instance',
-        () async {
-      var disposed = false;
-      box.addAsyncSingleton<_CustomDisposable>((_) async {
-        throw Exception('failed init');
-      });
+    test(
+      'failed initialization does not dispose a nonexistent instance',
+      () async {
+        var disposed = false;
+        box.addAsyncSingleton<_CustomDisposable>((_) async {
+          throw Exception('failed init');
+        });
 
-      try {
-        await box.getAsync<_CustomDisposable>();
-      } catch (_) {}
+        try {
+          await box.getAsync<_CustomDisposable>();
+        } catch (_) {}
 
-      await box.dispose();
-      expect(disposed, isFalse);
-    });
-
-    test('calling getAsync on a disposed box immediately returns StateError',
-        () async {
-      box.addAsyncSingleton<String>((_) async {
-        return 'hello';
-      });
-
-      await box.dispose();
-      expect(box.isDisposed, isTrue);
-
-      await expectLater(
-        box.getAsync<String>(),
-        throwsA(
-          isA<StateError>().having(
-            (e) {
-              return e.message;
-            },
-            'message',
-            contains('Cannot resolve dependency from a disposed DependencyBox'),
-          ),
-        ),
-      );
-    });
+        await box.dispose();
+        expect(disposed, isFalse);
+      },
+    );
 
     test(
-        'disposal racing with in-flight initialization disposes the instance and rejects waiting caller',
-        () async {
+      'calling getAsync on a disposed box immediately returns StateError',
+      () async {
+        box.addAsyncSingleton<String>((_) async {
+          return 'hello';
+        });
+
+        await box.dispose();
+        expect(box.isDisposed, isTrue);
+
+        await expectLater(
+          box.getAsync<String>(),
+          throwsA(
+            isA<StateError>().having(
+              (e) {
+                return e.message;
+              },
+              'message',
+              contains(
+                'Cannot resolve dependency from a disposed DependencyBox',
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    test('disposal racing with in-flight initialization disposes the instance and rejects waiting caller', () async {
       final completer = Completer<_CustomDisposable>();
       var instanceDisposed = false;
 
@@ -1058,9 +1041,11 @@ void main() {
       final disposeFuture = box.dispose();
 
       // Factory now completes
-      completer.complete(_CustomDisposable(() {
-        instanceDisposed = true;
-      }));
+      completer.complete(
+        _CustomDisposable(() {
+          instanceDisposed = true;
+        }),
+      );
 
       await disposeFuture;
 
@@ -1080,9 +1065,7 @@ void main() {
       expect(instanceDisposed, isTrue);
     });
 
-    test(
-        'cleanup failure in one disposable does not prevent remaining disposables from disposing',
-        () async {
+    test('cleanup failure in one disposable does not prevent remaining disposables from disposing', () async {
       var secondDisposed = false;
 
       box.addSingleton<_CustomDisposable>(
@@ -1099,10 +1082,7 @@ void main() {
         key: 'second',
       );
 
-      await expectLater(
-        box.dispose(),
-        throwsA(isA<Exception>()),
-      );
+      await expectLater(box.dispose(), throwsA(isA<Exception>()));
 
       expect(secondDisposed, isTrue);
     });
@@ -1133,15 +1113,16 @@ void main() {
     });
 
     test(
-        'child registration shadows parent registration without modifying parent',
-        () {
-      box.addSingleton<String>('parent-data');
-      final child = box.createChild();
-      child.addSingleton<String>('child-override');
+      'child registration shadows parent registration without modifying parent',
+      () {
+        box.addSingleton<String>('parent-data');
+        final child = box.createChild();
+        child.addSingleton<String>('child-override');
 
-      expect(child.get<String>(), equals('child-override'));
-      expect(box.get<String>(), equals('parent-data'));
-    });
+        expect(child.get<String>(), equals('child-override'));
+        expect(box.get<String>(), equals('parent-data'));
+      },
+    );
 
     test('parent cannot resolve child-only registration', () {
       final child = box.createChild();
@@ -1149,12 +1130,9 @@ void main() {
 
       expect(child.get<int>(), equals(42));
       expect(box.contains<int>(), isFalse);
-      expect(
-        () {
-          return box.get<int>();
-        },
-        throwsA(isA<StateError>()),
-      );
+      expect(() {
+        return box.get<int>();
+      }, throwsA(isA<StateError>()));
     });
 
     test('multi-level hierarchy resolves up the chain', () {
@@ -1167,28 +1145,32 @@ void main() {
       expect(grandchild.get<int>(), equals(100));
     });
 
-    test('disposal of child container does not affect parent registrations',
-        () async {
-      box.addSingleton<String>('parent-kept');
-      final childDisposable = _TestDisposable();
-      final child = box.createChild();
-      child.addSingleton<_TestDisposable>(childDisposable);
+    test(
+      'disposal of child container does not affect parent registrations',
+      () async {
+        box.addSingleton<String>('parent-kept');
+        final childDisposable = _TestDisposable();
+        final child = box.createChild();
+        child.addSingleton<_TestDisposable>(childDisposable);
 
-      await child.dispose();
+        await child.dispose();
 
-      expect(child.isDisposed, isTrue);
-      expect(childDisposable.disposed, isTrue);
-      expect(box.isDisposed, isFalse);
-      expect(box.get<String>(), equals('parent-kept'));
-    });
+        expect(child.isDisposed, isTrue);
+        expect(childDisposable.disposed, isTrue);
+        expect(box.isDisposed, isFalse);
+        expect(box.get<String>(), equals('parent-kept'));
+      },
+    );
 
-    test('parent disposal does not throw if child is already disposed',
-        () async {
-      final child = box.createChild();
-      await child.dispose();
-      await box.dispose();
-      expect(box.isDisposed, isTrue);
-    });
+    test(
+      'parent disposal does not throw if child is already disposed',
+      () async {
+        final child = box.createChild();
+        await child.dispose();
+        await box.dispose();
+        expect(box.isDisposed, isTrue);
+      },
+    );
   });
 
   group('inline onDispose hooks', () {
@@ -1208,33 +1190,35 @@ void main() {
       expect(client.isClosed, isTrue);
     });
 
-    test('lazySingleton invokes custom onDispose only when initialized',
-        () async {
-      var disposedCount = 0;
-      box.addLazySingleton<_NonDisposableResource>(
-        (c) {
-          return _NonDisposableResource('lazy-used');
-        },
-        key: 'used',
-        onDispose: (r) {
-          disposedCount++;
-        },
-      );
-      box.addLazySingleton<_NonDisposableResource>(
-        (c) {
-          return _NonDisposableResource('lazy-unused');
-        },
-        key: 'unused',
-        onDispose: (r) {
-          disposedCount++;
-        },
-      );
+    test(
+      'lazySingleton invokes custom onDispose only when initialized',
+      () async {
+        var disposedCount = 0;
+        box.addLazySingleton<_NonDisposableResource>(
+          (c) {
+            return _NonDisposableResource('lazy-used');
+          },
+          key: 'used',
+          onDispose: (r) {
+            disposedCount++;
+          },
+        );
+        box.addLazySingleton<_NonDisposableResource>(
+          (c) {
+            return _NonDisposableResource('lazy-unused');
+          },
+          key: 'unused',
+          onDispose: (r) {
+            disposedCount++;
+          },
+        );
 
-      box.get<_NonDisposableResource>(key: 'used');
-      await box.dispose();
+        box.get<_NonDisposableResource>(key: 'used');
+        await box.dispose();
 
-      expect(disposedCount, equals(1));
-    });
+        expect(disposedCount, equals(1));
+      },
+    );
 
     test('asyncSingleton invokes custom async onDispose', () async {
       var disposed = false;
@@ -1253,9 +1237,7 @@ void main() {
       expect(disposed, isTrue);
     });
 
-    test(
-        'both onDispose callback and DependencyDisposable.dispose run on disposal',
-        () async {
+    test('both onDispose callback and DependencyDisposable.dispose run on disposal', () async {
       var callbackRan = false;
       final disposable = _TestDisposable();
       box.addSingleton<_TestDisposable>(
@@ -1311,12 +1293,9 @@ void main() {
       expect(removed, isTrue);
       expect(box.contains<_TestDisposable>(), isFalse);
       expect(disposable.disposed, isTrue);
-      expect(
-        () {
-          return box.get<_TestDisposable>();
-        },
-        throwsA(isA<StateError>()),
-      );
+      expect(() {
+        return box.get<_TestDisposable>();
+      }, throwsA(isA<StateError>()));
     });
 
     test('unregisters without disposing when dispose: false', () async {
@@ -1347,13 +1326,15 @@ void main() {
   });
 
   group('test overrides (replaceSingleton)', () {
-    test('replaces registration without throwing duplicate registration assert',
-        () {
-      box.addSingleton<String>('production');
-      box.replaceSingleton<String>('mocked-test');
+    test(
+      'replaces registration without throwing duplicate registration assert',
+      () {
+        box.addSingleton<String>('production');
+        box.replaceSingleton<String>('mocked-test');
 
-      expect(box.get<String>(), equals('mocked-test'));
-    });
+        expect(box.get<String>(), equals('mocked-test'));
+      },
+    );
 
     test('disposes old instance when disposeOld is true', () async {
       final old = _TestDisposable();
@@ -1368,19 +1349,21 @@ void main() {
       expect(box.get<_TestDisposable>(), equals(replacement));
     });
 
-    test('retains old instance without disposal when disposeOld is false',
-        () async {
-      final old = _TestDisposable();
-      box.addSingleton<_TestDisposable>(old);
+    test(
+      'retains old instance without disposal when disposeOld is false',
+      () async {
+        final old = _TestDisposable();
+        box.addSingleton<_TestDisposable>(old);
 
-      final replacement = _TestDisposable();
-      box.replaceSingleton<_TestDisposable>(replacement, disposeOld: false);
+        final replacement = _TestDisposable();
+        box.replaceSingleton<_TestDisposable>(replacement, disposeOld: false);
 
-      await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
 
-      expect(old.disposed, isFalse);
-      expect(box.get<_TestDisposable>(), equals(replacement));
-    });
+        expect(old.disposed, isFalse);
+        expect(box.get<_TestDisposable>(), equals(replacement));
+      },
+    );
   });
 
   group('modular feature composition (DependencyModule & install)', () {
@@ -1388,16 +1371,20 @@ void main() {
       final module = _AuthModule();
       box.install(module);
 
-      expect(box.get<String>(key: 'auth_endpoint'),
-          equals('https://auth.example.com'));
+      expect(
+        box.get<String>(key: 'auth_endpoint'),
+        equals('https://auth.example.com'),
+      );
       expect(box.get<int>(key: 'token_timeout'), equals(3600));
     });
 
     test('installs multiple modules via installAll', () {
       box.installAll([_AuthModule(), _DatabaseModule()]);
 
-      expect(box.get<String>(key: 'auth_endpoint'),
-          equals('https://auth.example.com'));
+      expect(
+        box.get<String>(key: 'auth_endpoint'),
+        equals('https://auth.example.com'),
+      );
       expect(box.get<String>(key: 'db_host'), equals('localhost'));
     });
   });
@@ -1429,7 +1416,7 @@ void main() {
 
   group('async multi-resolution (getAllAsync)', () {
     test('resolves multiple async singletons', () async {
-      box.allowMultiple({const MultiRegistration<String>()});
+      box.allowMultiAll({const MultiRegistration<String>()});
       box.addAsyncSingleton<String>((c) async {
         return 'first';
       });
@@ -1442,7 +1429,7 @@ void main() {
     });
 
     test('child getAllAsync includes parent async registrations', () async {
-      box.allowMultiple({const MultiRegistration<String>()});
+      box.allowMultiAll({const MultiRegistration<String>()});
       box.addAsyncSingleton<String>((c) async {
         return 'parent-item';
       });
@@ -1459,8 +1446,10 @@ void main() {
 
   group('DependencyBoxConfig', () {
     test('provides compile-time constants for default behaviors', () {
-      expect(DependencyBoxConfig.defaultMultiResolution,
-          equals(MultiResolution.last));
+      expect(
+        DependencyBoxConfig.defaultMultiResolution,
+        equals(MultiResolution.last),
+      );
       expect(DependencyBoxConfig.defaultDisposeOldOnReplace, isTrue);
       expect(DependencyBoxConfig.defaultDisposeOnRemove, isTrue);
       expect(DependencyBoxConfig.isDebug, isTrue);
@@ -1468,18 +1457,17 @@ void main() {
   });
 
   group('DependencyBox.throwError', () {
-    test('duplicate registration triggers throwError and throws AssertionError',
-        () {
-      expect(
-        () => box.addSingleton<String>('a'),
-        returnsNormally,
-      );
+    test(
+      'duplicate registration triggers throwError and throws AssertionError',
+      () {
+        expect(() => box.addSingleton<String>('a'), returnsNormally);
 
-      expect(
-        () => box.addSingleton<String>('b'),
-        throwsA(isA<AssertionError>()),
-      );
-    });
+        expect(
+          () => box.addSingleton<String>('b'),
+          throwsA(isA<AssertionError>()),
+        );
+      },
+    );
 
     test('multiNotAllowed error throws AssertionError', () {
       expect(
@@ -1488,17 +1476,19 @@ void main() {
       );
     });
 
-    test(
-        'direct DependencyBox.throwError throws mapped exceptions based on DependencyBoxError',
-        () {
+    test('direct DependencyBox.throwError throws mapped exceptions based on DependencyBoxError', () {
       expect(
         () => DependencyBox.throwError(
-            'duplicate', DependencyBoxError.duplicateRegistration),
+          'duplicate',
+          DependencyBoxError.duplicateRegistration,
+        ),
         throwsA(isA<AssertionError>()),
       );
       expect(
         () => DependencyBox.throwError(
-            'multi', DependencyBoxError.multiNotAllowed),
+          'multi',
+          DependencyBoxError.multiNotAllowed,
+        ),
         throwsA(isA<AssertionError>()),
       );
       expect(
@@ -1508,7 +1498,9 @@ void main() {
       );
       expect(
         () => DependencyBox.throwError(
-            'invalid arg', DependencyBoxError.invalidArgument),
+          'invalid arg',
+          DependencyBoxError.invalidArgument,
+        ),
         throwsA(isA<ArgumentError>()),
       );
       expect(
@@ -1517,7 +1509,9 @@ void main() {
       );
       expect(
         () => DependencyBox.throwError(
-            'cycle', DependencyBoxError.circularDependency),
+          'cycle',
+          DependencyBoxError.circularDependency,
+        ),
         throwsA(isA<StateError>()),
       );
     });
@@ -1578,7 +1572,8 @@ void main() {
             (e) => e.message,
             'message',
             contains(
-                'Cannot create a child scope from a disposed DependencyBox'),
+              'Cannot create a child scope from a disposed DependencyBox',
+            ),
           ),
         ),
       );
@@ -1607,80 +1602,82 @@ void main() {
         () => box.replaceSingleton<String>('fail'),
         throwsA(isA<StateError>()),
       );
+      expect(() => box.allowMulti<String>(), throwsA(isA<StateError>()));
       expect(
-        () => box.allowMulti<String>(),
-        throwsA(isA<StateError>()),
-      );
-      expect(
-        () => box.allowMultiple({const MultiRegistration<String>()}),
+        () => box.allowMultiAll({const MultiRegistration<String>()}),
         throwsA(isA<StateError>()),
       );
     });
 
-    test('disposing an empty container completes immediately and updates state',
-        () async {
-      final emptyBox = DependencyBox.main();
-      expect(emptyBox.isDisposed, isFalse);
-      await emptyBox.dispose();
-      expect(emptyBox.isDisposed, isTrue);
-      expect(() => emptyBox.createChild(), throwsA(isA<StateError>()));
-    });
+    test(
+      'disposing an empty container completes immediately and updates state',
+      () async {
+        final emptyBox = DependencyBox.main();
+        expect(emptyBox.isDisposed, isFalse);
+        await emptyBox.dispose();
+        expect(emptyBox.isDisposed, isTrue);
+        expect(() => emptyBox.createChild(), throwsA(isA<StateError>()));
+      },
+    );
   });
 
   group('child container disposal isolation', () {
     test(
-        'disposed child container does not resolve parent registrations via get',
-        () async {
-      box.addSingleton<String>('parent-val');
-      final child = box.createChild();
-      expect(child.get<String>(), equals('parent-val'));
+      'disposed child container does not resolve parent registrations via get',
+      () async {
+        box.addSingleton<String>('parent-val');
+        final child = box.createChild();
+        expect(child.get<String>(), equals('parent-val'));
 
-      await child.dispose();
-      expect(child.isDisposed, isTrue);
+        await child.dispose();
+        expect(child.isDisposed, isTrue);
 
-      expect(
-        () => child.get<String>(),
-        throwsA(
-          isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            contains('Cannot resolve dependency from a disposed DependencyBox'),
+        expect(
+          () => child.get<String>(),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                'Cannot resolve dependency from a disposed DependencyBox',
+              ),
+            ),
           ),
-        ),
-      );
-      expect(child.tryGet<String>(), isNull);
-      expect(child.contains<String>(), isFalse);
-      expect(child.getAll<String>(), isEmpty);
-      expect(child.registeredKeys, isEmpty);
+        );
+        expect(child.tryGet<String>(), isNull);
+        expect(child.contains<String>(), isFalse);
+        expect(child.getAll<String>(), isEmpty);
+        expect(child.registeredKeys, isEmpty);
 
-      // Parent remains completely intact and functional
-      expect(box.isDisposed, isFalse);
-      expect(box.get<String>(), equals('parent-val'));
-    });
+        // Parent remains completely intact and functional
+        expect(box.isDisposed, isFalse);
+        expect(box.get<String>(), equals('parent-val'));
+      },
+    );
   });
 
   group('identity-based disposal deduplication', () {
-    test('disposes two distinct instances that have value equality (==)',
-        () async {
-      final obj1 = _ValueEqualDisposable('shared_id');
-      final obj2 = _ValueEqualDisposable('shared_id');
-
-      // Verify they have value equality but are distinct objects
-      expect(obj1 == obj2, isTrue);
-      expect(identical(obj1, obj2), isFalse);
-
-      box.addSingleton<_ValueEqualDisposable>(obj1, key: 'first');
-      box.addSingleton<_ValueEqualDisposable>(obj2, key: 'second');
-
-      await box.dispose();
-
-      expect(obj1.disposed, isTrue);
-      expect(obj2.disposed, isTrue);
-    });
-
     test(
-        'deduplicates disposal for identical instance registered under multiple keys',
-        () async {
+      'disposes two distinct instances that have value equality (==)',
+      () async {
+        final obj1 = _ValueEqualDisposable('shared_id');
+        final obj2 = _ValueEqualDisposable('shared_id');
+
+        // Verify they have value equality but are distinct objects
+        expect(obj1 == obj2, isTrue);
+        expect(identical(obj1, obj2), isFalse);
+
+        box.addSingleton<_ValueEqualDisposable>(obj1, key: 'first');
+        box.addSingleton<_ValueEqualDisposable>(obj2, key: 'second');
+
+        await box.dispose();
+
+        expect(obj1.disposed, isTrue);
+        expect(obj2.disposed, isTrue);
+      },
+    );
+
+    test('deduplicates disposal for identical instance registered under multiple keys', () async {
       var disposeCount = 0;
       final obj = _CustomDisposable(() {
         disposeCount++;
@@ -1697,47 +1694,51 @@ void main() {
 
   group('synchronous circular dependency detection in lazy singletons', () {
     test(
-        'detects mutual circular dependency (A -> B -> A) and throws StateError',
-        () {
-      box.addLazySingleton<_CircularLazyA>(
-          (c) => _CircularLazyA(c.get<_CircularLazyB>()));
-      box.addLazySingleton<_CircularLazyB>(
-          (c) => _CircularLazyB(c.get<_CircularLazyA>()));
+      'detects mutual circular dependency (A -> B -> A) and throws StateError',
+      () {
+        box.addLazySingleton<_CircularLazyA>(
+          (c) => _CircularLazyA(c.get<_CircularLazyB>()),
+        );
+        box.addLazySingleton<_CircularLazyB>(
+          (c) => _CircularLazyB(c.get<_CircularLazyA>()),
+        );
 
-      expect(
-        () => box.get<_CircularLazyA>(),
-        throwsA(
-          isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                'Circular dependency detected in synchronous lazy resolution'),
+        expect(
+          () => box.get<_CircularLazyA>(),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                'Circular dependency detected in synchronous lazy resolution',
+              ),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
 
-    test('lazy factory error resets resolving flag and allows subsequent retry',
-        () {
-      var shouldThrow = true;
-      box.addLazySingleton<String>((_) {
-        if (shouldThrow) {
-          throw FormatException('initial failure');
-        }
-        return 'recovered';
-      });
+    test(
+      'lazy factory error resets resolving flag and allows subsequent retry',
+      () {
+        var shouldThrow = true;
+        box.addLazySingleton<String>((_) {
+          if (shouldThrow) {
+            throw FormatException('initial failure');
+          }
+          return 'recovered';
+        });
 
-      expect(() => box.get<String>(), throwsA(isA<FormatException>()));
+        expect(() => box.get<String>(), throwsA(isA<FormatException>()));
 
-      shouldThrow = false;
-      expect(box.get<String>(), equals('recovered'));
-    });
+        shouldThrow = false;
+        expect(box.get<String>(), equals('recovered'));
+      },
+    );
   });
 
   group('BoxDependencyRef diagnostics and symmetry', () {
-    test(
-        'BoxDependencyRef with different types and same key are not equal in both directions',
-        () {
+    test('BoxDependencyRef with different types and same key are not equal in both directions', () {
       const baseDep = BoxDependencyRef(Object, key: 'test');
       const derivedDep = BoxDependencyRef(String, key: 'test');
 
@@ -1757,13 +1758,11 @@ void main() {
   });
 
   group('targeted removal & replacement edge cases', () {
-    test(
-        'replaceSingleton with disposeOld: true disposes all instances in multiContainer',
-        () async {
+    test('replaceSingleton with disposeOld: true disposes all instances in multiContainer', () async {
       final d1 = _TestDisposable();
       final d2 = _TestDisposable();
 
-      box.allowMultiple({const MultiRegistration<_TestDisposable>()});
+      box.allowMultiAll({const MultiRegistration<_TestDisposable>()});
       box.addSingleton<_TestDisposable>(d1);
       box.addSingleton<_TestDisposable>(d2);
 
@@ -1776,24 +1775,26 @@ void main() {
       expect(box.get<_TestDisposable>(), equals(replacement));
     });
 
-    test('remove cleans up MultiResolution.key alias on unkeyed lookup',
-        () async {
-      final d1 = _TestDisposable();
-      final d2 = _TestDisposable();
+    test(
+      'remove cleans up MultiResolution.key alias on unkeyed lookup',
+      () async {
+        final d1 = _TestDisposable();
+        final d2 = _TestDisposable();
 
-      box.allowMultiple({MultiRegistration<_TestDisposable>.key('target')});
-      box.addSingleton<_TestDisposable>(d1, key: 'other');
-      box.addSingleton<_TestDisposable>(d2, key: 'target');
+        box.allowMultiAll({MultiRegistration<_TestDisposable>.key('target')});
+        box.addSingleton<_TestDisposable>(d1, key: 'other');
+        box.addSingleton<_TestDisposable>(d2, key: 'target');
 
-      expect(box.get<_TestDisposable>(), equals(d2));
+        expect(box.get<_TestDisposable>(), equals(d2));
 
-      final removed = await box.remove<_TestDisposable>(key: 'target');
-      expect(removed, isTrue);
-      expect(d2.disposed, isTrue);
+        final removed = await box.remove<_TestDisposable>(key: 'target');
+        expect(removed, isTrue);
+        expect(d2.disposed, isTrue);
 
-      // Unkeyed lookup no longer returns the removed d2
-      expect(() => box.get<_TestDisposable>(), throwsA(isA<StateError>()));
-    });
+        // Unkeyed lookup no longer returns the removed d2
+        expect(() => box.get<_TestDisposable>(), throwsA(isA<StateError>()));
+      },
+    );
   });
 
   group('README code examples & type inference verification', () {
@@ -1810,8 +1811,9 @@ void main() {
       expect(userRepo.fetchUser('42'), 'User 42 from https://api.example.com');
 
       // 3. Parameterized factory
-      box.addFactoryWith((dbox, String sessionId) =>
-          _ReadmeUserSession(sessionId, dbox.get()));
+      box.addFactoryWith(
+        (dbox, String sessionId) => _ReadmeUserSession(sessionId, dbox.get()),
+      );
       final _ReadmeUserSession session = box.get(args: 'session_token_xyz');
       expect(session.sessionId, 'session_token_xyz');
 
@@ -1837,13 +1839,19 @@ void main() {
       // 7. Typed getter class
       final appDeps = _ReadmeAppDependencies(box);
       expect(
-          appDeps.users.fetchUser('1'), 'User 1 from https://api.example.com');
+        appDeps.users.fetchUser('1'),
+        'User 1 from https://api.example.com',
+      );
 
       // 8. Keyed with enum
-      box.addSingleton(const _ReadmeApiConfig('https://api.prod.example.com'),
-          key: _TestEnv.prod);
-      box.addSingleton(const _ReadmeApiConfig('https://api.dev.example.com'),
-          key: _TestEnv.dev);
+      box.addSingleton(
+        const _ReadmeApiConfig('https://api.prod.example.com'),
+        key: _TestEnv.prod,
+      );
+      box.addSingleton(
+        const _ReadmeApiConfig('https://api.dev.example.com'),
+        key: _TestEnv.dev,
+      );
       final _ReadmeApiConfig prod = box.get(key: _TestEnv.prod);
       final _ReadmeApiConfig dev = box.get(key: _TestEnv.dev);
       expect(prod.baseUrl, 'https://api.prod.example.com');
@@ -1852,7 +1860,7 @@ void main() {
       // 9. Multi singletons with inferred list
       final plugins = <_ReadmeAppPlugin>[
         _ReadmeAnalyticsPlugin(),
-        _ReadmeLoggingPlugin()
+        _ReadmeLoggingPlugin(),
       ];
       box.allowMulti<_ReadmeAppPlugin>();
       box.addSingletons(plugins);
@@ -1866,19 +1874,70 @@ void main() {
       box.addLazySingleton((dbox) => _ReadmeGetUserProfileUseCase(dbox.get()));
       box.addFactory((dbox) => _ReadmeProfileController(dbox.get()));
       final _ReadmeProfileController controller = box.get();
-      expect(controller.useCase.repo.client.config.baseUrl,
-          'https://api.example.com');
+      expect(
+        controller.useCase.repo.client.config.baseUrl,
+        'https://api.example.com',
+      );
 
       // 11. Child scope
       final childScope = box.createChild();
       childScope.addSingleton(_ReadmeRequestContext('req-1', 'usr-1'));
-      childScope
-          .addFactory((dbox) => _ReadmeRequestLogger(dbox.get(), dbox.get()));
+      childScope.addFactory(
+        (dbox) => _ReadmeRequestLogger(dbox.get(), dbox.get()),
+      );
       final _ReadmeRequestLogger reqLogger = childScope.get();
       expect(reqLogger.context.requestId, 'req-1');
 
       await childScope.dispose();
       await box.dispose();
+
+      // 12. LookupScope hierarchy resolution & shadow detection from README
+      final rootBox = DependencyBox.main(name: 'app_root');
+      rootBox.addSingleton<_ReadmeApiClient>(_ReadmeProductionApiClient());
+
+      final featureBox = rootBox.createChild(name: 'checkout_feature');
+      final screenBox = featureBox.createChild(name: 'payment_screen');
+
+      // Scoped override in screenBox (shadows root)
+      screenBox.addSingleton<_ReadmeApiClient>(_ReadmeMockApiClient());
+
+      // 1. inherited (default): finds the nearest registration in screenBox
+      final client1 = screenBox.get<_ReadmeApiClient>();
+      expect(client1, isA<_ReadmeMockApiClient>());
+
+      // 2. local: resolves strictly within screenBox
+      final client2 = screenBox.get<_ReadmeApiClient>(scope: LookupScope.local);
+      expect(client2, isA<_ReadmeMockApiClient>());
+
+      // 3. ancestors: skips screenBox and resolves from ancestors
+      final client3 = screenBox.get<_ReadmeApiClient>(
+        scope: LookupScope.ancestors,
+      );
+      expect(client3, isA<_ReadmeProductionApiClient>());
+
+      // 4. root: jumps directly to root container in O(1)
+      final client4 = screenBox.get<_ReadmeApiClient>(scope: LookupScope.root);
+      expect(client4, isA<_ReadmeProductionApiClient>());
+
+      // 5. parent: searches strictly within featureBox (not found -> null)
+      final parentClient = screenBox.tryGet<_ReadmeApiClient>(
+        scope: LookupScope.parent,
+      );
+      expect(parentClient, isNull);
+
+      // Hierarchy Introspection & Shadow Detection
+      expect(screenBox.depth, equals(2));
+      expect(screenBox.isShadowed<_ReadmeApiClient>(), isTrue);
+      expect(
+        screenBox.findOwner<_ReadmeApiClient>()?.name,
+        equals('payment_screen'),
+      );
+      expect(
+        screenBox.findOwner<_ReadmeApiClient>(scope: LookupScope.root)?.name,
+        equals('app_root'),
+      );
+
+      await rootBox.dispose();
     });
   });
 
@@ -1921,7 +1980,9 @@ void main() {
       var output = box.printContainer(printer: (_) {});
       expect(output, contains('String -> Singleton (instance: "hello_world")'));
       expect(
-          output, contains("int (key: 'answer') -> Singleton (instance: 42)"));
+        output,
+        contains("int (key: 'answer') -> Singleton (instance: 42)"),
+      );
       expect(output, contains('List<int> -> LazySingleton [uninitialized]'));
       expect(output, contains('DateTime -> Factory'));
       expect(output, contains('double -> FactoryWith<int>'));
@@ -1932,8 +1993,10 @@ void main() {
       await box.getAsync<bool>();
 
       output = box.printContainer(printer: (_) {});
-      expect(output,
-          contains('List<int> -> LazySingleton [initialized: [1, 2, 3]]'));
+      expect(
+        output,
+        contains('List<int> -> LazySingleton [initialized: [1, 2, 3]]'),
+      );
       expect(output, contains('bool -> AsyncSingleton [initialized: true]'));
     });
 
@@ -1950,15 +2013,16 @@ void main() {
       expect(output, contains('[2] Singleton (instance: "third") [active]'));
     });
 
-    test('prints child scope hierarchy, inherited entries, and shadowed status',
-        () {
+    test('prints child scope hierarchy, inherited entries, and shadowed status', () {
       final parent = DependencyBox.main(name: 'Root');
       parent.addSingleton<String>('parent_env', key: 'env');
       parent.addSingleton<int>(100);
 
       final child = parent.createChild(name: 'Feature');
-      child.addSingleton<String>('child_env',
-          key: 'env'); // Shadows parent 'env'
+      child.addSingleton<String>(
+        'child_env',
+        key: 'env',
+      ); // Shadows parent 'env'
       child.addSingleton<double>(3.14);
 
       // Child with includeParent: true (default)
@@ -1967,31 +2031,41 @@ void main() {
       expect(outputWithParent, contains("├── Hierarchy: 'Feature' -> 'Root'"));
       expect(outputWithParent, contains('Direct Registrations (2):'));
       expect(
-          outputWithParent,
-          contains(
-              "String (key: 'env') -> Singleton (instance: \"child_env\")"));
+        outputWithParent,
+        contains("String (key: 'env') -> Singleton (instance: \"child_env\")"),
+      );
       expect(
-          outputWithParent, contains('double -> Singleton (instance: 3.14)'));
+        outputWithParent,
+        contains('double -> Singleton (instance: 3.14)'),
+      );
       expect(outputWithParent, contains("Inherited Registrations (2):"));
       expect(
-          outputWithParent,
-          contains(
-              "String (key: 'env') -> Singleton (from 'Root') [shadowed by child]"));
-      expect(outputWithParent,
-          contains("int -> Singleton (instance: 100) (from 'Root')"));
+        outputWithParent,
+        contains(
+          "String (key: 'env') -> Singleton (from 'Root') [shadowed by child]",
+        ),
+      );
+      expect(
+        outputWithParent,
+        contains("int -> Singleton (instance: 100) (from 'Root')"),
+      );
 
       // Child with includeParent: false
-      final outputWithoutParent =
-          child.printContainer(includeParent: false, printer: (_) {});
+      final outputWithoutParent = child.printContainer(
+        includeParent: false,
+        printer: (_) {},
+      );
       expect(outputWithoutParent, isNot(contains('Inherited Registrations')));
     });
 
     test('invokes custom printer callback', () {
       final box = DependencyBox.main(name: 'PrinterTest');
       String? captured;
-      final returned = box.printContainer(printer: (obj) {
-        captured = obj.toString();
-      });
+      final returned = box.printContainer(
+        printer: (obj) {
+          captured = obj.toString();
+        },
+      );
 
       expect(captured, isNotNull);
       expect(captured, equals(returned));
@@ -2046,11 +2120,13 @@ void main() {
     test('isolates cached factory by key', () {
       final box = DependencyBox.main();
       box.addCachedFactory<_NonDisposableResource>(
-          (_) => _NonDisposableResource('a'),
-          key: 'keyA');
+        (_) => _NonDisposableResource('a'),
+        key: 'keyA',
+      );
       box.addCachedFactory<_NonDisposableResource>(
-          (_) => _NonDisposableResource('b'),
-          key: 'keyB');
+        (_) => _NonDisposableResource('b'),
+        key: 'keyB',
+      );
 
       final a = box.get<_NonDisposableResource>(key: 'keyA');
       final b = box.get<_NonDisposableResource>(key: 'keyB');
@@ -2063,9 +2139,11 @@ void main() {
     test('detects synchronous circular dependency in cached factory', () {
       final box = DependencyBox.main();
       box.addCachedFactory<_CircularLazyA>(
-          (dbox) => _CircularLazyA(dbox.get()));
+        (dbox) => _CircularLazyA(dbox.get()),
+      );
       box.addCachedFactory<_CircularLazyB>(
-          (dbox) => _CircularLazyB(dbox.get()));
+        (dbox) => _CircularLazyB(dbox.get()),
+      );
 
       expect(
         () => box.get<_CircularLazyA>(),
@@ -2074,7 +2152,8 @@ void main() {
             (e) => e.message,
             'message',
             contains(
-                'Circular dependency detected in cached factory resolution'),
+              'Circular dependency detected in cached factory resolution',
+            ),
           ),
         ),
       );
@@ -2091,107 +2170,113 @@ void main() {
         return _NonDisposableResource('recovered');
       });
 
-      expect(() => box.get<_NonDisposableResource>(),
-          throwsA(isA<FormatException>()));
+      expect(
+        () => box.get<_NonDisposableResource>(),
+        throwsA(isA<FormatException>()),
+      );
       expect(box.get<_NonDisposableResource>().name, 'recovered');
       expect(attempts, 2);
     });
 
     test(
-        'throws ArgumentError when attempting to weak-reference primitive types',
-        () {
-      final box = DependencyBox.main();
-      box.addCachedFactory<String>((_) => 'primitive_string');
+      'throws ArgumentError when attempting to weak-reference primitive types',
+      () {
+        final box = DependencyBox.main();
+        box.addCachedFactory<String>((_) => 'primitive_string');
 
-      expect(
-        () => box.get<String>(),
-        throwsA(
-          isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('Dart does not allow WeakReference on strings'),
+        expect(
+          () => box.get<String>(),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('Dart does not allow WeakReference on strings'),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
 
-    test('disposes active cached instance implementing DependencyDisposable',
-        () async {
-      final box = DependencyBox.main();
-      var onDisposeCalled = false;
-      box.addCachedFactory<_TestDisposable>(
-        (_) => _TestDisposable(),
-        onDispose: (_) => onDisposeCalled = true,
-      );
+    test(
+      'disposes active cached instance implementing DependencyDisposable',
+      () async {
+        final box = DependencyBox.main();
+        var onDisposeCalled = false;
+        box.addCachedFactory<_TestDisposable>(
+          (_) => _TestDisposable(),
+          onDispose: (_) => onDisposeCalled = true,
+        );
 
-      final instance = box.get<_TestDisposable>();
-      expect(instance.disposed, isFalse);
+        final instance = box.get<_TestDisposable>();
+        expect(instance.disposed, isFalse);
 
-      await box.dispose();
-      expect(instance.disposed, isTrue);
-      expect(onDisposeCalled, isTrue);
-    });
+        await box.dispose();
+        expect(instance.disposed, isTrue);
+        expect(onDisposeCalled, isTrue);
+      },
+    );
   });
 
   group('shared registrations (anchored to root)', () {
     test(
-        'addSharedSingleton anchors to root and is accessible across all scopes',
-        () async {
-      final root = DependencyBox.main(name: 'Root');
-      final child1 = root.createChild(name: 'Child1');
-      final child2 = root.createChild(name: 'Child2');
+      'addSharedSingleton anchors to root and is accessible across all scopes',
+      () async {
+        final root = DependencyBox.main(name: 'Root');
+        final child1 = root.createChild(name: 'Child1');
+        final child2 = root.createChild(name: 'Child2');
 
-      // Register from child1
-      child1.addSharedSingleton<String>('shared_token');
+        // Register from child1
+        child1.addSharedSingleton<String>('shared_token');
 
-      // Accessible from root, child1, child2
-      expect(root.get<String>(), 'shared_token');
-      expect(child1.get<String>(), 'shared_token');
-      expect(child2.get<String>(), 'shared_token');
+        // Accessible from root, child1, child2
+        expect(root.get<String>(), 'shared_token');
+        expect(child1.get<String>(), 'shared_token');
+        expect(child2.get<String>(), 'shared_token');
 
-      // Newly created child3 also sees it
-      final child3 = root.createChild(name: 'Child3');
-      expect(child3.get<String>(), 'shared_token');
+        // Newly created child3 also sees it
+        final child3 = root.createChild(name: 'Child3');
+        expect(child3.get<String>(), 'shared_token');
 
-      // Disposing child1 does NOT affect the shared registration
-      await child1.dispose();
-      expect(root.get<String>(), 'shared_token');
-      expect(child2.get<String>(), 'shared_token');
-      expect(child3.get<String>(), 'shared_token');
-    });
-
-    test('addSharedLazySingleton is constructed on first access and shared',
-        () async {
-      final root = DependencyBox.main(name: 'Root');
-      final child = root.createChild(name: 'Child');
-      final sibling = root.createChild(name: 'Sibling');
-
-      var factoryCalls = 0;
-      child.addSharedLazySingleton<_NonDisposableResource>((_) {
-        factoryCalls++;
-        return _NonDisposableResource('shared_lazy');
-      });
-
-      expect(factoryCalls, 0);
-
-      // Resolved from sibling
-      final resFromSibling = sibling.get<_NonDisposableResource>();
-      expect(factoryCalls, 1);
-      expect(resFromSibling.name, 'shared_lazy');
-
-      // Resolved from root
-      final resFromRoot = root.get<_NonDisposableResource>();
-      expect(factoryCalls, 1);
-      expect(identical(resFromSibling, resFromRoot), isTrue);
-
-      // Disposing child does NOT dispose or clear the shared lazy singleton
-      await child.dispose();
-      expect(root.get<_NonDisposableResource>(), equals(resFromRoot));
-    });
+        // Disposing child1 does NOT affect the shared registration
+        await child1.dispose();
+        expect(root.get<String>(), 'shared_token');
+        expect(child2.get<String>(), 'shared_token');
+        expect(child3.get<String>(), 'shared_token');
+      },
+    );
 
     test(
-        'addSharedCachedFactory is cached across scopes and survives child disposal',
-        () async {
+      'addSharedLazySingleton is constructed on first access and shared',
+      () async {
+        final root = DependencyBox.main(name: 'Root');
+        final child = root.createChild(name: 'Child');
+        final sibling = root.createChild(name: 'Sibling');
+
+        var factoryCalls = 0;
+        child.addSharedLazySingleton<_NonDisposableResource>((_) {
+          factoryCalls++;
+          return _NonDisposableResource('shared_lazy');
+        });
+
+        expect(factoryCalls, 0);
+
+        // Resolved from sibling
+        final resFromSibling = sibling.get<_NonDisposableResource>();
+        expect(factoryCalls, 1);
+        expect(resFromSibling.name, 'shared_lazy');
+
+        // Resolved from root
+        final resFromRoot = root.get<_NonDisposableResource>();
+        expect(factoryCalls, 1);
+        expect(identical(resFromSibling, resFromRoot), isTrue);
+
+        // Disposing child does NOT dispose or clear the shared lazy singleton
+        await child.dispose();
+        expect(root.get<_NonDisposableResource>(), equals(resFromRoot));
+      },
+    );
+
+    test('addSharedCachedFactory is cached across scopes and survives child disposal', () async {
       final root = DependencyBox.main(name: 'Root');
       final child = root.createChild(name: 'Child');
       final sibling = root.createChild(name: 'Sibling');
@@ -2215,17 +2300,23 @@ void main() {
       expect(sibling.get<_TestDisposable>(), equals(instance2));
     });
 
-    test('shared registrations throw StateError on disposed container',
-        () async {
-      final box = DependencyBox.main();
-      await box.dispose();
+    test(
+      'shared registrations throw StateError on disposed container',
+      () async {
+        final box = DependencyBox.main();
+        await box.dispose();
 
-      expect(() => box.addSharedSingleton('x'), throwsA(isA<StateError>()));
-      expect(() => box.addSharedLazySingleton((_) => 'x'),
-          throwsA(isA<StateError>()));
-      expect(() => box.addSharedCachedFactory((_) => 'x'),
-          throwsA(isA<StateError>()));
-    });
+        expect(() => box.addSharedSingleton('x'), throwsA(isA<StateError>()));
+        expect(
+          () => box.addSharedLazySingleton((_) => 'x'),
+          throwsA(isA<StateError>()),
+        );
+        expect(
+          () => box.addSharedCachedFactory((_) => 'x'),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
   });
 
   group('DependencyDisposable interface contract', () {
@@ -2265,22 +2356,21 @@ void main() {
     });
 
     test(
-        'preserves instance without disposal upon remove when dispose is false',
-        () async {
-      final box = DependencyBox.main();
-      final disposable = _TestDisposable();
+      'preserves instance without disposal upon remove when dispose is false',
+      () async {
+        final box = DependencyBox.main();
+        final disposable = _TestDisposable();
 
-      box.addSingleton<_TestDisposable>(disposable);
-      final removed = await box.remove<_TestDisposable>(dispose: false);
+        box.addSingleton<_TestDisposable>(disposable);
+        final removed = await box.remove<_TestDisposable>(dispose: false);
 
-      expect(removed, isTrue);
-      expect(disposable.disposed, isFalse);
-      await box.dispose();
-    });
+        expect(removed, isTrue);
+        expect(disposable.disposed, isFalse);
+        await box.dispose();
+      },
+    );
 
-    test(
-        'child container disposal only disposes child scoped DependencyDisposable',
-        () async {
+    test('child container disposal only disposes child scoped DependencyDisposable', () async {
       final root = DependencyBox.main();
       final rootDisposable = _TestDisposable();
       root.addSingleton<_TestDisposable>(rootDisposable, key: 'root');
@@ -2304,8 +2394,10 @@ void main() {
       final module = _AuthModule();
 
       box.install(module);
-      expect(box.get<String>(key: 'auth_endpoint'),
-          equals('https://auth.example.com'));
+      expect(
+        box.get<String>(key: 'auth_endpoint'),
+        equals('https://auth.example.com'),
+      );
       expect(box.get<int>(key: 'token_timeout'), equals(3600));
     });
 
@@ -2313,8 +2405,10 @@ void main() {
       final box = DependencyBox.main();
       box.installAll([_AuthModule(), _DatabaseModule()]);
 
-      expect(box.get<String>(key: 'auth_endpoint'),
-          equals('https://auth.example.com'));
+      expect(
+        box.get<String>(key: 'auth_endpoint'),
+        equals('https://auth.example.com'),
+      );
       expect(box.get<String>(key: 'db_host'), equals('localhost'));
     });
 
@@ -2332,6 +2426,690 @@ void main() {
       expect(child.contains<String>(key: 'auth_endpoint'), isTrue);
       expect(root.contains<String>(key: 'auth_endpoint'), isFalse);
     });
+  });
+
+  group('child container lifecycle and disposal (Section 7)', () {
+    // 1. Creating one child registers it with the parent.
+    test('1. creating one child registers it with the parent', () {
+      final root = DependencyBox.main(name: 'root') as DependencyBoxImpl;
+      expect(root.hasAllocatedChildren, isFalse);
+      expect(root.children, isEmpty);
+
+      final child = root.createChild(name: 'child-1');
+
+      expect(root.hasAllocatedChildren, isTrue);
+      expect(root.children.length, equals(1));
+      expect(root.children.first, equals(child));
+      expect(child.parent, equals(root));
+    });
+
+    // 2. Creating multiple children tracks each direct child independently.
+    test(
+      '2. creating multiple children tracks each direct child independently',
+      () {
+        final root = DependencyBox.main();
+        final child1 = root.createChild(name: 'child');
+        final child2 = root.createChild(name: 'child');
+        final child3 = root.createChild(name: 'other');
+
+        expect(identical(child1, child2), isFalse);
+        expect(root.children.length, equals(3));
+        expect(root.children.toSet().length, equals(3));
+        expect(root.children, containsAll([child1, child2, child3]));
+        expect(child1.parent, equals(root));
+        expect(child2.parent, equals(root));
+        expect(child3.parent, equals(root));
+      },
+    );
+
+    // 3. Disposing one child detaches only that child and leaves its siblings intact.
+    test('3. disposing one child detaches only that child and leaves its siblings intact', () async {
+      final root = DependencyBox.main();
+      final child1 = root.createChild(name: 'c1');
+      final child2 = root.createChild(name: 'c2');
+      final child3 = root.createChild(name: 'c3');
+
+      final d1 = _TestDisposable();
+      final d2 = _TestDisposable();
+      final d3 = _TestDisposable();
+
+      child1.addSingleton<_TestDisposable>(d1);
+      child2.addSingleton<_TestDisposable>(d2);
+      child3.addSingleton<_TestDisposable>(d3);
+
+      await child2.dispose();
+
+      expect(child2.isDisposed, isTrue);
+      expect(d2.disposed, isTrue);
+
+      expect(child1.isDisposed, isFalse);
+      expect(child3.isDisposed, isFalse);
+      expect(d1.disposed, isFalse);
+      expect(d3.disposed, isFalse);
+
+      expect(root.children.length, equals(2));
+      expect(root.children, containsAll([child1, child3]));
+      expect(root.children.contains(child2), isFalse);
+    });
+
+    // 4. Disposing the final child resets the parent's _children to null.
+    test(
+      '4. disposing the final child resets the parent\'s _children to null',
+      () async {
+        final root = DependencyBox.main() as DependencyBoxImpl;
+        final child1 = root.createChild();
+        final child2 = root.createChild();
+
+        expect(root.hasAllocatedChildren, isTrue);
+        expect(root.children.length, equals(2));
+
+        await child1.dispose();
+        expect(root.hasAllocatedChildren, isTrue);
+        expect(root.children.length, equals(1));
+
+        await child2.dispose();
+        expect(root.hasAllocatedChildren, isFalse);
+        expect(root.children, isEmpty);
+      },
+    );
+
+    // 5. Disposing a child recursively disposes its descendants.
+    test('5. disposing a child recursively disposes its descendants', () async {
+      final root = DependencyBox.main();
+      final child = root.createChild();
+      final grandchild = child.createChild();
+      final greatGrandchild = grandchild.createChild();
+
+      final dRoot = _TestDisposable();
+      final dChild = _TestDisposable();
+      final dGrandchild = _TestDisposable();
+      final dGreat = _TestDisposable();
+
+      root.addSingleton<_TestDisposable>(dRoot);
+      child.addSingleton<_TestDisposable>(dChild);
+      grandchild.addSingleton<_TestDisposable>(dGrandchild);
+      greatGrandchild.addSingleton<_TestDisposable>(dGreat);
+
+      await child.dispose();
+
+      expect(root.isDisposed, isFalse);
+      expect(dRoot.disposed, isFalse);
+
+      expect(child.isDisposed, isTrue);
+      expect(grandchild.isDisposed, isTrue);
+      expect(greatGrandchild.isDisposed, isTrue);
+
+      expect(dChild.disposed, isTrue);
+      expect(dGrandchild.disposed, isTrue);
+      expect(dGreat.disposed, isTrue);
+
+      expect(root.children, isEmpty);
+    });
+
+    // 6. Disposing a parent recursively disposes all descendants at arbitrary supported nesting depths.
+    test('6. disposing a parent recursively disposes all descendants at arbitrary supported nesting depths', () async {
+      final root = DependencyBox.main(name: 'root');
+      var current = root;
+      final chain = <DependencyBox>[];
+      final disposables = <_TestDisposable>[];
+
+      for (var i = 0; i < 30; i++) {
+        current = current.createChild(name: 'depth_$i');
+        chain.add(current);
+        final d = _TestDisposable();
+        disposables.add(d);
+        current.addSingleton<_TestDisposable>(d);
+      }
+
+      final branchChild = chain[15].createChild(name: 'branch');
+      final branchDisposable = _TestDisposable();
+      branchChild.addSingleton<_TestDisposable>(branchDisposable);
+
+      await root.dispose();
+
+      expect(root.isDisposed, isTrue);
+      for (final node in chain) {
+        expect(node.isDisposed, isTrue);
+      }
+      for (final d in disposables) {
+        expect(d.disposed, isTrue);
+      }
+      expect(branchChild.isDisposed, isTrue);
+      expect(branchDisposable.disposed, isTrue);
+    });
+
+    // 7. Disposing a leaf skips child traversal.
+    test('7. disposing a leaf skips child traversal', () async {
+      final leaf = DependencyBox.main() as DependencyBoxImpl;
+      expect(leaf.hasAllocatedChildren, isFalse);
+
+      await leaf.dispose();
+
+      expect(leaf.isDisposed, isTrue);
+      expect(leaf.hasAllocatedChildren, isFalse);
+    });
+
+    // 8. Disposing a parent with no children does not create or retain an empty Set.
+    test('8. disposing a parent with no children does not create or retain an empty Set', () async {
+      final parent = DependencyBox.main() as DependencyBoxImpl;
+      expect(parent.hasAllocatedChildren, isFalse);
+
+      await parent.dispose();
+
+      expect(parent.hasAllocatedChildren, isFalse);
+      expect(parent.children, isEmpty);
+    });
+
+    // 9. Child cleanup occurs exactly once when disposal is repeated.
+    test(
+      '9. child cleanup occurs exactly once when disposal is repeated',
+      () async {
+        var childCount = 0;
+        var grandchildCount = 0;
+
+        final root = DependencyBox.main();
+        final child = root.createChild();
+        final grandchild = child.createChild();
+
+        child.addSingleton<_CustomDisposable>(
+          _CustomDisposable(() => childCount++),
+        );
+        grandchild.addSingleton<_CustomDisposable>(
+          _CustomDisposable(() => grandchildCount++),
+        );
+
+        await root.dispose();
+        await root.dispose();
+        await child.dispose();
+        await grandchild.dispose();
+
+        expect(childCount, equals(1));
+        expect(grandchildCount, equals(1));
+
+        // Overlapping concurrent dispose calls
+        var concurrentCount = 0;
+        final root2 = DependencyBox.main();
+        final child2 = root2.createChild();
+        child2.addSingleton<_CustomDisposable>(
+          _CustomDisposable(() => concurrentCount++),
+        );
+
+        await Future.wait([root2.dispose(), root2.dispose(), child2.dispose()]);
+
+        expect(concurrentCount, equals(1));
+      },
+    );
+
+    // 10. All remaining children are processed when one child's disposal fails.
+    test('10. all remaining children are processed when one child\'s disposal fails', () async {
+      final root = DependencyBox.main();
+      final child1 = root.createChild(name: 'c1');
+      final child2 = root.createChild(name: 'c2');
+      final child3 = root.createChild(name: 'c3');
+
+      var c1Disposed = false;
+      var c3Disposed = false;
+
+      child1.addSingleton<_CustomDisposable>(
+        _CustomDisposable(() => c1Disposed = true),
+      );
+      child2.addSingleton<_CustomDisposable>(
+        _CustomDisposable(() => throw const FormatException('c2 failure')),
+      );
+      child3.addSingleton<_CustomDisposable>(
+        _CustomDisposable(() => c3Disposed = true),
+      );
+
+      await expectLater(root.dispose(), throwsA(isA<FormatException>()));
+
+      expect(c1Disposed, isTrue);
+      expect(c3Disposed, isTrue);
+      expect(child1.isDisposed, isTrue);
+      expect(child2.isDisposed, isTrue);
+      expect(child3.isDisposed, isTrue);
+      expect(root.isDisposed, isTrue);
+    });
+
+    // 11. The hierarchy and _children state remain consistent after disposal errors.
+    test('11. the hierarchy and _children state remain consistent after disposal errors', () async {
+      final root = DependencyBox.main() as DependencyBoxImpl;
+      final child = root.createChild();
+
+      child.addSingleton<_CustomDisposable>(
+        _CustomDisposable(() => throw Exception('child error')),
+      );
+
+      await expectLater(root.dispose(), throwsA(isA<Exception>()));
+
+      expect(root.isDisposed, isTrue);
+      expect(child.isDisposed, isTrue);
+      expect(root.hasAllocatedChildren, isFalse);
+      expect(root.children, isEmpty);
+    });
+
+    // 12. Parent disposal cannot trigger a ConcurrentModificationError.
+    test(
+      '12. parent disposal cannot trigger a ConcurrentModificationError',
+      () async {
+        final root = DependencyBox.main();
+        final children = List.generate(
+          100,
+          (i) => root.createChild(name: 'c_$i'),
+        );
+
+        expect(root.children.length, equals(100));
+
+        await expectLater(root.dispose(), completes);
+
+        for (final c in children) {
+          expect(c.isDisposed, isTrue);
+        }
+        expect(root.children, isEmpty);
+      },
+    );
+
+    // 13. Existing dependency lookup, registration, scoping, and disposal behavior remains compatible.
+    test('13. existing dependency lookup, registration, scoping, and disposal behavior remains compatible', () async {
+      final root = DependencyBox.main(name: 'root');
+      final child = root.createChild(name: 'child');
+      final sibling = root.createChild(name: 'sibling');
+
+      root.addSingleton<String>('database_url');
+      child.addSingleton<int>(42);
+
+      // Child resolves inherited and local
+      expect(child.get<String>(), equals('database_url'));
+      expect(child.get<int>(), equals(42));
+
+      // Root cannot resolve child local
+      expect(root.tryGet<int>(), isNull);
+
+      // Sibling cannot resolve other child's local
+      expect(sibling.get<String>(), equals('database_url'));
+      expect(sibling.tryGet<int>(), isNull);
+
+      // Disposing child leaves root untouched
+      await child.dispose();
+      expect(root.isDisposed, isFalse);
+      expect(root.get<String>(), equals('database_url'));
+      expect(sibling.isDisposed, isFalse);
+    });
+
+    // 14. Creating or disposing containers after the parent enters a terminal lifecycle state follows the documented contract.
+    test('14. creating or disposing containers after parent enters terminal state follows contract', () async {
+      final root = DependencyBox.main();
+      await root.dispose();
+
+      expect(
+        () => root.createChild(),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains(
+              'Cannot create a child scope from a disposed DependencyBox',
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => DependencyBox.child(parent: root),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains(
+              'Cannot create a child scope from a disposed DependencyBox',
+            ),
+          ),
+        ),
+      );
+
+      // In-flight disposal prevents creating new children
+      final activeRoot = DependencyBox.main();
+      final completer = Completer<void>();
+      activeRoot.addAsyncSingleton<String>((_) async {
+        await completer.future;
+        return 'value';
+      });
+      final futureGet = activeRoot.getAsync<String>();
+      completer.complete();
+      await futureGet;
+
+      final disposal = activeRoot.dispose();
+      expect(() => activeRoot.createChild(), throwsA(isA<StateError>()));
+      await disposal;
+
+      // Repeated dispose on terminal container completes cleanly
+      await expectLater(root.dispose(), completes);
+      await expectLater(activeRoot.dispose(), completes);
+    });
+  });
+
+  group('LookupScope & Hierarchy Boundary Resolution', () {
+    test('depth returns accurate 0-based hierarchy depth', () {
+      final root = DependencyBox.main();
+      expect(root.depth, equals(0));
+
+      final child = root.createChild();
+      expect(child.depth, equals(1));
+
+      final grandchild = child.createChild();
+      expect(grandchild.depth, equals(2));
+
+      final greatGrandchild = grandchild.createChild();
+      expect(greatGrandchild.depth, equals(3));
+    });
+
+    test('LookupScope.local resolves only within the target container', () {
+      final root = DependencyBox.main();
+      root.addSingleton<String>('root-value');
+
+      final child = root.createChild();
+      expect(
+        () => child.get<String>(scope: LookupScope.local),
+        throwsA(isA<StateError>()),
+      );
+      expect(child.tryGet<String>(scope: LookupScope.local), isNull);
+      expect(child.contains<String>(scope: LookupScope.local), isFalse);
+      expect(child.getAll<String>(scope: LookupScope.local), isEmpty);
+
+      child.addSingleton<String>('child-value');
+      expect(
+        child.get<String>(scope: LookupScope.local),
+        equals('child-value'),
+      );
+      expect(
+        child.tryGet<String>(scope: LookupScope.local),
+        equals('child-value'),
+      );
+      expect(child.contains<String>(scope: LookupScope.local), isTrue);
+      expect(
+        child.getAll<String>(scope: LookupScope.local),
+        equals(['child-value']),
+      );
+    });
+
+    test(
+      'LookupScope.parent resolves only within the immediate direct parent',
+      () {
+        final root = DependencyBox.main();
+        root.addSingleton<String>('root-value');
+
+        final intermediate = root.createChild();
+        final leaf = intermediate.createChild();
+
+        // intermediate does not have String, leaf does not have String, root has String
+        expect(
+          () => leaf.get<String>(scope: LookupScope.parent),
+          throwsA(isA<StateError>()),
+        );
+        expect(leaf.tryGet<String>(scope: LookupScope.parent), isNull);
+        expect(leaf.contains<String>(scope: LookupScope.parent), isFalse);
+        expect(leaf.getAll<String>(scope: LookupScope.parent), isEmpty);
+
+        // Now add to direct parent (intermediate)
+        intermediate.addSingleton<String>('intermediate-value');
+        leaf.addSingleton<String>('leaf-value'); // shadows parent
+
+        // leaf with scope: parent must resolve intermediate, skipping leaf
+        expect(
+          leaf.get<String>(scope: LookupScope.parent),
+          equals('intermediate-value'),
+        );
+        expect(
+          leaf.tryGet<String>(scope: LookupScope.parent),
+          equals('intermediate-value'),
+        );
+        expect(leaf.contains<String>(scope: LookupScope.parent), isTrue);
+        expect(
+          leaf.getAll<String>(scope: LookupScope.parent),
+          equals(['intermediate-value']),
+        );
+
+        // Root has no parent
+        expect(
+          () => root.get<String>(scope: LookupScope.parent),
+          throwsA(isA<StateError>()),
+        );
+        expect(root.tryGet<String>(scope: LookupScope.parent), isNull);
+        expect(root.contains<String>(scope: LookupScope.parent), isFalse);
+        expect(root.getAll<String>(scope: LookupScope.parent), isEmpty);
+      },
+    );
+
+    test(
+      'LookupScope.ancestors skips local container and cascades up to root',
+      () {
+        final root = DependencyBox.main();
+        root.addSingleton<String>('root-value');
+
+        final intermediate = root.createChild();
+        final leaf = intermediate.createChild();
+        leaf.addSingleton<String>('leaf-value'); // shadows
+
+        // intermediate does not have String, but root does. ancestors must find root-value
+        expect(
+          leaf.get<String>(scope: LookupScope.ancestors),
+          equals('root-value'),
+        );
+        expect(
+          leaf.tryGet<String>(scope: LookupScope.ancestors),
+          equals('root-value'),
+        );
+        expect(leaf.contains<String>(scope: LookupScope.ancestors), isTrue);
+        expect(
+          leaf.getAll<String>(scope: LookupScope.ancestors),
+          equals(['root-value']),
+        );
+
+        // If intermediate also registers String, ancestors stops at intermediate (nearest ancestor)
+        intermediate.addSingleton<String>('intermediate-value');
+        expect(
+          leaf.get<String>(scope: LookupScope.ancestors),
+          equals('intermediate-value'),
+        );
+
+        // Root has no ancestors
+        expect(
+          () => root.get<String>(scope: LookupScope.ancestors),
+          throwsA(isA<StateError>()),
+        );
+        expect(root.tryGet<String>(scope: LookupScope.ancestors), isNull);
+        expect(root.contains<String>(scope: LookupScope.ancestors), isFalse);
+        expect(root.getAll<String>(scope: LookupScope.ancestors), isEmpty);
+      },
+    );
+
+    test('LookupScope.root jumps directly to root container in O(1)', () {
+      final root = DependencyBox.main();
+      root.addSingleton<String>('root-value');
+
+      final intermediate = root.createChild();
+      intermediate.addSingleton<String>('intermediate-value');
+
+      final leaf = intermediate.createChild();
+      leaf.addSingleton<String>('leaf-value');
+
+      // leaf resolves root directly
+      expect(leaf.get<String>(scope: LookupScope.root), equals('root-value'));
+      expect(
+        leaf.tryGet<String>(scope: LookupScope.root),
+        equals('root-value'),
+      );
+      expect(leaf.contains<String>(scope: LookupScope.root), isTrue);
+      expect(
+        leaf.getAll<String>(scope: LookupScope.root),
+        equals(['root-value']),
+      );
+
+      // On root container itself
+      expect(root.get<String>(scope: LookupScope.root), equals('root-value'));
+      expect(
+        root.tryGet<String>(scope: LookupScope.root),
+        equals('root-value'),
+      );
+      expect(root.contains<String>(scope: LookupScope.root), isTrue);
+
+      // Root missing type
+      expect(
+        () => leaf.get<int>(scope: LookupScope.root),
+        throwsA(isA<StateError>()),
+      );
+      expect(leaf.tryGet<int>(scope: LookupScope.root), isNull);
+      expect(leaf.contains<int>(scope: LookupScope.root), isFalse);
+      expect(leaf.getAll<int>(scope: LookupScope.root), isEmpty);
+    });
+
+    test('LookupScope.inherited is the default behavior', () {
+      final root = DependencyBox.main();
+      root.addSingleton<String>('root-value');
+      root.addSingleton<int>(42);
+
+      final child = root.createChild();
+      child.addSingleton<String>('child-value');
+
+      expect(child.get<String>(), equals('child-value'));
+      expect(
+        child.get<String>(scope: LookupScope.inherited),
+        equals('child-value'),
+      );
+
+      expect(child.get<int>(), equals(42));
+      expect(child.get<int>(scope: LookupScope.inherited), equals(42));
+    });
+
+    test('async resolution variants support all LookupScope values', () async {
+      final root = DependencyBox.main();
+      root.addAsyncSingleton<String>((_) async => 'root-async');
+
+      final intermediate = root.createChild();
+      final leaf = intermediate.createChild();
+      leaf.addAsyncSingleton<String>((_) async => 'leaf-async');
+
+      // local on leaf
+      expect(
+        await leaf.getAsync<String>(scope: LookupScope.local),
+        equals('leaf-async'),
+      );
+      expect(
+        await leaf.tryGetAsync<String>(scope: LookupScope.local),
+        equals('leaf-async'),
+      );
+
+      // local on intermediate (missing)
+      expect(
+        () => intermediate.getAsync<String>(scope: LookupScope.local),
+        throwsA(isA<StateError>()),
+      );
+      expect(
+        await intermediate.tryGetAsync<String>(scope: LookupScope.local),
+        isNull,
+      );
+
+      // parent on leaf (intermediate is empty -> error)
+      expect(
+        () => leaf.getAsync<String>(scope: LookupScope.parent),
+        throwsA(isA<StateError>()),
+      );
+      expect(await leaf.tryGetAsync<String>(scope: LookupScope.parent), isNull);
+
+      // ancestors on leaf (skips leaf, skips intermediate, reaches root)
+      expect(
+        await leaf.getAsync<String>(scope: LookupScope.ancestors),
+        equals('root-async'),
+      );
+      expect(
+        await leaf.tryGetAsync<String>(scope: LookupScope.ancestors),
+        equals('root-async'),
+      );
+
+      // root on leaf
+      expect(
+        await leaf.getAsync<String>(scope: LookupScope.root),
+        equals('root-async'),
+      );
+      expect(
+        await leaf.tryGetAsync<String>(scope: LookupScope.root),
+        equals('root-async'),
+      );
+
+      // getAllAsync with root
+      final rootList = await leaf.getAllAsync<String>(scope: LookupScope.root);
+      expect(rootList, equals(['root-async']));
+    });
+
+    test(
+      'findOwner identifies the exact container owning the registration',
+      () {
+        final root = DependencyBox.main(name: 'root');
+        root.addSingleton<String>('config', key: 'api');
+
+        final intermediate = root.createChild(name: 'mid');
+        final leaf = intermediate.createChild(name: 'leaf');
+        leaf.addSingleton<int>(100);
+
+        expect(leaf.findOwner<int>(), same(leaf));
+        expect(leaf.findOwner<String>(key: 'api'), same(root));
+        expect(leaf.findOwner<double>(), isNull);
+
+        // With specific scope
+        expect(
+          leaf.findOwner<String>(key: 'api', scope: LookupScope.local),
+          isNull,
+        );
+        expect(leaf.findOwner<int>(scope: LookupScope.local), same(leaf));
+        expect(
+          leaf.findOwner<String>(key: 'api', scope: LookupScope.root),
+          same(root),
+        );
+        expect(
+          leaf.findOwner<String>(key: 'api', scope: LookupScope.ancestors),
+          same(root),
+        );
+        expect(
+          leaf.findOwner<String>(key: 'api', scope: LookupScope.parent),
+          isNull,
+        );
+
+        intermediate.addSingleton<String>('mid-api', key: 'api');
+        expect(
+          leaf.findOwner<String>(key: 'api', scope: LookupScope.parent),
+          same(intermediate),
+        );
+      },
+    );
+
+    test(
+      'isShadowed detects whether a local registration shadows an ancestor',
+      () {
+        final root = DependencyBox.main();
+        root.addSingleton<String>('root-service');
+        root.addSingleton<int>(1, key: 'count');
+
+        final child = root.createChild();
+        // Not yet registered locally in child
+        expect(child.isShadowed<String>(), isFalse);
+        expect(child.isShadowed<int>(key: 'count'), isFalse);
+        expect(child.isShadowed<double>(), isFalse);
+
+        // Register local override (shadowing root)
+        child.addSingleton<String>('child-service');
+        expect(child.isShadowed<String>(), isTrue);
+
+        // Register unique child dependency (no ancestor has it)
+        child.addSingleton<bool>(true);
+        expect(child.isShadowed<bool>(), isFalse);
+
+        // Keyed shadowing
+        child.addSingleton<int>(2, key: 'count');
+        expect(child.isShadowed<int>(key: 'count'), isTrue);
+
+        // Root container itself is never shadowed
+        expect(root.isShadowed<String>(), isFalse);
+      },
+    );
   });
 }
 
@@ -2438,6 +3216,16 @@ class _ReadmeApiClient {
   final _ReadmeApiConfig config;
   bool isClosed = false;
   void close() => isClosed = true;
+}
+
+class _ReadmeProductionApiClient extends _ReadmeApiClient {
+  _ReadmeProductionApiClient()
+    : super(const _ReadmeApiConfig('https://api.prod.example.com'));
+}
+
+class _ReadmeMockApiClient extends _ReadmeApiClient {
+  _ReadmeMockApiClient()
+    : super(const _ReadmeApiConfig('https://api.mock.example.com'));
 }
 
 class _ReadmeUserRepository {

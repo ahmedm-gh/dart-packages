@@ -3,29 +3,31 @@ import 'package:comparison_benchmark/src/stats/stats.dart';
 
 void main() {
   group('Statistical Engine Tests', () {
-    test('Calculates exact statistics on known dataset [10, 20, 30, 40, 50]',
-        () {
-      final samples = [10.0, 20.0, 30.0, 40.0, 50.0];
-      final series = BenchmarkSampleSeries(
-        name: 'test_series',
-        operationsPerSample: 1000,
-        samples: samples,
-      );
+    test(
+      'Calculates exact statistics on known dataset [10, 20, 30, 40, 50]',
+      () {
+        final samples = [10.0, 20.0, 30.0, 40.0, 50.0];
+        final series = BenchmarkSampleSeries(
+          name: 'test_series',
+          operationsPerSample: 1000,
+          samples: samples,
+        );
 
-      expect(series.sampleCount, equals(5));
-      expect(series.min, equals(10.0));
-      expect(series.max, equals(50.0));
-      expect(series.mean, equals(30.0));
-      expect(series.median, equals(30.0));
-      expect(series.q1, equals(20.0));
-      expect(series.q3, equals(40.0));
-      expect(series.iqr, equals(20.0));
-      expect(series.standardDeviation, closeTo(15.811, 0.001));
+        expect(series.sampleCount, equals(5));
+        expect(series.min, equals(10.0));
+        expect(series.max, equals(50.0));
+        expect(series.mean, equals(30.0));
+        expect(series.median, equals(30.0));
+        expect(series.q1, equals(20.0));
+        expect(series.q3, equals(40.0));
+        expect(series.iqr, equals(20.0));
+        expect(series.standardDeviation, closeTo(15.811, 0.001));
 
-      final (ciLower, ciUpper) = series.confidenceInterval95;
-      expect(ciLower, lessThan(30.0));
-      expect(ciUpper, greaterThan(30.0));
-    });
+        final (ciLower, ciUpper) = series.confidenceInterval95;
+        expect(ciLower, lessThan(30.0));
+        expect(ciUpper, greaterThan(30.0));
+      },
+    );
 
     test('Speedup ratio and direction calculation', () {
       final baseline = BenchmarkSampleSeries(

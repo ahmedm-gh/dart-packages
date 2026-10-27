@@ -13,8 +13,7 @@ void main() {
   group('CloneableGenerator Direct Tests', () {
     const generator = CloneableGenerator();
 
-    test('generateForAnnotatedElement produces expected mixin and interface',
-        () async {
+    test('generateForAnnotatedElement produces expected mixin and interface', () async {
       const source = '''
 library test_lib;
 
@@ -66,15 +65,18 @@ class Person with _\$PersonCloneable {
         expect(output, isNot(contains('typedef')));
         expect(output, contains('Object? name = cloneableUndefined,'));
         expect(
-            output,
-            contains(
-                'identical(name, cloneableUndefined) ? self.name : name as String'));
+          output,
+          contains(
+            'identical(name, cloneableUndefined) ? self.name : name as String',
+          ),
+        );
       });
     });
 
-    test('generateForAnnotatedElement respects ignoreNull on class and field',
-        () async {
-      const source = '''
+    test(
+      'generateForAnnotatedElement respects ignoreNull on class and field',
+      () async {
+        const source = '''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -110,27 +112,28 @@ class Config with _\$ConfigCloneable {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('Config')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('Config')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForAnnotatedElement(
-          classElement,
-          ConstantReader(annotation.computeConstantValue()),
-          _MockBuildStep('test_lib.dart'),
-        );
+          final output = generator.generateForAnnotatedElement(
+            classElement,
+            ConstantReader(annotation.computeConstantValue()),
+            _MockBuildStep('test_lib.dart'),
+          );
 
-        expect(
+          expect(
             output,
             contains(
-                'identical(path, cloneableUndefined) || path == null ? self.path : path as String?'));
-      });
-    });
+              'identical(path, cloneableUndefined) || path == null ? self.path : path as String?',
+            ),
+          );
+        });
+      },
+    );
 
-    test(
-        'generateForAnnotatedElement generates deep collection copies when enabled',
-        () async {
+    test('generateForAnnotatedElement generates deep collection copies when enabled', () async {
       const source = '''
 library test_lib;
 
@@ -209,18 +212,21 @@ abstract class AbstractPerson with _\$AbstractPersonCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains('cannot be applied to abstract classes'),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains('cannot be applied to abstract classes'),
+            ),
+          ),
         );
       });
     });
 
-    test('Diagnostics: throws when applied to non-class element (e.g., enum)',
-        () async {
-      const source = '''
+    test(
+      'Diagnostics: throws when applied to non-class element (e.g., enum)',
+      () async {
+        const source = '''
 library test_lib;
 
 class Cloneable {
@@ -231,30 +237,32 @@ class Cloneable {
 enum MyEnum { a, b }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final enumElement =
-            library!.enums.firstWhere((e) => e.name == 'MyEnum');
-        final annotation = enumElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final enumElement = library!.enums.firstWhere(
+            (e) => e.name == 'MyEnum',
+          );
+          final annotation = enumElement.metadata.first;
 
-        expect(
-          () => generator.generateForAnnotatedElement(
-            enumElement,
-            ConstantReader(annotation.computeConstantValue()),
-            _MockBuildStep('test_lib.dart'),
-          ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains('can only be applied to classes'),
-          )),
-        );
-      });
-    });
+          expect(
+            () => generator.generateForAnnotatedElement(
+              enumElement,
+              ConstantReader(annotation.computeConstantValue()),
+              _MockBuildStep('test_lib.dart'),
+            ),
+            throwsA(
+              isA<InvalidGenerationSourceError>().having(
+                (e) => e.message,
+                'message',
+                contains('can only be applied to classes'),
+              ),
+            ),
+          );
+        });
+      },
+    );
 
-    test(
-        'generateForAnnotatedElement produces extension when mixin is omitted (auto)',
-        () async {
+    test('generateForAnnotatedElement produces extension when mixin is omitted (auto)', () async {
       const source = '''
 library test_lib;
 
@@ -304,17 +312,17 @@ class CleanPerson {
         );
 
         expect(output, contains('CleanPerson Function({'));
-        expect(output,
-            contains('extension \$CleanPersonExtension on CleanPerson {'));
+        expect(
+          output,
+          contains('extension \$CleanPersonExtension on CleanPerson {'),
+        );
         expect(output, contains('get copyWith => _copyWith;'));
         expect(output, contains('CleanPerson _copyWith({'));
         expect(output, isNot(contains('typedef')));
       });
     });
 
-    test(
-        'generateForAnnotatedElement does not recognize short _\$Person as mixin (defaults to extension in auto)',
-        () async {
+    test('generateForAnnotatedElement does not recognize short _\$Person as mixin (defaults to extension in auto)', () async {
       const source = '''
 library test_lib;
 
@@ -351,9 +359,7 @@ class Person with _\$Person {
       });
     });
 
-    test(
-        'generateForAnnotatedElement supports custom methodName via @Cloneable(methodName: "clone")',
-        () async {
+    test('generateForAnnotatedElement supports custom methodName via @Cloneable(methodName: "clone")', () async {
       const source = '''
 library test_lib;
 
@@ -392,9 +398,7 @@ class Person with _\$PersonClone {
       });
     });
 
-    test(
-        'generateForAnnotatedElement produces only _\$PersonCopyWith when written',
-        () async {
+    test('generateForAnnotatedElement produces only _\$PersonCopyWith when written', () async {
       const source = '''
 library test_lib;
 
@@ -431,9 +435,7 @@ class Person with _\$PersonCopyWith {
       });
     });
 
-    test(
-        'generateForAnnotatedElement produces only _\$PersonCloneable when written',
-        () async {
+    test('generateForAnnotatedElement produces only _\$PersonCloneable when written', () async {
       const source = '''
 library test_lib;
 
@@ -471,9 +473,9 @@ class Person with _\$PersonCloneable {
     });
 
     test(
-        'Diagnostics: throws when strategy is mixin but class is missing mixin',
-        () async {
-      const source = '''
+      'Diagnostics: throws when strategy is mixin but class is missing mixin',
+      () async {
+        const source = '''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -498,30 +500,32 @@ class MissingMixinPerson {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('MissingMixinPerson')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('MissingMixinPerson')!;
+          final annotation = classElement.metadata.first;
 
-        expect(
-          () => generator.generateForAnnotatedElement(
-            classElement,
-            ConstantReader(annotation.computeConstantValue()),
-            _MockBuildStep('test_lib.dart'),
-          ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                "is configured with CloneableStrategy.mixin but does not mix in"),
-          )),
-        );
-      });
-    });
+          expect(
+            () => generator.generateForAnnotatedElement(
+              classElement,
+              ConstantReader(annotation.computeConstantValue()),
+              _MockBuildStep('test_lib.dart'),
+            ),
+            throwsA(
+              isA<InvalidGenerationSourceError>().having(
+                (e) => e.message,
+                'message',
+                contains(
+                  "is configured with CloneableStrategy.mixin but does not mix in",
+                ),
+              ),
+            ),
+          );
+        });
+      },
+    );
 
-    test(
-        'generateForAnnotatedElement generates standalone extension without part of when part directive is omitted',
-        () async {
+    test('generateForAnnotatedElement generates standalone extension without part of when part directive is omitted', () async {
       const source = '''
 library test_lib;
 
@@ -556,18 +560,18 @@ class StandalonePerson {
         expect(output, contains("import 'package:cloneable/cloneable.dart';"));
         expect(output, contains("import 'test_lib.dart';"));
         expect(
-            output,
-            contains(
-                'extension \$StandalonePersonExtension on StandalonePerson {'));
+          output,
+          contains(
+            'extension \$StandalonePersonExtension on StandalonePerson {',
+          ),
+        );
         expect(output, contains('StandalonePerson Function({'));
         expect(output, contains('get copyWith => _copyWith;'));
         expect(output, isNot(contains('typedef')));
       });
     });
 
-    test(
-        'generateForAnnotatedElement includes external library imports in standalone extension when part directive is omitted',
-        () async {
+    test('generateForAnnotatedElement includes external library imports in standalone extension when part directive is omitted', () async {
       await resolveSources(
         {
           'a|lib/external.dart': '''
@@ -596,8 +600,9 @@ class StandaloneOrder {
 ''',
         },
         (resolver) async {
-          final library =
-              await resolver.libraryFor(AssetId('a', 'lib/standalone.dart'));
+          final library = await resolver.libraryFor(
+            AssetId('a', 'lib/standalone.dart'),
+          );
           final classElement = library.getClass('StandaloneOrder')!;
           final annotation = classElement.metadata.first;
 
@@ -609,7 +614,9 @@ class StandaloneOrder {
 
           expect(output, isNot(contains('part of')));
           expect(
-              output, contains("import 'package:cloneable/cloneable.dart';"));
+            output,
+            contains("import 'package:cloneable/cloneable.dart';"),
+          );
           expect(output, contains("import 'standalone.dart';"));
           expect(output, contains("import 'external.dart';"));
           expect(output, contains("import 'external.dart' as ext;"));
@@ -619,9 +626,7 @@ class StandaloneOrder {
       );
     });
 
-    test(
-        'generateForAnnotatedElement accepts selective part "test_lib_cloneable.g.dart"',
-        () async {
+    test('generateForAnnotatedElement accepts selective part "test_lib_cloneable.g.dart"', () async {
       const source = '''
 library test_lib;
 
@@ -652,14 +657,14 @@ class Person with _\$PersonCloneable {
         );
 
         expect(output, contains('mixin _\$PersonCloneable {'));
-        expect(output,
-            isNot(contains("import 'package:cloneable/cloneable.dart';")));
+        expect(
+          output,
+          isNot(contains("import 'package:cloneable/cloneable.dart';")),
+        );
       });
     });
 
-    test(
-        'generateForAnnotatedElement accepts selective part "test_lib_copyWith.g.dart"',
-        () async {
+    test('generateForAnnotatedElement accepts selective part "test_lib_copyWith.g.dart"', () async {
       const source = '''
 library test_lib;
 
@@ -690,14 +695,14 @@ class Person with _\$PersonCopyWith {
         );
 
         expect(output, contains('mixin _\$PersonCopyWith {'));
-        expect(output,
-            isNot(contains("import 'package:cloneable/cloneable.dart';")));
+        expect(
+          output,
+          isNot(contains("import 'package:cloneable/cloneable.dart';")),
+        );
       });
     });
 
-    test(
-        'generateForAnnotatedElement accepts selective part according to methodName "test_lib_clone.g.dart"',
-        () async {
+    test('generateForAnnotatedElement accepts selective part according to methodName "test_lib_clone.g.dart"', () async {
       const source = '''
 library test_lib;
 
@@ -733,9 +738,7 @@ class Person with _\$PersonClone {
       });
     });
 
-    test(
-        'Diagnostics: throws when strategy is mixin but part directive is missing',
-        () async {
+    test('Diagnostics: throws when strategy is mixin but part directive is missing', () async {
       const source = '''
 library test_lib;
 
@@ -764,11 +767,13 @@ class MissingPartPerson with _\$MissingPartPersonCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains('requires a part directive'),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains('requires a part directive'),
+            ),
+          ),
         );
       });
     });
@@ -802,18 +807,18 @@ class BadConstructorPerson with _\$BadConstructorPersonCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains("does not have a constructor named 'nonExistent'"),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains("does not have a constructor named 'nonExistent'"),
+            ),
+          ),
         );
       });
     });
 
-    test(
-        'generateForAnnotatedElement generates private sentinel when sentinel is CloneableSentinel.private',
-        () async {
+    test('generateForAnnotatedElement generates private sentinel when sentinel is CloneableSentinel.private', () async {
       const source = '''
 library test_lib;
 
@@ -851,9 +856,7 @@ class Person with _\$PersonCloneable {
       });
     });
 
-    test(
-        'generateForAnnotatedElement uses prefix when package:cloneable is imported with prefix',
-        () async {
+    test('generateForAnnotatedElement uses prefix when package:cloneable is imported with prefix', () async {
       const source = '''
 library test_lib;
 
@@ -885,15 +888,16 @@ class Person with _\$PersonCloneable {
       });
     });
 
-    test('generateForAnnotatedElement preserves prefixed types from AST',
-        () async {
-      await resolveSources(
-        {
-          'a|lib/external.dart': '''
+    test(
+      'generateForAnnotatedElement preserves prefixed types from AST',
+      () async {
+        await resolveSources(
+          {
+            'a|lib/external.dart': '''
 library external_lib;
 class CustomType {}
 ''',
-          'a|lib/test_lib.dart': '''
+            'a|lib/test_lib.dart': '''
 library test_lib;
 import 'external.dart' as ext;
 part 'test_lib.g.dart';
@@ -917,32 +921,32 @@ class PrefixedModel with _\$PrefixedModelCloneable {
   });
 }
 ''',
-        },
-        (resolver) async {
-          final library =
-              await resolver.libraryFor(AssetId('a', 'lib/test_lib.dart'));
-          final classElement = library.getClass('PrefixedModel')!;
-          final annotation = classElement.metadata.first;
+          },
+          (resolver) async {
+            final library = await resolver.libraryFor(
+              AssetId('a', 'lib/test_lib.dart'),
+            );
+            final classElement = library.getClass('PrefixedModel')!;
+            final annotation = classElement.metadata.first;
 
-          final output = generator.generateForAnnotatedElement(
-            classElement,
-            ConstantReader(annotation.computeConstantValue()),
-            _MockBuildStep('test_lib.dart'),
-          );
+            final output = generator.generateForAnnotatedElement(
+              classElement,
+              ConstantReader(annotation.computeConstantValue()),
+              _MockBuildStep('test_lib.dart'),
+            );
 
-          expect(output, contains('ext.CustomType item,'));
-          expect(output, contains('ext.CustomType? optionalItem,'));
-          expect(output, contains('List<ext.CustomType> list,'));
-          expect(output, contains('item as ext.CustomType'));
-          expect(output, contains('optionalItem as ext.CustomType?'));
-          expect(output, contains('list as List<ext.CustomType>'));
-        },
-      );
-    });
+            expect(output, contains('ext.CustomType item,'));
+            expect(output, contains('ext.CustomType? optionalItem,'));
+            expect(output, contains('List<ext.CustomType> list,'));
+            expect(output, contains('item as ext.CustomType'));
+            expect(output, contains('optionalItem as ext.CustomType?'));
+            expect(output, contains('list as List<ext.CustomType>'));
+          },
+        );
+      },
+    );
 
-    test(
-        'generateForAnnotatedElement uses package sentinel when sentinel is CloneableSentinel.package',
-        () async {
+    test('generateForAnnotatedElement uses package sentinel when sentinel is CloneableSentinel.package', () async {
       const source = '''
 library test_lib;
 
@@ -982,9 +986,9 @@ class Person with _\$PersonCloneable {
     });
 
     test(
-        'generateForAnnotatedElement produces empty string when active is false',
-        () async {
-      const source = '''
+      'generateForAnnotatedElement produces empty string when active is false',
+      () async {
+        const source = '''
 library test_lib;
 
 class Cloneable {
@@ -999,24 +1003,23 @@ class InactivePerson {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('InactivePerson')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('InactivePerson')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForAnnotatedElement(
-          classElement,
-          ConstantReader(annotation.computeConstantValue()),
-          _MockBuildStep('test_lib.dart'),
-        );
+          final output = generator.generateForAnnotatedElement(
+            classElement,
+            ConstantReader(annotation.computeConstantValue()),
+            _MockBuildStep('test_lib.dart'),
+          );
 
-        expect(output, isEmpty);
-      });
-    });
+          expect(output, isEmpty);
+        });
+      },
+    );
 
-    test(
-        'generateForAnnotatedElement ignores abstract/non-class elements when active is false without throwing',
-        () async {
+    test('generateForAnnotatedElement ignores abstract/non-class elements when active is false without throwing', () async {
       const source = '''
 library test_lib;
 
@@ -1047,9 +1050,7 @@ abstract class InactiveAbstractClass {
       });
     });
 
-    test(
-        'generateForAnnotatedElement respects whitelist via @Cloneable(fields: [...])',
-        () async {
+    test('generateForAnnotatedElement respects whitelist via @Cloneable(fields: [...])', () async {
       const source = '''
 library test_lib;
 
@@ -1104,9 +1105,7 @@ class User with _\$UserCloneable {
       });
     });
 
-    test(
-        'generateForAnnotatedElement ignores class when fields is explicitly empty (like active = false)',
-        () async {
+    test('generateForAnnotatedElement ignores class when fields is explicitly empty (like active = false)', () async {
       const source = '''
 library test_lib;
 
@@ -1158,9 +1157,7 @@ class InClassEmptyUser with _\$InClassEmptyUserCloneable {
       });
     });
 
-    test(
-        'generateForAnnotatedElement respects whitelist via in-class get cloneableFields => [...]',
-        () async {
+    test('generateForAnnotatedElement respects whitelist via in-class get cloneableFields => [...]', () async {
       const source = '''
 library test_lib;
 
@@ -1208,9 +1205,7 @@ class User with _\$UserCloneable {
       });
     });
 
-    test(
-        'generateForAnnotatedElement respects whitelist via in-class get copyWithFields => [...]',
-        () async {
+    test('generateForAnnotatedElement respects whitelist via in-class get copyWithFields => [...]', () async {
       const source = '''
 library test_lib;
 
@@ -1258,9 +1253,7 @@ class User with _\$UserCloneable {
       });
     });
 
-    test(
-        'generateForAnnotatedElement respects custom cloneableFieldsGetter in @Cloneable',
-        () async {
+    test('generateForAnnotatedElement respects custom cloneableFieldsGetter in @Cloneable', () async {
       const source = '''
 library test_lib;
 
@@ -1301,9 +1294,7 @@ class CustomUser with _\$CustomUserCloneable {
       });
     });
 
-    test(
-        'generateForAnnotatedElement respects whitelist via in-class strings and block body',
-        () async {
+    test('generateForAnnotatedElement respects whitelist via in-class strings and block body', () async {
       const source = '''
 library test_lib;
 
@@ -1348,9 +1339,7 @@ class StringUser with _\$StringUserCloneable {
       });
     });
 
-    test(
-        'Diagnostics: throws when fields are specified in both @Cloneable(fields: ...) and in-class getter',
-        () async {
+    test('Diagnostics: throws when fields are specified in both @Cloneable(fields: ...) and in-class getter', () async {
       const source = '''
 library test_lib;
 
@@ -1383,19 +1372,20 @@ class ConflictUser with _\$ConflictUserCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                "Fields cannot be specified in both @Cloneable(fields: ...) and the 'cloneableFields' getter in class 'ConflictUser'."),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                "Fields cannot be specified in both @Cloneable(fields: ...) and the 'cloneableFields' getter in class 'ConflictUser'.",
+              ),
+            ),
+          ),
         );
       });
     });
 
-    test(
-        'Diagnostics: throws when multiple in-class field whitelist getters are defined',
-        () async {
+    test('Diagnostics: throws when multiple in-class field whitelist getters are defined', () async {
       const source = '''
 library test_lib;
 
@@ -1428,19 +1418,20 @@ class MultiGetterUser with _\$MultiGetterUserCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                "Multiple in-class field whitelist getters found ('cloneableFields', 'copyWithFields') in class 'MultiGetterUser'."),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                "Multiple in-class field whitelist getters found ('cloneableFields', 'copyWithFields') in class 'MultiGetterUser'.",
+              ),
+            ),
+          ),
         );
       });
     });
 
-    test(
-        'Diagnostics: throws when cloneableFieldsGetter is specified but not found on class',
-        () async {
+    test('Diagnostics: throws when cloneableFieldsGetter is specified but not found on class', () async {
       const source = '''
 library test_lib;
 
@@ -1470,19 +1461,20 @@ class MissingGetterUser with _\$MissingGetterUserCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                "Class 'MissingGetterUser' specifies cloneableFieldsGetter: 'nonExistentGetter', but no in-class getter or field named 'nonExistentGetter' was found."),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                "Class 'MissingGetterUser' specifies cloneableFieldsGetter: 'nonExistentGetter', but no in-class getter or field named 'nonExistentGetter' was found.",
+              ),
+            ),
+          ),
         );
       });
     });
 
-    test(
-        'Diagnostics: throws when field in fields does not match any constructor parameter',
-        () async {
+    test('Diagnostics: throws when field in fields does not match any constructor parameter', () async {
       const source = '''
 library test_lib;
 
@@ -1513,19 +1505,20 @@ class TypoUser with _\$TypoUserCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                "Field 'namme' in '@Cloneable(fields: ...)' does not match any constructor parameter in class 'TypoUser'."),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                "Field 'namme' in '@Cloneable(fields: ...)' does not match any constructor parameter in class 'TypoUser'.",
+              ),
+            ),
+          ),
         );
       });
     });
 
-    test(
-        'Diagnostics: throws when in-class fields getter does not return a list literal',
-        () async {
+    test('Diagnostics: throws when in-class fields getter does not return a list literal', () async {
       const source = '''
 library test_lib;
 
@@ -1556,19 +1549,20 @@ class NonListUser with _\$NonListUserCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                "The 'cloneableFields' getter in class 'NonListUser' must return a list literal"),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                "The 'cloneableFields' getter in class 'NonListUser' must return a list literal",
+              ),
+            ),
+          ),
         );
       });
     });
 
-    test(
-        'Diagnostics: throws when in-class fields list contains non-field identifier',
-        () async {
+    test('Diagnostics: throws when in-class fields list contains non-field identifier', () async {
       const source = '''
 library test_lib;
 
@@ -1599,19 +1593,20 @@ class InvalidElementUser with _\$InvalidElementUserCloneable {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                "The 'cloneableFields' list in class 'InvalidElementUser' must contain only field identifiers or field name strings."),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                "The 'cloneableFields' list in class 'InvalidElementUser' must contain only field identifiers or field name strings.",
+              ),
+            ),
+          ),
         );
       });
     });
 
-    test(
-        'generateForAnnotatedElement treats fields as regular field when in constructor',
-        () async {
+    test('generateForAnnotatedElement treats fields as regular field when in constructor', () async {
       const source = '''
 library test_lib;
 
@@ -1652,9 +1647,10 @@ class ContainerModel with _\$ContainerModelCloneable {
       });
     });
 
-    test('supports typedef alias e.g. typedef UseCopyWith = Cloneable',
-        () async {
-      const source = '''
+    test(
+      'supports typedef alias e.g. typedef UseCopyWith = Cloneable',
+      () async {
+        const source = '''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -1677,32 +1673,31 @@ class AliasedModel with _\$AliasedModelCloneable {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('AliasedModel')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('AliasedModel')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForAnnotatedElement(
-          classElement,
-          ConstantReader(annotation.computeConstantValue()),
-          _MockBuildStep('test_lib.dart'),
-        );
+          final output = generator.generateForAnnotatedElement(
+            classElement,
+            ConstantReader(annotation.computeConstantValue()),
+            _MockBuildStep('test_lib.dart'),
+          );
 
-        expect(output, contains('AliasedModel Function({'));
-        expect(output, contains('mixin _\$AliasedModelCloneable'));
-        expect(output, isNot(contains('typedef')));
+          expect(output, contains('AliasedModel Function({'));
+          expect(output, contains('mixin _\$AliasedModelCloneable'));
+          expect(output, isNot(contains('typedef')));
 
-        final cloneableType = library.getClass('Cloneable')!.thisType;
-        final annotated = LibraryReader(library)
-            .annotatedWith(TypeChecker.fromStatic(cloneableType));
-        expect(annotated, isNotEmpty);
-        expect(annotated.first.element.name, equals('AliasedModel'));
-      });
-    });
+          final cloneableType = library.getClass('Cloneable')!.thisType;
+          final annotated = LibraryReader(library)
+              .annotatedWith(TypeChecker.fromStatic(cloneableType));
+          expect(annotated, isNotEmpty);
+          expect(annotated.first.element.name, equals('AliasedModel'));
+        });
+      },
+    );
 
-    test(
-        'generateForAnnotatedElement produces empty string when output is inLibrary or inClass',
-        () async {
+    test('generateForAnnotatedElement produces empty string when output is inLibrary or inClass', () async {
       const source = '''
 library test_lib;
 
@@ -1741,9 +1736,10 @@ class InlineModel {
       });
     });
 
-    test('generateForClass respects custom prefix with mixin (part approach)',
-        () async {
-      const source = r'''
+    test(
+      'generateForClass respects custom prefix with mixin (part approach)',
+      () async {
+        const source = r'''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -1775,27 +1771,26 @@ class CustomPerson with _CustomPersonCloneable {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('CustomPerson')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('CustomPerson')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForAnnotatedElement(
-          classElement,
-          ConstantReader(annotation.computeConstantValue()),
-          _MockBuildStep('test_lib.dart'),
-        );
+          final output = generator.generateForAnnotatedElement(
+            classElement,
+            ConstantReader(annotation.computeConstantValue()),
+            _MockBuildStep('test_lib.dart'),
+          );
 
-        expect(output, contains('CustomPerson Function({'));
-        expect(output, contains('mixin _CustomPersonCloneable {'));
-        expect(output, contains('get copyWith => _copyWith;'));
-        expect(output, isNot(contains('typedef')));
-      });
-    });
+          expect(output, contains('CustomPerson Function({'));
+          expect(output, contains('mixin _CustomPersonCloneable {'));
+          expect(output, contains('get copyWith => _copyWith;'));
+          expect(output, isNot(contains('typedef')));
+        });
+      },
+    );
 
-    test(
-        'generateForClass respects custom prefix with extension (standalone/no-part approach)',
-        () async {
+    test('generateForClass respects custom prefix with extension (standalone/no-part approach)', () async {
       const source = r'''
 library test_lib;
 
@@ -1839,9 +1834,9 @@ class StandaloneItem {
 
         expect(output, contains('StandaloneItem Function({'));
         expect(
-            output,
-            contains(
-                'extension MyStandaloneItemExtension on StandaloneItem {'));
+          output,
+          contains('extension MyStandaloneItemExtension on StandaloneItem {'),
+        );
         expect(output, contains('get copyWith => _copyWith;'));
         expect(output, isNot(contains('typedef')));
       });
@@ -1896,9 +1891,7 @@ class PlainUser {
       });
     });
 
-    test(
-        'generateForClass respects empty prefix on mixin (prefix: "") without fallback',
-        () async {
+    test('generateForClass respects empty prefix on mixin (prefix: "") without fallback', () async {
       const source = r'''
 library test_lib;
 
@@ -1959,9 +1952,7 @@ class PlainUser with PlainUserCloneableMixin {
       });
     });
 
-    test(
-        'strategy mixin error message includes empty prefix recommendation without fallback',
-        () async {
+    test('strategy mixin error message includes empty prefix recommendation without fallback', () async {
       const source = r'''
 library test_lib;
 
@@ -2018,7 +2009,8 @@ class MissingMixinUser {
               'message',
               allOf(
                 contains(
-                    'class MissingMixinUser with MissingMixinUserCloneableMixin { ... }'),
+                  'class MissingMixinUser with MissingMixinUserCloneableMixin { ... }',
+                ),
                 isNot(contains(r'_$MissingMixinUserCloneableMixin')),
                 isNot(contains('_MissingMixinUserCloneableMixin')),
               ),
@@ -2028,10 +2020,11 @@ class MissingMixinUser {
       });
     });
 
-    test('generator defaultPrefix is used when prefix is not set in annotation',
-        () async {
-      const customPrefixGen = CloneableGenerator(defaultPrefix: 'Gen');
-      const source = r'''
+    test(
+      'generator defaultPrefix is used when prefix is not set in annotation',
+      () async {
+        const customPrefixGen = CloneableGenerator(defaultPrefix: 'Gen');
+        const source = r'''
 library test_lib;
 
 class CloneableAffix {
@@ -2061,28 +2054,31 @@ class FallbackUser {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('FallbackUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('FallbackUser')!;
+          final annotation = classElement.metadata.first;
 
-        final output = customPrefixGen.generateForClass(
-          element: classElement,
-          annotation: ConstantReader(annotation.computeConstantValue()),
-          inputFileName: 'fallback_user.dart',
-        );
+          final output = customPrefixGen.generateForClass(
+            element: classElement,
+            annotation: ConstantReader(annotation.computeConstantValue()),
+            inputFileName: 'fallback_user.dart',
+          );
 
-        expect(output, contains('FallbackUser Function({'));
-        expect(output,
-            contains('extension GenFallbackUserExtension on FallbackUser {'));
-        expect(output, isNot(contains('typedef')));
-      });
-    });
+          expect(output, contains('FallbackUser Function({'));
+          expect(
+            output,
+            contains('extension GenFallbackUserExtension on FallbackUser {'),
+          );
+          expect(output, isNot(contains('typedef')));
+        });
+      },
+    );
 
     test(
-        'strategy mixin error message includes customized prefix recommendation',
-        () async {
-      const source = r'''
+      'strategy mixin error message includes customized prefix recommendation',
+      () async {
+        const source = r'''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -2121,31 +2117,33 @@ class MissingMixinUser {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('MissingMixinUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('MissingMixinUser')!;
+          final annotation = classElement.metadata.first;
 
-        expect(
-          () => generator.generateForClass(
-            element: classElement,
-            annotation: ConstantReader(annotation.computeConstantValue()),
-            inputFileName: 'test_lib.dart',
-          ),
-          throwsA(
-            isA<InvalidGenerationSourceError>().having(
-              (e) => e.message,
-              'message',
-              contains('CustomMissingMixinUserCloneable'),
+          expect(
+            () => generator.generateForClass(
+              element: classElement,
+              annotation: ConstantReader(annotation.computeConstantValue()),
+              inputFileName: 'test_lib.dart',
             ),
-          ),
-        );
-      });
-    });
+            throwsA(
+              isA<InvalidGenerationSourceError>().having(
+                (e) => e.message,
+                'message',
+                contains('CustomMissingMixinUserCloneable'),
+              ),
+            ),
+          );
+        });
+      },
+    );
 
-    test('generateForClass respects custom suffix with mixin (part approach)',
-        () async {
-      const source = r'''
+    test(
+      'generateForClass respects custom suffix with mixin (part approach)',
+      () async {
+        const source = r'''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -2177,26 +2175,25 @@ class CustomSuffixPerson with _$CustomSuffixPersonCopyable {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('CustomSuffixPerson')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('CustomSuffixPerson')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForAnnotatedElement(
-          classElement,
-          ConstantReader(annotation.computeConstantValue()),
-          _MockBuildStep('test_lib.dart'),
-        );
+          final output = generator.generateForAnnotatedElement(
+            classElement,
+            ConstantReader(annotation.computeConstantValue()),
+            _MockBuildStep('test_lib.dart'),
+          );
 
-        expect(output, contains('mixin _\$CustomSuffixPersonCopyable {'));
-        expect(output, contains('CustomSuffixPerson Function({'));
-        expect(output, isNot(contains('typedef')));
-      });
-    });
+          expect(output, contains('mixin _\$CustomSuffixPersonCopyable {'));
+          expect(output, contains('CustomSuffixPerson Function({'));
+          expect(output, isNot(contains('typedef')));
+        });
+      },
+    );
 
-    test(
-        'generateForClass respects custom suffix with extension (standalone approach)',
-        () async {
+    test('generateForClass respects custom suffix with extension (standalone approach)', () async {
       const source = r'''
 library test_lib;
 
@@ -2239,17 +2236,20 @@ class StandaloneItem {
         );
 
         expect(
-            output,
-            contains(
-                'extension \$StandaloneItemCopyableExtension on StandaloneItem {'));
+          output,
+          contains(
+            'extension \$StandaloneItemCopyableExtension on StandaloneItem {',
+          ),
+        );
         expect(output, contains('StandaloneItem Function({'));
         expect(output, isNot(contains('typedef')));
       });
     });
 
-    test('generateForClass respects granular mixin prefix and suffix overrides',
-        () async {
-      const source = r'''
+    test(
+      'generateForClass respects granular mixin prefix and suffix overrides',
+      () async {
+        const source = r'''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -2285,24 +2285,23 @@ class GranularMixinUser with _MyMixGranularMixinUserSpecial {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('GranularMixinUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('GranularMixinUser')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForClass(
-          element: classElement,
-          annotation: ConstantReader(annotation.computeConstantValue()),
-          inputFileName: 'test_lib.dart',
-        );
+          final output = generator.generateForClass(
+            element: classElement,
+            annotation: ConstantReader(annotation.computeConstantValue()),
+            inputFileName: 'test_lib.dart',
+          );
 
-        expect(output, contains('mixin _MyMixGranularMixinUserSpecial {'));
-      });
-    });
+          expect(output, contains('mixin _MyMixGranularMixinUserSpecial {'));
+        });
+      },
+    );
 
-    test(
-        'generateForClass respects granular extension prefix and suffix overrides',
-        () async {
+    test('generateForClass respects granular extension prefix and suffix overrides', () async {
       const source = r'''
 library test_lib;
 
@@ -2349,9 +2348,11 @@ class GranularExtUser {
         );
 
         expect(
-            output,
-            contains(
-                'extension ExtGranularExtUserCustomHelper on GranularExtUser {'));
+          output,
+          contains(
+            'extension ExtGranularExtUserCustomHelper on GranularExtUser {',
+          ),
+        );
       });
     });
 
@@ -2409,9 +2410,10 @@ class PartApproachUser with _PPartApproachUserPart {
       });
     });
 
-    test('generateForClass respects standalone affix in standalone approach',
-        () async {
-      const source = r'''
+    test(
+      'generateForClass respects standalone affix in standalone approach',
+      () async {
+        const source = r'''
 library test_lib;
 
 class CloneableAffix {
@@ -2445,29 +2447,33 @@ class StandaloneApproachUser {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('StandaloneApproachUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('StandaloneApproachUser')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForClass(
-          element: classElement,
-          annotation: ConstantReader(annotation.computeConstantValue()),
-          inputFileName: 'standalone_approach_user.dart',
-        );
+          final output = generator.generateForClass(
+            element: classElement,
+            annotation: ConstantReader(annotation.computeConstantValue()),
+            inputFileName: 'standalone_approach_user.dart',
+          );
 
-        expect(
+          expect(
             output,
             contains(
-                'extension SoloStandaloneApproachUserStandaloneExtension on StandaloneApproachUser {'));
-        expect(output, contains('StandaloneApproachUser Function({'));
-        expect(output, isNot(contains('typedef')));
-      });
-    });
+              'extension SoloStandaloneApproachUserStandaloneExtension on StandaloneApproachUser {',
+            ),
+          );
+          expect(output, contains('StandaloneApproachUser Function({'));
+          expect(output, isNot(contains('typedef')));
+        });
+      },
+    );
 
-    test('generateForClass respects inLibrary affix in inLibrary approach',
-        () async {
-      const source = r'''
+    test(
+      'generateForClass respects inLibrary affix in inLibrary approach',
+      () async {
+        const source = r'''
 library test_lib;
 
 enum CloneableOutput {
@@ -2514,30 +2520,31 @@ class InlineApproachUser {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('InlineApproachUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('InlineApproachUser')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForClass(
-          element: classElement,
-          annotation: ConstantReader(annotation.computeConstantValue()),
-          inputFileName: 'inline_approach_user.dart',
-          isInline: true,
-        );
+          final output = generator.generateForClass(
+            element: classElement,
+            annotation: ConstantReader(annotation.computeConstantValue()),
+            inputFileName: 'inline_approach_user.dart',
+            isInline: true,
+          );
 
-        expect(
+          expect(
             output,
             contains(
-                'extension InInlineApproachUserBlockExtension on InlineApproachUser {'));
-        expect(output, contains('InlineApproachUser Function({'));
-        expect(output, isNot(contains('typedef')));
-      });
-    });
+              'extension InInlineApproachUserBlockExtension on InlineApproachUser {',
+            ),
+          );
+          expect(output, contains('InlineApproachUser Function({'));
+          expect(output, isNot(contains('typedef')));
+        });
+      },
+    );
 
-    test(
-        'generateForClass automatically detects inLibrary in annotation without explicit isInline param',
-        () async {
+    test('generateForClass automatically detects inLibrary in annotation without explicit isInline param', () async {
       const source = r'''
 library test_lib;
 
@@ -2598,18 +2605,21 @@ class AutoInlineUser {
         );
 
         expect(
-            output,
-            contains(
-                'extension AutoInAutoInlineUserScopeExtension on AutoInlineUser {'));
+          output,
+          contains(
+            'extension AutoInAutoInlineUserScopeExtension on AutoInlineUser {',
+          ),
+        );
         expect(output, contains('AutoInlineUser Function({'));
         expect(output, isNot(contains('typedef')));
       });
     });
 
-    test('generator defaultSuffix is used when suffix is not set in annotation',
-        () async {
-      const customSuffixGen = CloneableGenerator(defaultSuffix: 'Replica');
-      const source = '''
+    test(
+      'generator defaultSuffix is used when suffix is not set in annotation',
+      () async {
+        const customSuffixGen = CloneableGenerator(defaultSuffix: 'Replica');
+        const source = '''
 library test_lib;
 
 class Cloneable {
@@ -2625,28 +2635,31 @@ class FallbackSuffixUser {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('FallbackSuffixUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('FallbackSuffixUser')!;
+          final annotation = classElement.metadata.first;
 
-        final output = customSuffixGen.generateForClass(
-          element: classElement,
-          annotation: ConstantReader(annotation.computeConstantValue()),
-          inputFileName: 'fallback_suffix_user.dart',
-        );
+          final output = customSuffixGen.generateForClass(
+            element: classElement,
+            annotation: ConstantReader(annotation.computeConstantValue()),
+            inputFileName: 'fallback_suffix_user.dart',
+          );
 
-        expect(
+          expect(
             output,
             contains(
-                'extension \$FallbackSuffixUserReplicaExtension on FallbackSuffixUser {'));
-      });
-    });
+              'extension \$FallbackSuffixUserReplicaExtension on FallbackSuffixUser {',
+            ),
+          );
+        });
+      },
+    );
 
     test(
-        'strategy mixin error message includes customized suffix recommendation',
-        () async {
-      const source = r'''
+      'strategy mixin error message includes customized suffix recommendation',
+      () async {
+        const source = r'''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -2685,31 +2698,33 @@ class MissingMixinUser {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('MissingMixinUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('MissingMixinUser')!;
+          final annotation = classElement.metadata.first;
 
-        expect(
-          () => generator.generateForClass(
-            element: classElement,
-            annotation: ConstantReader(annotation.computeConstantValue()),
-            inputFileName: 'test_lib.dart',
-          ),
-          throwsA(
-            isA<InvalidGenerationSourceError>().having(
-              (e) => e.message,
-              'message',
-              contains('_\$MissingMixinUserCopyable'),
+          expect(
+            () => generator.generateForClass(
+              element: classElement,
+              annotation: ConstantReader(annotation.computeConstantValue()),
+              inputFileName: 'test_lib.dart',
             ),
-          ),
-        );
-      });
-    });
+            throwsA(
+              isA<InvalidGenerationSourceError>().having(
+                (e) => e.message,
+                'message',
+                contains('_\$MissingMixinUserCopyable'),
+              ),
+            ),
+          );
+        });
+      },
+    );
 
-    test('fieldsConflict error throws when both annotation and getter exist',
-        () async {
-      const source = '''
+    test(
+      'fieldsConflict error throws when both annotation and getter exist',
+      () async {
+        const source = '''
 library test_lib;
 
 enum CloneableFieldsConflict { error, merge, inClass, inAnnotation }
@@ -2735,32 +2750,32 @@ class ConflictedClass {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('ConflictedClass')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('ConflictedClass')!;
+          final annotation = classElement.metadata.first;
 
-        expect(
-          () => generator.generateForClass(
-            element: classElement,
-            annotation: ConstantReader(annotation.computeConstantValue()),
-            inputFileName: 'conflicted_class.dart',
-          ),
-          throwsA(
-            isA<InvalidGenerationSourceError>().having(
-              (e) => e.message,
-              'message',
-              contains(
-                  "cannot be specified in both @Cloneable(fields: ...) and the 'cloneableFields' getter"),
+          expect(
+            () => generator.generateForClass(
+              element: classElement,
+              annotation: ConstantReader(annotation.computeConstantValue()),
+              inputFileName: 'conflicted_class.dart',
             ),
-          ),
-        );
-      });
-    });
+            throwsA(
+              isA<InvalidGenerationSourceError>().having(
+                (e) => e.message,
+                'message',
+                contains(
+                  "cannot be specified in both @Cloneable(fields: ...) and the 'cloneableFields' getter",
+                ),
+              ),
+            ),
+          );
+        });
+      },
+    );
 
-    test(
-        'fieldsConflict merge combines fields from annotation and in-class getter',
-        () async {
+    test('fieldsConflict merge combines fields from annotation and in-class getter', () async {
       const source = '''
 library test_lib;
 
@@ -2805,9 +2820,10 @@ class MergedClass {
       });
     });
 
-    test('fieldsConflict inClass prefers in-class getter over annotation',
-        () async {
-      const source = '''
+    test(
+      'fieldsConflict inClass prefers in-class getter over annotation',
+      () async {
+        const source = '''
 library test_lib;
 
 enum CloneableFieldsConflict { error, merge, inClass, inAnnotation }
@@ -2833,25 +2849,24 @@ class InClassPreferenceClass {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('InClassPreferenceClass')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('InClassPreferenceClass')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForClass(
-          element: classElement,
-          annotation: ConstantReader(annotation.computeConstantValue()),
-          inputFileName: 'in_class_preference_class.dart',
-        );
+          final output = generator.generateForClass(
+            element: classElement,
+            annotation: ConstantReader(annotation.computeConstantValue()),
+            inputFileName: 'in_class_preference_class.dart',
+          );
 
-        expect(output, contains('String name,'));
-        expect(output, isNot(contains('String id,')));
-      });
-    });
+          expect(output, contains('String name,'));
+          expect(output, isNot(contains('String id,')));
+        });
+      },
+    );
 
-    test(
-        'fieldsConflict inAnnotation prefers annotation list over in-class getter',
-        () async {
+    test('fieldsConflict inAnnotation prefers annotation list over in-class getter', () async {
       const source = '''
 library test_lib;
 
@@ -2894,9 +2909,10 @@ class InAnnotationPreferenceClass {
       });
     });
 
-    test('raw class name with empty suffix generates and matches raw mixin',
-        () async {
-      const source = r'''
+    test(
+      'raw class name with empty suffix generates and matches raw mixin',
+      () async {
+        const source = r'''
 library test_lib;
 
 part 'test_lib.g.dart';
@@ -2928,22 +2944,23 @@ class RawUser with _$RawUser {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('RawUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('RawUser')!;
+          final annotation = classElement.metadata.first;
 
-        final output = generator.generateForAnnotatedElement(
-          classElement,
-          ConstantReader(annotation.computeConstantValue()),
-          _MockBuildStep('test_lib.dart'),
-        );
+          final output = generator.generateForAnnotatedElement(
+            classElement,
+            ConstantReader(annotation.computeConstantValue()),
+            _MockBuildStep('test_lib.dart'),
+          );
 
-        expect(output, contains('mixin _\$RawUser {'));
-        expect(output, contains('RawUser Function({'));
-        expect(output, isNot(contains('typedef')));
-      });
-    });
+          expect(output, contains('mixin _\$RawUser {'));
+          expect(output, contains('RawUser Function({'));
+          expect(output, isNot(contains('typedef')));
+        });
+      },
+    );
 
     test('CloneableNaming configuration generates expected symbols', () async {
       const source = r'''
@@ -2995,17 +3012,19 @@ class NamingTestUser {
           _MockBuildStep('test_lib.dart'),
         );
 
-        expect(output,
-            contains('extension ExtNamingTestUserExtension on NamingTestUser'));
+        expect(
+          output,
+          contains('extension ExtNamingTestUserExtension on NamingTestUser'),
+        );
         expect(output, contains('NamingTestUser Function({'));
         expect(output, isNot(contains('typedef')));
       });
     });
 
     test(
-        'Diagnostics: throws when private class is used with standalone output',
-        () async {
-      const source = '''
+      'Diagnostics: throws when private class is used with standalone output',
+      () async {
+        const source = '''
 library test_lib;
 
 class Cloneable {
@@ -3019,31 +3038,30 @@ class _PrivateUser {
 }
 ''';
 
-      await resolveSource(source, (resolver) async {
-        final library = await resolver.findLibraryByName('test_lib');
-        final classElement = library!.getClass('_PrivateUser')!;
-        final annotation = classElement.metadata.first;
+        await resolveSource(source, (resolver) async {
+          final library = await resolver.findLibraryByName('test_lib');
+          final classElement = library!.getClass('_PrivateUser')!;
+          final annotation = classElement.metadata.first;
 
-        expect(
-          () => generator.generateForAnnotatedElement(
-            classElement,
-            ConstantReader(annotation.computeConstantValue()),
-            _MockBuildStep('test_lib.dart'),
-          ),
-          throwsA(
-            isA<InvalidGenerationSourceError>().having(
-              (e) => e.message,
-              'message',
-              contains('Class \'_PrivateUser\' is private'),
+          expect(
+            () => generator.generateForAnnotatedElement(
+              classElement,
+              ConstantReader(annotation.computeConstantValue()),
+              _MockBuildStep('test_lib.dart'),
             ),
-          ),
-        );
-      });
-    });
+            throwsA(
+              isA<InvalidGenerationSourceError>().having(
+                (e) => e.message,
+                'message',
+                contains('Class \'_PrivateUser\' is private'),
+              ),
+            ),
+          );
+        });
+      },
+    );
 
-    test(
-        'Diagnostics: throws when private constructor is used with standalone output',
-        () async {
+    test('Diagnostics: throws when private constructor is used with standalone output', () async {
       const source = '''
 library test_lib;
 
@@ -3075,7 +3093,8 @@ class UserWithPrivateCtor {
               (e) => e.message,
               'message',
               contains(
-                  'Constructor \'_internal\' of class \'UserWithPrivateCtor\' is private'),
+                'Constructor \'_internal\' of class \'UserWithPrivateCtor\' is private',
+              ),
             ),
           ),
         );
@@ -3129,7 +3148,9 @@ class SubdirUser {
         );
 
         expect(
-            output, contains('extension \$SubdirUserExtension on SubdirUser'));
+          output,
+          contains('extension \$SubdirUserExtension on SubdirUser'),
+        );
       });
     });
 
@@ -3260,9 +3281,7 @@ class CustomClonerModel {
       });
     });
 
-    test(
-        'standalone output imports dart:typed_data only when needed and deepCopy is true',
-        () async {
+    test('standalone output imports dart:typed_data only when needed and deepCopy is true', () async {
       const sourceWithDeepCopy = '''
 library test_lib;
 
@@ -3379,12 +3398,15 @@ class PrivateClonerModel {
             ConstantReader(annotation.computeConstantValue()),
             _MockBuildStep('test_lib.dart'),
           ),
-          throwsA(isA<InvalidGenerationSourceError>().having(
-            (e) => e.message,
-            'message',
-            contains(
-                "Cloner function '_privateCloner' on field 'text' of class 'PrivateClonerModel' is private"),
-          )),
+          throwsA(
+            isA<InvalidGenerationSourceError>().having(
+              (e) => e.message,
+              'message',
+              contains(
+                "Cloner function '_privateCloner' on field 'text' of class 'PrivateClonerModel' is private",
+              ),
+            ),
+          ),
         );
       });
     });

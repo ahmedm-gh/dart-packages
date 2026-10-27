@@ -3,6 +3,13 @@
 # Internal benchmarks, test suites, and tooling
 tool/
 
+# Detailed benchmark report (hosted on GitHub)
+doc/benchmarks.md
+doc/api/
+
+# Comprehensive test suite (hosted on GitHub)
+test/
+
 # Standard pub/dart artifacts
 .dart_tool/
 pubspec.lock

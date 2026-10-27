@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:dependency_box/dependency_box.dart';
 import 'package:get_it/get_it.dart';
 
@@ -72,13 +73,17 @@ BenchmarkScore runTimed(int iterations, void Function() fn) {
 
 void main() {
   stdout.writeln(
-      '=========================================================================================');
+    '=========================================================================================',
+  );
   stdout.writeln(
-      '  COMPREHENSIVE HEAD-TO-HEAD BENCHMARK: dependency_box vs get_it 9.3.0');
+    '  COMPREHENSIVE HEAD-TO-HEAD BENCHMARK: dependency_box vs get_it 9.3.0',
+  );
   stdout.writeln(
-      '  Dart SDK: ${Platform.version.split(' ').first} (${Platform.operatingSystem})');
+    '  Dart SDK: ${Platform.version.split(' ').first} (${Platform.operatingSystem})',
+  );
   stdout.writeln(
-      '=========================================================================================\n');
+    '=========================================================================================\n',
+  );
 
   const hotPathCount = 5000000; // 5 Million iterations
   const factoryCount = 2000000; // 2 Million iterations
@@ -115,8 +120,10 @@ void main() {
   });
 
   final getIt2 = GetIt.asNewInstance();
-  getIt2.registerSingleton<ConfigService>(ConfigService(),
-      instanceName: 'primary');
+  getIt2.registerSingleton<ConfigService>(
+    ConfigService(),
+    instanceName: 'primary',
+  );
   final scoreGetIt2 = runTimed(hotPathCount, () {
     final res = getIt2<ConfigService>(instanceName: 'primary');
     if (identical(res, null)) throw StateError('');
@@ -126,8 +133,9 @@ void main() {
   // ---------------------------------------------------------------------------
   // 3. Cached Lazy Singleton Resolution
   // ---------------------------------------------------------------------------
-  stdout
-      .write('Running Test 3/10: Cached LazySingleton Resolution (5M ops)... ');
+  stdout.write(
+    'Running Test 3/10: Cached LazySingleton Resolution (5M ops)... ',
+  );
   final box3 = DependencyBox.main();
   box3.addLazySingleton<ConfigService>((_) {
     return ConfigService();
@@ -199,14 +207,17 @@ void main() {
   // 6. Deep Hierarchy Graph Resolution (5-level nested graph)
   // ---------------------------------------------------------------------------
   stdout.write(
-      'Running Test 6/10: Deep Dependency Graph Resolution (5M ops)... ');
+    'Running Test 6/10: Deep Dependency Graph Resolution (5M ops)... ',
+  );
   final box6 = DependencyBox.main();
   box6.addSingleton<ConfigService>(ConfigService());
   box6.addSingleton<DatabaseService>(
-      DatabaseService(box6.get<ConfigService>()));
+    DatabaseService(box6.get<ConfigService>()),
+  );
   box6.addSingleton<NetworkClient>(NetworkClient(box6.get<ConfigService>()));
   box6.addSingleton<UserRepository>(
-      UserRepository(box6.get<DatabaseService>(), box6.get<NetworkClient>()));
+    UserRepository(box6.get<DatabaseService>(), box6.get<NetworkClient>()),
+  );
   box6.addSingleton<AuthService>(AuthService(box6.get<UserRepository>()));
   final scoreBox6 = runTimed(hotPathCount, () {
     final res = box6.get<AuthService>();
@@ -216,11 +227,14 @@ void main() {
   final getIt6 = GetIt.asNewInstance();
   getIt6.registerSingleton<ConfigService>(ConfigService());
   getIt6.registerSingleton<DatabaseService>(
-      DatabaseService(getIt6<ConfigService>()));
-  getIt6
-      .registerSingleton<NetworkClient>(NetworkClient(getIt6<ConfigService>()));
+    DatabaseService(getIt6<ConfigService>()),
+  );
+  getIt6.registerSingleton<NetworkClient>(
+    NetworkClient(getIt6<ConfigService>()),
+  );
   getIt6.registerSingleton<UserRepository>(
-      UserRepository(getIt6<DatabaseService>(), getIt6<NetworkClient>()));
+    UserRepository(getIt6<DatabaseService>(), getIt6<NetworkClient>()),
+  );
   getIt6.registerSingleton<AuthService>(AuthService(getIt6<UserRepository>()));
   final scoreGetIt6 = runTimed(hotPathCount, () {
     final res = getIt6<AuthService>();
@@ -232,7 +246,8 @@ void main() {
   // 7. Setup Overhead: 100 Dependencies per Container
   // ---------------------------------------------------------------------------
   stdout.write(
-      'Running Test 7/10: Setup Overhead: 100 Dependencies (2,000 setups of 100 deps)... ');
+    'Running Test 7/10: Setup Overhead: 100 Dependencies (2,000 setups of 100 deps)... ',
+  );
   const setupCount = 2000;
   final swBoxSetup = Stopwatch()..start();
   for (var r = 0; r < setupCount; r++) {
@@ -242,8 +257,10 @@ void main() {
     }
   }
   swBoxSetup.stop();
-  final scoreBoxSetup =
-      BenchmarkScore(setupCount, swBoxSetup.elapsedMicroseconds);
+  final scoreBoxSetup = BenchmarkScore(
+    setupCount,
+    swBoxSetup.elapsedMicroseconds,
+  );
 
   final swGetItSetup = Stopwatch()..start();
   for (var r = 0; r < setupCount; r++) {
@@ -253,15 +270,18 @@ void main() {
     }
   }
   swGetItSetup.stop();
-  final scoreGetItSetup =
-      BenchmarkScore(setupCount, swGetItSetup.elapsedMicroseconds);
+  final scoreGetItSetup = BenchmarkScore(
+    setupCount,
+    swGetItSetup.elapsedMicroseconds,
+  );
   stdout.writeln('Done.');
 
   // ---------------------------------------------------------------------------
   // 8. Mass Setup: Create Container + 1,000 Keyed Singletons
   // ---------------------------------------------------------------------------
-  stdout
-      .write('Running Test 8/10: Mass Setup (2,000 setups of 1,000 deps)... ');
+  stdout.write(
+    'Running Test 8/10: Mass Setup (2,000 setups of 1,000 deps)... ',
+  );
   final swBoxMass = Stopwatch()..start();
   for (var r = 0; r < setupRuns; r++) {
     final box = DependencyBox.main();
@@ -280,8 +300,10 @@ void main() {
     }
   }
   swGetItMass.stop();
-  final scoreGetItMass =
-      BenchmarkScore(setupRuns, swGetItMass.elapsedMicroseconds);
+  final scoreGetItMass = BenchmarkScore(
+    setupRuns,
+    swGetItMass.elapsedMicroseconds,
+  );
   stdout.writeln('Done.');
 
   // ---------------------------------------------------------------------------
@@ -311,7 +333,8 @@ void main() {
   // 10. Hierarchical Child Scope with Shared Root Singleton
   // ---------------------------------------------------------------------------
   stdout.write(
-      'Running Test 10/10: Hierarchical Child Scope Shared Resolution (5M ops)... ');
+    'Running Test 10/10: Hierarchical Child Scope Shared Resolution (5M ops)... ',
+  );
   final rootBox10 = DependencyBox.main(name: 'root');
   final childBox10 = rootBox10.createChild(name: 'child_scope');
   childBox10.addSharedSingleton<ConfigService>(ConfigService());
@@ -345,30 +368,59 @@ void main() {
     stdout.writeln('| Metric | dependency_box | get_it 9.3.0 | Advantage |');
     stdout.writeln('|:---|:---:|:---:|:---|');
     stdout.writeln(
-        '| **Latency** | **${box.nsPerOp.toStringAsFixed(2)} ns/op** | ${getIt.nsPerOp.toStringAsFixed(2)} ns/op | **$winner** |');
+      '| **Latency** | **${box.nsPerOp.toStringAsFixed(2)} ns/op** | ${getIt.nsPerOp.toStringAsFixed(2)} ns/op | **$winner** |',
+    );
     stdout.writeln(
-        '| **Throughput** | **${box.opsPerSec.toStringAsFixed(0)} ops/s** | ${getIt.opsPerSec.toStringAsFixed(0)} ops/s | |');
+      '| **Throughput** | **${box.opsPerSec.toStringAsFixed(0)} ops/s** | ${getIt.opsPerSec.toStringAsFixed(0)} ops/s | |',
+    );
     stdout.writeln('');
   }
 
   stdout.writeln('## Head-to-Head Performance Results\n');
   printComparison(
-      '1. Singleton Resolution (Unkeyed Hot Path)', scoreBox1, scoreGetIt1);
+    '1. Singleton Resolution (Unkeyed Hot Path)',
+    scoreBox1,
+    scoreGetIt1,
+  );
   printComparison(
-      '2. Keyed / Named Singleton Resolution', scoreBox2, scoreGetIt2);
+    '2. Keyed / Named Singleton Resolution',
+    scoreBox2,
+    scoreGetIt2,
+  );
   printComparison('3. Cached LazySingleton Resolution', scoreBox3, scoreGetIt3);
-  printComparison('4. Factory Creation (New Instance on Every Call)', scoreBox4,
-      scoreGetIt4);
   printComparison(
-      '5. Parameterized Factory Resolution', scoreBox5, scoreGetIt5);
-  printComparison('6. Deep Hierarchy Graph Resolution (5 nested layers)',
-      scoreBox6, scoreGetIt6);
-  printComparison('7. Setup Overhead: 100 Dependencies per Container',
-      scoreBoxSetup, scoreGetItSetup);
-  printComparison('8. Mass Setup: Create Container + 1,000 Keyed Singletons',
-      scoreBoxMass, scoreGetItMass);
-  printComparison('9. Cached Weak-Reference Factory (Auto-Expiring Singleton)',
-      scoreBox9, scoreGetIt9);
-  printComparison('10. Hierarchical Child Scope Shared Resolution', scoreBox10,
-      scoreGetIt10);
+    '4. Factory Creation (New Instance on Every Call)',
+    scoreBox4,
+    scoreGetIt4,
+  );
+  printComparison(
+    '5. Parameterized Factory Resolution',
+    scoreBox5,
+    scoreGetIt5,
+  );
+  printComparison(
+    '6. Deep Hierarchy Graph Resolution (5 nested layers)',
+    scoreBox6,
+    scoreGetIt6,
+  );
+  printComparison(
+    '7. Setup Overhead: 100 Dependencies per Container',
+    scoreBoxSetup,
+    scoreGetItSetup,
+  );
+  printComparison(
+    '8. Mass Setup: Create Container + 1,000 Keyed Singletons',
+    scoreBoxMass,
+    scoreGetItMass,
+  );
+  printComparison(
+    '9. Cached Weak-Reference Factory (Auto-Expiring Singleton)',
+    scoreBox9,
+    scoreGetIt9,
+  );
+  printComparison(
+    '10. Hierarchical Child Scope Shared Resolution',
+    scoreBox10,
+    scoreGetIt10,
+  );
 }

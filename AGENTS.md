@@ -133,7 +133,8 @@ Before declaring any package ready or publishing, the following verification pip
 2. **Code Formatting**:
 
    ```bash
-   dart format --output=none --set-exit-if-changed .
+   dart format --language-version=latest .
+   dart format --language-version=latest --output=none --set-exit-if-changed .
    ```
 
    *Requirement*: 100% formatted according to standard Dart guidelines.
@@ -163,6 +164,16 @@ Before declaring any package ready or publishing, the following verification pip
    - Ensure `*.exe` is added to `.gitignore`.
    - Delete temporary scratch benchmarks or debugging scripts before publishing.
    - Archive size should be minimal (typically under 50 KB).
+
+---
+
+### 2.5. Markdown & Documentation Conventions (No LaTeX)
+
+> [!IMPORTANT]
+> **Never use LaTeX math notation (`$...$` or `$$...$$`)** in `README.md`, `CHANGELOG.md`, or `doc/*.md` files. Pub.dev, GitHub markdown previews, and IDE readers do not render LaTeX math reliably, leaving raw dollar signs and unrendered TeX commands (`$O(1)$`, `$\to$`, `$\le$`) visible to users.
+>
+> - **Use inline backtick code** for asymptotic complexities, formulas, or code entities: e.g., `O(1)`, `O(n)`, `O(log n)`, `O(d)`.
+> - **Use standard Unicode symbols** for arrows, comparisons, and math operators: e.g., `→` (instead of `\to`), `≥` (instead of `\ge`), `≤` (instead of `\le`), `×` (instead of `\times`), `≠` (instead of `\ne`).
 
 ---
 
@@ -289,7 +300,8 @@ Before completing a task or submitting changes for a package:
 - [ ] `CHANGELOG.md` documents the changes for the version specified in `pubspec.yaml`.
 - [ ] `LICENSE` is present with the current year and author name (`AHMED M.`).
 - [ ] `dart analyze` reports **0 issues**.
-- [ ] `dart format` reports **0 files changed**.
+- [ ] `dart format` reports **0 files changed** (run `dart format --language-version=latest .`).
 - [ ] `dart test` passes **100% of tests**.
 - [ ] `dart pub publish --dry-run` reports **0 warnings**.
+- [ ] No LaTeX math syntax (`$...$`) is used in any markdown documentation; use inline code (e.g. `O(1)`) and Unicode symbols (`→`, `×`) instead.
 - [ ] Package achieves or maintains **160/160 pub points** under `pana`.

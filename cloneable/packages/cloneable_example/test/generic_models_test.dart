@@ -10,10 +10,7 @@ void main() {
         tag: 'Frameworks',
       );
 
-      final updated = box.copyWith(
-        value: 'Rust',
-        optionalValue: null,
-      );
+      final updated = box.copyWith(value: 'Rust', optionalValue: null);
 
       expect(updated.value, equals('Rust'));
       expect(updated.optionalValue, isNull);
@@ -25,11 +22,7 @@ void main() {
     });
 
     test('Box<int> with integer generic type', () {
-      const box = Box<int>(
-        value: 100,
-        optionalValue: 200,
-        tag: 'Numbers',
-      );
+      const box = Box<int>(value: 100, optionalValue: 200, tag: 'Numbers');
 
       final updated = box.copyWith(optionalValue: null);
       expect(updated.value, equals(100));
@@ -37,27 +30,21 @@ void main() {
       expect(updated.tag, equals('Numbers'));
     });
 
-    test('BoundedBox<T extends num> preserves bounds and updates correctly',
-        () {
-      const doubleBox = BoundedBox<double>(
-        number: 3.14159,
-        label: 'Pi',
-      );
+    test(
+      'BoundedBox<T extends num> preserves bounds and updates correctly',
+      () {
+        const doubleBox = BoundedBox<double>(number: 3.14159, label: 'Pi');
 
-      final updated = doubleBox.copyWith(
-        number: 2.71828,
-      );
+        final updated = doubleBox.copyWith(number: 2.71828);
 
-      expect(updated.number, equals(2.71828));
-      expect(updated.label, equals('Pi'));
-      expect(doubleBox.number, equals(3.14159));
-    });
+        expect(updated.number, equals(2.71828));
+        expect(updated.label, equals('Pi'));
+        expect(doubleBox.number, equals(3.14159));
+      },
+    );
 
     test('Pair<A, B> handles multi-type generic parameters', () {
-      const pair = Pair<int, String>(
-        first: 1,
-        second: 'One',
-      );
+      const pair = Pair<int, String>(first: 1, second: 'One');
 
       final updated = pair.copyWith(second: 'First');
       expect(updated.first, equals(1));

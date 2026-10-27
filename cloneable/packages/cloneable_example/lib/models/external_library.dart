@@ -13,11 +13,7 @@ enum ExternalStatus {
 }
 
 /// An external priority enum.
-enum ExternalPriority {
-  low,
-  medium,
-  high,
-}
+enum ExternalPriority { low, medium, high }
 
 /// An external class type imported from another library.
 class ExternalAddress {
@@ -109,10 +105,7 @@ class ExternalProfile with _$ExternalProfileCloneable {
   final String username;
   final String email;
 
-  const ExternalProfile({
-    required this.username,
-    required this.email,
-  });
+  const ExternalProfile({required this.username, required this.email});
 }
 
 /// External typedef / function signature type.

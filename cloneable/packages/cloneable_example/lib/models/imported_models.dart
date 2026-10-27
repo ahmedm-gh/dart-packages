@@ -79,10 +79,7 @@ class IgnoreNullImportedModel with _$IgnoreNullImportedModelCloneable {
   final ExternalStatus status;
   final ExternalAddress? address;
 
-  const IgnoreNullImportedModel({
-    required this.status,
-    this.address,
-  });
+  const IgnoreNullImportedModel({required this.status, this.address});
 }
 
 /// Model demonstrating field-level ignore on an imported member type.

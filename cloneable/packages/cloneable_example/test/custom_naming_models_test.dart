@@ -13,17 +13,18 @@ void main() {
     });
 
     test(
-        'CustomGranularModel uses custom extension and inline copyWith function',
-        () {
-      const model = CustomGranularModel(title: 'Initial');
-      final updated = model.copyWith(title: 'Updated');
+      'CustomGranularModel uses custom extension and inline copyWith function',
+      () {
+        const model = CustomGranularModel(title: 'Initial');
+        final updated = model.copyWith(title: 'Updated');
 
-      expect(updated.title, 'Updated');
+        expect(updated.title, 'Updated');
 
-      // Verify strongly-typed inline copyWith function assignment
-      final CustomGranularModel Function({String title}) fn = model.copyWith;
-      final viaFn = fn(title: 'Via Function');
-      expect(viaFn.title, 'Via Function');
-    });
+        // Verify strongly-typed inline copyWith function assignment
+        final CustomGranularModel Function({String title}) fn = model.copyWith;
+        final viaFn = fn(title: 'Via Function');
+        expect(viaFn.title, 'Via Function');
+      },
+    );
   });
 }

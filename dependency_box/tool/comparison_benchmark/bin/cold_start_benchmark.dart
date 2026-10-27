@@ -34,12 +34,15 @@ void main(List<String> args) {
   final results = <String, List<double>>{for (final lib in libraries) lib: []};
 
   stdout.writeln(
-      '================================================================================');
+    '================================================================================',
+  );
   stdout.writeln(
-      '  COLD-START BENCHMARK (Process-Isolated Setup & 1st Resolution)');
+    '  COLD-START BENCHMARK (Process-Isolated Setup & 1st Resolution)',
+  );
   stdout.writeln('  Runs: $runsPerLib clean processes per library');
   stdout.writeln(
-      '================================================================================\n');
+    '================================================================================\n',
+  );
 
   final scriptPath = Platform.script.toFilePath();
 
@@ -47,13 +50,14 @@ void main(List<String> args) {
     // Rotate order
     final rotated = [
       ...libraries.sublist(r % libraries.length),
-      ...libraries.sublist(0, r % libraries.length)
+      ...libraries.sublist(0, r % libraries.length),
     ];
     for (final lib in rotated) {
-      final proc = Process.runSync(
-        Platform.resolvedExecutable,
-        [scriptPath, '--worker', lib],
-      );
+      final proc = Process.runSync(Platform.resolvedExecutable, [
+        scriptPath,
+        '--worker',
+        lib,
+      ]);
       if (proc.exitCode != 0) {
         stderr.writeln('Worker error for $lib: ${proc.stderr}');
         continue;
@@ -66,7 +70,8 @@ void main(List<String> args) {
   }
 
   stdout.writeln(
-      '| Library | Cold Startup (Median ms) | Mean (ms) | StdDev (ms) | Min (ms) | Max (ms) |');
+    '| Library | Cold Startup (Median ms) | Mean (ms) | StdDev (ms) | Min (ms) | Max (ms) |',
+  );
   stdout.writeln('| :--- | :---: | :---: | :---: | :---: | :---: |');
 
   for (final lib in libraries) {

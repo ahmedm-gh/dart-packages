@@ -5,7 +5,7 @@ part of 'clean_models.dart';
 /// Generated cloneable extension for [CleanUser].
 extension $CleanUserExtension on CleanUser {
   CleanUser Function({String id, String name, int age, String? bio})
-      get copyWith => _copyWith;
+  get copyWith => _copyWith;
 
   CleanUser _copyWith({
     Object? id = $undefined,
@@ -26,7 +26,7 @@ extension $CleanUserExtension on CleanUser {
 /// Generated cloneable extension for [CleanProduct].
 extension $CleanProductExtension on CleanProduct {
   CleanProduct Function({String sku, double price, List<String> tags})
-      get copyWith => _copyWith;
+  get copyWith => _copyWith;
 
   CleanProduct _copyWith({
     Object? sku = $undefined,
@@ -47,7 +47,7 @@ extension $CleanProductExtension on CleanProduct {
 /// Generated cloneable extension for [ExtensionUser].
 extension $ExtensionUserExtension on ExtensionUser {
   ExtensionUser Function({String name, int age, String? nickname})
-      get copyWith => _copyWith;
+  get copyWith => _copyWith;
 
   ExtensionUser _copyWith({
     Object? name = $undefined,
@@ -58,8 +58,9 @@ extension $ExtensionUserExtension on ExtensionUser {
     return ExtensionUser(
       name: identical(name, $undefined) ? self.name : name as String,
       age: identical(age, $undefined) ? self.age : age as int,
-      nickname:
-          identical(nickname, $undefined) ? self.nickname : nickname as String?,
+      nickname: identical(nickname, $undefined)
+          ? self.nickname
+          : nickname as String?,
     );
   }
 }

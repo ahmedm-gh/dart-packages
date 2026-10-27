@@ -15,7 +15,8 @@ mixin _$MediumModelCloneable {
     bool? f8,
     List<String> f9,
     Map<String, int>? f10,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   MediumModel _copyWith({
     Object? f1 = $undefined,
@@ -73,7 +74,8 @@ mixin _$LargeModelCloneable {
     int? opt3,
     double? opt4,
     bool? opt5,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   LargeModel _copyWith({
     Object? s1 = $undefined,

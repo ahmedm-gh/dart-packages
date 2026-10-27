@@ -4,18 +4,13 @@ part 'custom_naming_models.g.dart';
 
 /// Model demonstrating custom suffix ('Copyable' instead of 'Cloneable') in mixin.
 @Cloneable(
-  naming: CloneableNaming(
-    mixin: CloneableAffix(suffix: 'Copyable'),
-  ),
+  naming: CloneableNaming(mixin: CloneableAffix(suffix: 'Copyable')),
 )
 class CustomSuffixModel with _$CustomSuffixModelCopyable {
   final String name;
   final int count;
 
-  const CustomSuffixModel({
-    required this.name,
-    this.count = 0,
-  });
+  const CustomSuffixModel({required this.name, this.count = 0});
 }
 
 /// Model demonstrating granular prefix and suffix overrides.
@@ -27,7 +22,5 @@ class CustomSuffixModel with _$CustomSuffixModelCopyable {
 class CustomGranularModel {
   final String title;
 
-  const CustomGranularModel({
-    required this.title,
-  });
+  const CustomGranularModel({required this.title});
 }

@@ -19,6 +19,8 @@ Engineered with a zero-allocation unkeyed lookup path, `dependency_box` achieves
 - ⚡ **Sub-15ns Resolution**: Over 75 Million ops/sec on the hot path via direct `Type` literal map keys.
 - ⏳ **6 Registration Lifetimes**: Eager singletons, lazy singletons, weak-reference caches, transient factories, parameterized factories, and async singletons.
 - 🌳 **Hierarchical Child Scopes**: Isolated sub-containers (`createChild()`) that inherit parent registrations.
+- 🔍 **Hierarchy Resolution Boundaries (`LookupScope`)**: Pinpoint search boundaries (`inherited`, `local`, `parent`, `ancestors`, `root`) with zero allocation overhead.
+- 📐 **Hierarchy Introspection**: Query container `depth`, identify registration owners via `findOwner<T>()`, and detect shadowed bindings via `isShadowed<T>()`.
 - 🌐 **Root-Anchored Shared Singletons**: Register singletons from child scopes (`addShared*`) anchored directly to root.
 - 🔄 **Async Concurrency & Cycle Detection**: In-flight `Future` deduplication with automatic reentrancy/circular dependency protection.
 - 🧹 **Automatic Resource Disposal**: Clean lifecycle cleanup via `DependencyDisposable` and inline `onDispose` hooks.
@@ -96,19 +98,19 @@ void main() {
 final dbox = DependencyBox.main();
 
 // Eager Singleton (instantiated immediately)
-dbox.addSingleton(DatabaseService());
+dbox.addSingleton(NotificationService());
 
 // Lazy Singleton (instantiated once upon first get())
 dbox.addLazySingleton((dbox) => AuthService(dbox.get()));
 
 // Weak-Reference Cached Factory (cached while referenced in memory, auto-collected when unreferenced)
-dbox.addCachedFactory((dbox) => HeavyImageCache());
+dbox.addCachedFactory((dbox) => ReportRenderer());
 
 // Transient Factory (creates a fresh instance every time get() is called)
 dbox.addFactory((dbox) => OrderController(dbox.get()));
 
 // Parameterized Factory (accepts runtime arguments)
-dbox.addFactoryWith<QueryEngine, String>((dbox, query) => QueryEngine(query));
+dbox.addFactoryWith<ScopedLogger, String>((dbox, tag) => ScopedLogger(tag));
 
 // Asynchronous Singleton (deduplicated Future resolution)
 dbox.addAsyncSingleton((dbox) async {
@@ -123,51 +125,163 @@ Child scopes inherit dependencies from their parent while keeping local registra
 
 ```dart
 // Root Container (creates the primary container instance)
-final appBox = DependencyBox.main(name: 'app_root');
+final dbox = DependencyBox.main(name: 'app_root');
 
 // Eager Singleton on root
-appBox.addSingleton(GlobalConfig());
+dbox.addSingleton(GlobalConfig());
 
 // Create an isolated child scope (via convenience method)
-final featureBox = appBox.createChild(name: 'checkout_feature');
+final featureDbox = dbox.createChild(name: 'checkout_feature');
 
 // Or create a child container (via explicit parent constructor)
-final childBox = DependencyBox.child(parent: appBox, name: 'child_scope');
+final childDbox = DependencyBox.child(parent: dbox, name: 'child_scope');
 
 // Scoped Singleton (isolated to child scope)
-featureBox.addSingleton(CheckoutState());
+featureDbox.addSingleton(CheckoutState());
 
 // Shared Singleton (anchored to root from within the child scope)
-featureBox.addSharedSingleton(SharedAnalyticsSession());
+featureDbox.addSharedSingleton(SharedAnalyticsSession());
 
 // Scope hierarchy inspection:
-print(featureBox.name); // 'checkout_feature'
-print(featureBox.parent); // appBox
-print(featureBox.root); // appBox (topmost root across any nesting depth)
+print(featureDbox.name); // 'checkout_feature'
+print(featureDbox.parent); // dbox
+print(featureDbox.root); // dbox (topmost root across any nesting depth)
+print(featureDbox.depth); // 1 (0 for root, 1 for direct child)
+print(dbox.children.length); // 2 active direct child scopes
 
 // Dispose scope and clean up scoped dependencies
-featureBox.dispose();
+await featureDbox.dispose();
 ```
 
 - **`createChild({String? name})`**: *Importance:* Creates an isolated sub-container (e.g. for user sessions, HTTP requests, or navigation flows) that inherits parent dependencies. When the child scope is disposed, its scoped resources are torn down without affecting the parent.
+- **`children`**: *Importance:* An unmodifiable iterable of all active direct child containers tracked by this container.
+- **`depth`**: *Importance:* The 0-based hierarchy depth level (`0` for root, `1` for child, `2` for grandchild, etc.).
+- **`findOwner<T>({key, scope})`**: *Importance:* Returns the specific container instance in the hierarchy that holds the registration for type `T`, or `null` if not found. Useful for inspecting ownership or performing targeted singleton replacements (`findOwner<T>()?.replaceSingleton(...)`).
+- **`isShadowed<T>({key})`**: *Importance:* Returns `true` if type `T` is registered locally in this container *and* also exists in an ancestor container, identifying shadow overrides.
 - **`name`**: *Importance:* An optional human-readable identifier displayed in logs, error traces, and diagnostic inspection (`printContainer()`) to distinguish scopes.
 - **`parent`**: *Importance:* Gives direct access to the immediate parent container (or `null` if root), enabling scope boundary inspection.
 - **`root`**: *Importance:* Resolves the topmost root container across any nesting depth, ensuring direct access to global application singletons from deeply nested scopes.
+
+#### Scope Hierarchy & Upward Resolution
+
+Child containers resolve dependencies locally first, then seamlessly delegate missing lookups up the ancestor chain to the root container. Sibling child scopes remain completely isolated from each other:
+
+```text
+dbox (DependencyBox.main) [depth: 0]
+├── GlobalConfig                          (Singleton)
+├── AuthService                           (Lazy Singleton)
+├── SharedAnalyticsSession                (Shared Singleton — anchored to root)
+│
+├── featureDbox (createChild) [depth: 1]
+│   ├── CheckoutState                     (Scoped Singleton)
+│   ├── CartController                    (Factory)
+│   │   ▲
+│   │   └── Resolves missing lookups upward: featureDbox ──> dbox
+│   │
+│   └── screenDbox (createChild) [depth: 2]
+│       └── ReceiptPrinter                (Scoped Singleton)
+│           ▲
+│           └── Cascades upward: screenDbox ──> featureDbox ──> dbox
+│
+└── sessionDbox (createChild) [depth: 1]
+    ├── UserContext                       (Scoped Singleton)
+    └── SessionLogger                     (Factory)
+        ▲
+        └── Isolated from sibling featureDbox; resolves inherited from dbox
+```
+
+#### Hierarchy Resolution Boundaries (`LookupScope`)
+
+By default, resolution checks the local container first and cascades upward through ancestors to the root container (`LookupScope.inherited`). When precise control over resolution boundaries is required, pass `scope` to `get()`, `tryGet()`, `getAsync()`, `tryGetAsync()`, `contains()`, `getAll()`, or `getAllAsync()`:
+
+| `LookupScope` | Role | Resolution Boundary | Complexity | Purpose & Typical Use Case |
+| :--- | :---: | :--- | :---: | :--- |
+| **`inherited`** | **Default** | `this` → `parent` → ... → `root` | `O(d)` | Standard lexical scoping: resolves locally first, cascading upward. |
+| **`local`** | Opt-in | `this` container only | `O(1)` | Strict modular isolation: ensures instance exists directly in this container without looking up parents. |
+| **`parent`** | Opt-in | Immediate direct `parent` only (1 hop) | `O(1)` | Accesses the direct parent container, bypassing local overrides and higher ancestors. |
+| **`ancestors`** | Opt-in | `parent` → ... → `root` (skips `this`) | `O(d)` | Decorator / "super" pattern: accesses inherited services while intentionally skipping local overrides. |
+| **`root`** | Opt-in | `root` container only | `O(1)` | Direct pointer jump: resolves global application singletons, bypassing all intermediate scopes. |
+
+##### Example: Scope Boundary Control & Shadow Detection
+
+```dart
+// Root Container (creates the primary container instance)
+final dbox = DependencyBox.main(name: 'app_root');
+dbox.addSingleton<ApiClient>(ProductionApiClient());
+
+// Child and Grandchild Scopes
+final featureDbox = dbox.createChild(name: 'checkout_feature');
+final screenDbox = featureDbox.createChild(name: 'payment_screen');
+
+// Scoped override in screenDbox (shadows root)
+screenDbox.addSingleton<ApiClient>(MockApiClient());
+
+// 1. inherited (default): finds the nearest registration in screenDbox
+final client1 = screenDbox.get<ApiClient>(); // MockApiClient
+
+// 2. local: resolves strictly within screenDbox
+final client2 = screenDbox.get<ApiClient>(scope: LookupScope.local); // MockApiClient
+
+// 3. ancestors: skips screenDbox and resolves from ancestors
+final client3 = screenDbox.get<ApiClient>(scope: LookupScope.ancestors); // ProductionApiClient
+
+// 4. root: jumps directly to root container in O(1)
+final client4 = screenDbox.get<ApiClient>(scope: LookupScope.root); // ProductionApiClient
+
+// 5. parent: searches strictly within featureDbox (not found -> null)
+final parentClient = screenDbox.tryGet<ApiClient>(scope: LookupScope.parent); // null
+
+// Hierarchy Introspection & Shadow Detection
+print(screenDbox.depth); // 2
+print(screenDbox.isShadowed<ApiClient>()); // true (screenDbox shadows root ApiClient)
+print(screenDbox.findOwner<ApiClient>()?.name); // 'payment_screen'
+print(screenDbox.findOwner<ApiClient>(scope: LookupScope.root)?.name); // 'app_root'
+```
+
+#### Child Self-Detachment vs. Cascading Parent Disposal
+
+Disposing an individual child cleanly tears down its local scope and descendants while leaving parents and siblings intact. Disposing a parent cascades downward to all descendants before finalizing local resources:
+
+```text
+1. Disposing Individual Child (await childDbox.dispose())
+   │
+   ├── [1] Descendant Teardown ──> Recursively disposes all active sub-scopes (e.g. screenDbox)
+   ├── [2] Local Cleanup       ──> Disposes local instances & active DependencyDisposables
+   ├── [3] Self-Detachment     ──> Detaches itself from parent's children collection
+   │                               (sets parent._children = null when final child exits)
+   └── [4] Parent Isolation    ──> Parent and sibling containers remain active and untouched
+
+2. Cascading Parent Disposal (await rootDbox.dispose())
+   │
+   ├── [1] Pre-emptive Transfer ──> Snapshots children and clears parent._children reference
+   │                               (prevents ConcurrentModificationError during iteration)
+   ├── [2] Downward Cascade    ──> Recursively awaits dispose() on all active child scopes
+   ├── [3] Fault Tolerance    ──> Continues tearing down remaining children if one throws
+   ├── [4] Ancestor Detach     ──> Detaches parent from grandparent (if intermediate scope)
+   ├── [5] Local Cleanup       ──> Disposes parent's own singletons, instances, and disposables
+   └── [6] Error Propagation   ──> Re-throws first encountered child or local disposal error
+```
 
 ### 3. Lifecycle Cleanup with `DependencyDisposable`
 
 Classes implementing `DependencyDisposable` or registered with custom `onDispose` hooks are automatically closed when their container is disposed:
 
 ```dart
-class DatabaseClient implements DependencyDisposable {
+class EventBusService implements DependencyDisposable {
+  final _controller = StreamController<String>.broadcast();
+
+  Stream<String> get stream => _controller.stream;
+  void publish(String event) => _controller.add(event);
+
   @override
   void dispose() {
-    print('Database connection closed cleanly.');
+    _controller.close();
+    print('EventBusService streams closed cleanly.');
   }
 }
 
 // Automatically called when dbox.dispose() is executed
-dbox.addSingleton(DatabaseClient());
+dbox.addSingleton(EventBusService());
 
 // Or with an inline hook for third-party classes:
 dbox.addSingleton(
@@ -185,34 +299,34 @@ Package related registrations into cohesive modules implementing `DependencyModu
 ```dart
 class NetworkModule implements DependencyModule {
   @override
-  void register(DependencyBox box) {
-    box.addSingleton(HttpClient());
-    box.addLazySingleton((b) => ApiService(b.get()));
+  void register(DependencyBox dbox) {
+    dbox.addSingleton(HttpClient());
+    dbox.addLazySingleton((dbox) => ApiService(dbox.get()));
   }
 }
 
 class AuthModule implements DependencyModule {
   @override
-  void register(DependencyBox box) {
-    box.addSingleton(AuthTokenStorage());
+  void register(DependencyBox dbox) {
+    dbox.addSingleton(AuthTokenProvider());
   }
 }
 
 // Root Container (creates the primary container instance)
-final box = DependencyBox.main();
+final dbox = DependencyBox.main();
 
 // Install a single module:
-box.install(NetworkModule());
+dbox.install(NetworkModule());
 
 // Or batch-install multiple modules at the composition root:
-box.installAll([NetworkModule(), AuthModule()]);
+dbox.installAll([NetworkModule(), AuthModule()]);
 ```
 
-- **`DependencyModule`**: *Importance:* Modular feature registration contract (`void register(DependencyBox box)`). Encapsulates related dependencies into cohesive, reusable architectural units.
+- **`DependencyModule`**: *Importance:* Modular feature registration contract (`void register(DependencyBox dbox)`). Encapsulates related dependencies into cohesive, reusable architectural units.
 - **`install(module)`**: *Importance:* Enables modular, decoupled architecture by organizing feature dependencies into dedicated classes rather than maintaining a monolithic composition root.
 - **`installAll(modules)`**: *Importance:* Streamlines application startup sequences by cleanly registering multiple feature modules in a single call.
 
-### 5. Multi-Registrations (`allowMulti` & `allowMultiple`)
+### 5. Multi-Registrations (`allowMulti` & `allowMultiAll`)
 
 By default, duplicate registrations throw an assertion to catch accidental overwrites. When multiple implementations of a type are intentionally needed (e.g. plugins, interceptors, middleware), enable multi-registration:
 
@@ -222,28 +336,28 @@ abstract interface class Interceptor {
 }
 
 // Root Container (creates the primary container instance)
-final box = DependencyBox.main();
+final dbox = DependencyBox.main();
 
 // 1. Enable multiple registrations for a type with a resolution strategy
-box.allowMulti<Interceptor>(resolution: MultiResolution.last);
+dbox.allowMulti<Interceptor>(resolution: MultiResolution.last);
 
 // Register multiple implementations of the same type
-box.addSingleton<Interceptor>(AuthInterceptor());
-box.addSingleton<Interceptor>(LoggingInterceptor());
+dbox.addSingleton<Interceptor>(AuthInterceptor());
+dbox.addSingleton<Interceptor>(LoggingInterceptor());
 
 // 2. Resolve all instances or the default instance
-final List<Interceptor> all = box.getAll<Interceptor>().toList();
-final Interceptor active = box.get(); // Resolves LoggingInterceptor (last)
+final List<Interceptor> all = dbox.getAll<Interceptor>().toList();
+final Interceptor active = dbox.get(); // Resolves LoggingInterceptor (last)
 
 // 3. Or batch-configure multiple types at once:
-box.allowMultiple({
+dbox.allowMultiAll({
   const MultiRegistration<Interceptor>.last(),
   const MultiRegistration<Validator>(),
 });
 ```
 
 - **`allowMulti<T>({resolution})`**: *Importance:* Safely opts type `T` into multiple registrations and defines how `get<T>()` resolves (`first`, `last`, `at(index)`, `key(key)`), while `getAll<T>()` retrieves the full collection of instances.
-- **`allowMultiple(types)`**: *Importance:* Declaratively configures multi-registration for multiple types in a single call using compile-time `MultiRegistration` descriptors.
+- **`allowMultiAll(types)`**: *Importance:* Declaratively configures multi-registration for multiple types in a single call using compile-time `MultiRegistration` descriptors.
 
 ---
 
@@ -253,54 +367,25 @@ box.allowMultiple({
 
 ### Verified Benchmark Comparison: `dependency_box` vs. `get_it 9.3.0`
 
-- **Head-to-Head Resolution**: `dependency_box` delivers up to **27.71× faster** dependency resolution than `get_it 9.3.0` (e.g. Singleton: 13 ns vs 362 ns in AOT; 15 ns vs 239 ns in JIT).
-- **Container Setup**: **2.30×–6.35× faster** initialization and dependency binding setup.
-- **Complex Architectures**: **13.87×–19.74× faster** across deep dependency graphs and application lifecycles, with weak-reference caching reaching **27.32×**.
-- **Verified Suite Advantage**: **5.57× geometric-mean speedup in JIT** and **6.67× in AOT** across comprehensive multi-workload benchmarking.
+`dependency_box` outperforms `get_it 9.3.0` across all 27 benchmark workloads on both Native AOT and JIT runtimes:
 
-#### 1. JIT Resolution Workloads
+- **Overall Speedup**: **~1.33× to ~26.7× faster** on Native AOT and **~1.52× to ~15.3× faster** on JIT.
+- **Resolution Hot Path**: Up to **~26.7× faster** on singleton, lazy, factory, and graph lookups (e.g. Singleton: 14.1 ns vs 377.2 ns in AOT; 30.2 ns vs 461.0 ns in JIT).
+- **Registration & Scaling**: **~1.33× to ~8.2× faster** from 1 to 10,000 services with zero-overhead container setup.
+- **Lifecycle & Scoping**: **~2.37× to ~25.8× faster** across child scopes, hierarchy resolution boundaries, and cached factories.
 
-![JIT Resolution Workloads](doc/benchmark_jit_resolution.svg)
-
-#### 2. JIT Registration & Scaling
-
-![JIT Registration & Scaling](doc/benchmark_jit_registration.svg)
-
-#### 3. AOT Resolution Workloads
-
-![AOT Resolution Workloads](doc/benchmark_aot_resolution.svg)
-
-#### 4. AOT Registration & Scaling
-
-![AOT Registration & Scaling](doc/benchmark_aot_registration.svg)
+![dependency_box vs get_it 9.3.0 speedup ranges](doc/benchmark_comparison.svg)
 
 > [!TIP]
-> A consolidated 4-in-1 chart is also available at [doc/benchmark_comparison.svg](doc/benchmark_comparison.svg), along with suite overviews for [JIT](doc/benchmark_jit.svg) and [AOT](doc/benchmark_aot.svg).
-
-### 🔬 Reproducing the Benchmarks
-
-All benchmark suites and measurement harnesses are 100% open source and reproducible:
-
-- **Comparative Benchmark Suite**: [`tool/comparison_benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool/comparison_benchmark)
-
-  ```bash
-  # Run head-to-head microbenchmarks (dependency_box vs get_it 9.3.0)
-  dart run tool/comparison_benchmark/bin/compare_benchmark.dart
-
-  # Run real-world production architecture simulation suite
-  dart run tool/comparison_benchmark/bin/real_world_benchmark.dart
-  ```
-
-- **Standalone Package Microbenchmarks**: [`tool/benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool/benchmark)
-
-  ```bash
-  dart run tool/benchmark/benchmark.dart
-  ```
-
-> [!NOTE]
+> **Detailed Benchmark Audit & Test Suite on GitHub**
 >
-> - Benchmarks were run on Dart SDK 3.13.4 on Windows x64.
-> - Comparison harness sources are located in [`tool/comparison_benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool/comparison_benchmark) and internal benchmarks in [`tool/benchmark/`](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool/benchmark).
+> To keep the published pub package download minimal and lightweight for production builds, the comprehensive benchmark audit report (`doc/benchmarks.md`), internal benchmarking harnesses (`tool/`), and automated test suite (`test/`) are excluded from the pub.dev distribution.
+>
+> If you would like to inspect the complete statistical breakdown, reproduction instructions, or test suite, please visit the [GitHub repository](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box):
+>
+> - 📊 **Detailed Benchmark Audit & Statistical Tables**: [doc/benchmarks.md](https://github.com/ahmedm-gh/dart-packages/blob/main/dependency_box/doc/benchmarks.md)
+> - 🧪 **Comprehensive Automated Test Suite**: [test/](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/test)
+> - 🔬 **Reproducible Benchmark Suites & Tooling**: [tool/](https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/tool)
 
 ---
 

@@ -6,11 +6,7 @@ class HandwrittenUser {
   final int age;
   final String? nickname;
 
-  const HandwrittenUser({
-    required this.name,
-    required this.age,
-    this.nickname,
-  });
+  const HandwrittenUser({required this.name, required this.age, this.nickname});
 
   HandwrittenUser copyWith({
     Object? name = _handwrittenUndefined,
@@ -43,8 +39,9 @@ class _$FreezedUserCopyWithImpl implements $FreezedUserCopyWith {
     Object? nickname = _handwrittenUndefined,
   }) {
     return FreezedStyleUser(
-      name:
-          identical(name, _handwrittenUndefined) ? _value.name : name as String,
+      name: identical(name, _handwrittenUndefined)
+          ? _value.name
+          : name as String,
       age: identical(age, _handwrittenUndefined) ? _value.age : age as int,
       nickname: identical(nickname, _handwrittenUndefined)
           ? _value.nickname
@@ -227,13 +224,16 @@ class HandwrittenLargeModel {
       b3: identical(b3, _handwrittenUndefined) ? this.b3 : b3 as bool,
       b4: identical(b4, _handwrittenUndefined) ? this.b4 : b4 as bool,
       b5: identical(b5, _handwrittenUndefined) ? this.b5 : b5 as bool,
-      opt1:
-          identical(opt1, _handwrittenUndefined) ? this.opt1 : opt1 as String?,
-      opt2:
-          identical(opt2, _handwrittenUndefined) ? this.opt2 : opt2 as String?,
+      opt1: identical(opt1, _handwrittenUndefined)
+          ? this.opt1
+          : opt1 as String?,
+      opt2: identical(opt2, _handwrittenUndefined)
+          ? this.opt2
+          : opt2 as String?,
       opt3: identical(opt3, _handwrittenUndefined) ? this.opt3 : opt3 as int?,
-      opt4:
-          identical(opt4, _handwrittenUndefined) ? this.opt4 : opt4 as double?,
+      opt4: identical(opt4, _handwrittenUndefined)
+          ? this.opt4
+          : opt4 as double?,
       opt5: identical(opt5, _handwrittenUndefined) ? this.opt5 : opt5 as bool?,
     );
   }

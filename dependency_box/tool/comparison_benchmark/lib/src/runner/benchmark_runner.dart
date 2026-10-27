@@ -57,10 +57,8 @@ class BenchmarkSuiteRunner {
   final BenchmarkOptions options;
   final BenchmarkEnvironment environment;
 
-  BenchmarkSuiteRunner({
-    required this.adapters,
-    required this.options,
-  }) : environment = BenchmarkEnvironment.detect(mode: options.executionMode);
+  BenchmarkSuiteRunner({required this.adapters, required this.options})
+    : environment = BenchmarkEnvironment.detect(mode: options.executionMode);
 
   /// Executes the full suite of workloads and returns all results.
   Future<List<WorkloadExecutionResult>> runSuite({
@@ -84,8 +82,9 @@ class BenchmarkSuiteRunner {
 
       final dbMedian = result.adapterSeries['dependency_box']?.median ?? 0.0;
       final giMedian = result.adapterSeries['get_it']?.median ?? 0.0;
-      final speedupGi =
-          giMedian > 0 ? (giMedian / dbMedian).toStringAsFixed(2) : 'N/A';
+      final speedupGi = giMedian > 0
+          ? (giMedian / dbMedian).toStringAsFixed(2)
+          : 'N/A';
 
       final msg =
           '  -> dependency_box: ${dbMedian.toStringAsFixed(1)}ns/op | get_it: ${giMedian.toStringAsFixed(1)}ns/op (${speedupGi}x)';
@@ -97,7 +96,8 @@ class BenchmarkSuiteRunner {
   }
 
   Future<WorkloadExecutionResult> _executeWorkload(
-      BenchmarkWorkload workload) async {
+    BenchmarkWorkload workload,
+  ) async {
     final rawSamples = <String, List<double>>{
       for (final a in adapters) a.name: <double>[],
     };
@@ -214,12 +214,14 @@ class BenchmarkSuiteRunner {
     };
     final rawFile = File('${dir.path}/raw_samples.json');
     await rawFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(rawSamplesMap));
+      const JsonEncoder.withIndent('  ').convert(rawSamplesMap),
+    );
 
     // 2. Aggregated Results JSON
     final aggFile = File('${dir.path}/aggregated_results.json');
     await aggFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(rawSamplesMap));
+      const JsonEncoder.withIndent('  ').convert(rawSamplesMap),
+    );
 
     // 3. Results CSV
     final csvBuf = StringBuffer();
@@ -249,7 +251,8 @@ class BenchmarkSuiteRunner {
   String generateMarkdownReport(List<WorkloadExecutionResult> results) {
     final buf = StringBuffer();
     buf.writeln(
-        '# Definitive DI Performance Benchmark: dependency_box vs get_it 9.3.0');
+      '# Definitive DI Performance Benchmark: dependency_box vs get_it 9.3.0',
+    );
     buf.writeln();
     buf.writeln('**Generated:** ${environment.timestamp.toIso8601String()}  ');
     buf.writeln('**Dart SDK:** ${environment.dartVersion.split(" ").first}  ');
@@ -257,7 +260,8 @@ class BenchmarkSuiteRunner {
     buf.writeln('**CPU Processors:** ${environment.numberOfProcessors}  ');
     buf.writeln('**Runtime Mode:** ${environment.executionMode}  ');
     buf.writeln(
-        '**Samples per workload:** ${options.sampleCount} independent runs  ');
+      '**Samples per workload:** ${options.sampleCount} independent runs  ',
+    );
     buf.writeln();
 
     buf.writeln('---');
@@ -275,9 +279,11 @@ class BenchmarkSuiteRunner {
 
     final geomeanGi = _geometricMean(giSpeedups);
     buf.writeln(
-        '- **Overall Geometric Mean Speedup vs GetIt 9.3.0:** **${geomeanGi.toStringAsFixed(2)}x faster**');
+      '- **Overall Geometric Mean Speedup vs GetIt 9.3.0:** **${geomeanGi.toStringAsFixed(2)}x faster**',
+    );
     buf.writeln(
-        '- **Methodology Reliability:** **PASS** (Zero failed conformance checks, randomized sampling rotation, statistical dispersion reported).');
+      '- **Methodology Reliability:** **PASS** (Zero failed conformance checks, randomized sampling rotation, statistical dispersion reported).',
+    );
     buf.writeln();
 
     buf.writeln('---');
@@ -285,27 +291,37 @@ class BenchmarkSuiteRunner {
     buf.writeln('## 2. Capability & Conformance Matrix');
     buf.writeln();
     buf.writeln(
-        '| DI Feature / Capability | `dependency_box` | `get_it 9.3.0` |');
+      '| DI Feature / Capability | `dependency_box` | `get_it 9.3.0` |',
+    );
     buf.writeln('| :--- | :---: | :---: |');
     buf.writeln(
-        '| **Singleton Identity Preservation** | Supported | Supported |');
+      '| **Singleton Identity Preservation** | Supported | Supported |',
+    );
     buf.writeln(
-        '| **Lazy Singleton (Initialize Once)** | Supported | Supported |');
+      '| **Lazy Singleton (Initialize Once)** | Supported | Supported |',
+    );
     buf.writeln('| **Transient Factory Creation** | Supported | Supported |');
     buf.writeln(
-        '| **Weak-Reference Cached Factory** | Supported | Supported |');
+      '| **Weak-Reference Cached Factory** | Supported | Supported |',
+    );
     buf.writeln(
-        '| **Interface-to-Implementation Mapping** | Supported | Supported |');
+      '| **Interface-to-Implementation Mapping** | Supported | Supported |',
+    );
     buf.writeln(
-        '| **Keyed / Named Registrations** | Supported (Any Object) | Supported (String only) |');
+      '| **Keyed / Named Registrations** | Supported (Any Object) | Supported (String only) |',
+    );
     buf.writeln(
-        '| **Parameterized Factory Arguments** | Supported (Strongly Typed `A`) | Supported (Up to 2 params) |');
+      '| **Parameterized Factory Arguments** | Supported (Strongly Typed `A`) | Supported (Up to 2 params) |',
+    );
     buf.writeln(
-        '| **Asynchronous Singleton Initialization** | Supported (`getAsync`) | Supported (`getAsync`) |');
+      '| **Asynchronous Singleton Initialization** | Supported (`getAsync`) | Supported (`getAsync`) |',
+    );
     buf.writeln(
-        '| **Hierarchical Container Objects (`createChild`)** | **Native Container Tree** | Stack-based Scopes |');
+      '| **Hierarchical Container Objects (`createChild`)** | **Native Container Tree** | Stack-based Scopes |',
+    );
     buf.writeln(
-        '| **Zero-Dependency Core Runtime** | **Yes (0 external dependencies)** | No (`async`, `collection`) |');
+      '| **Zero-Dependency Core Runtime** | **Yes (0 external dependencies)** | No (`async`, `collection`) |',
+    );
     buf.writeln();
 
     buf.writeln('---');
@@ -321,14 +337,16 @@ class BenchmarkSuiteRunner {
     ];
 
     for (final cat in categories) {
-      final catResults =
-          results.where((r) => r.workload.category == cat).toList();
+      final catResults = results
+          .where((r) => r.workload.category == cat)
+          .toList();
       if (catResults.isEmpty) continue;
 
       buf.writeln('### ${_categoryTitle(cat)}');
       buf.writeln();
       buf.writeln(
-          '| Benchmark Workload | `dependency_box` (Median) | `get_it` (Median) | Speedup vs GetIt |');
+        '| Benchmark Workload | `dependency_box` (Median) | `get_it` (Median) | Speedup vs GetIt |',
+      );
       buf.writeln('| :--- | :---: | :---: | :---: |');
 
       for (final r in catResults) {
@@ -349,15 +367,18 @@ class BenchmarkSuiteRunner {
     buf.writeln();
     buf.writeln('1. **Direct Hash Map Lookup vs Scope Stack Iteration:**');
     buf.writeln(
-        '   - `dependency_box` performs direct hash lookups using `Type` or lightweight `BoxDependencyRef`. In contrast, `get_it` searches backwards through its `_scopes` stack and executes runtime type checks `(const Object() is! T)`. This gives `dependency_box` a consistent 2x-4x speedup on singletons and interface resolutions.');
+      '   - `dependency_box` performs direct hash lookups using `Type` or lightweight `BoxDependencyRef`. In contrast, `get_it` searches backwards through its `_scopes` stack and executes runtime type checks `(const Object() is! T)`. This gives `dependency_box` a consistent 2x-4x speedup on singletons and interface resolutions.',
+    );
     buf.writeln();
     buf.writeln('2. **Hierarchical Scopes vs Scope Stacks:**');
     buf.writeln(
-        '   - `dependency_box` creates true child container instances via `createChild()`, allowing multiple concurrent isolated scopes (e.g. per-session or per-screen). GetIt uses a global stack `pushNewScope()` / `popScope()`, where scope names must remain unique across the entire application lifecycle.');
+      '   - `dependency_box` creates true child container instances via `createChild()`, allowing multiple concurrent isolated scopes (e.g. per-session or per-screen). GetIt uses a global stack `pushNewScope()` / `popScope()`, where scope names must remain unique across the entire application lifecycle.',
+    );
     buf.writeln();
     buf.writeln('---');
     buf.writeln(
-        'Generated automatically by `tool/comparison_benchmark/bin/run_benchmark_suite.dart`.');
+      'Generated automatically by `tool/comparison_benchmark/bin/run_benchmark_suite.dart`.',
+    );
 
     return buf.toString();
   }
@@ -372,9 +393,9 @@ class BenchmarkSuiteRunner {
   }
 
   static String _categoryTitle(WorkloadCategory cat) => switch (cat) {
-        WorkloadCategory.resolution => 'Resolution Workloads',
-        WorkloadCategory.registration => 'Registration & Container Setup',
-        WorkloadCategory.lifecycleAndScope => 'Lifecycle & Scoping Workloads',
-        WorkloadCategory.bulkAndScaling => 'Bulk & Scaling Workloads',
-      };
+    WorkloadCategory.resolution => 'Resolution Workloads',
+    WorkloadCategory.registration => 'Registration & Container Setup',
+    WorkloadCategory.lifecycleAndScope => 'Lifecycle & Scoping Workloads',
+    WorkloadCategory.bulkAndScaling => 'Bulk & Scaling Workloads',
+  };
 }

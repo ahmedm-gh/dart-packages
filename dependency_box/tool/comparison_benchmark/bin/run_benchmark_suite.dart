@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:comparison_benchmark/comparison_benchmark.dart';
 
 Future<void> main(List<String> args) async {
@@ -25,31 +26,36 @@ Future<void> main(List<String> args) async {
       stdout.writeln('Options:');
       stdout.writeln('  --smoke              Run quick smoke benchmark');
       stdout.writeln(
-          '  --samples <n>        Number of independent samples (default: 20)');
+        '  --samples <n>        Number of independent samples (default: 20)',
+      );
       stdout.writeln(
-          '  --mode <JIT|AOT>     Recorded execution mode (default: JIT)');
+        '  --mode <JIT|AOT>     Recorded execution mode (default: JIT)',
+      );
       stdout.writeln('  --workload <id>      Run a single workload by ID');
       stdout.writeln(
-          '  --output-dir <path>  Directory to save results (default: results)');
+        '  --output-dir <path>  Directory to save results (default: results)',
+      );
       exit(0);
     }
   }
 
   stdout.writeln(
-      '================================================================================');
+    '================================================================================',
+  );
   stdout.writeln(
-      '  DEFINITIVE DART DI BENCHMARK: dependency_box vs get_it 9.3.0');
+    '  DEFINITIVE DART DI BENCHMARK: dependency_box vs get_it 9.3.0',
+  );
   stdout.writeln(
-      '  Mode: $mode | Samples: $sampleCount | Smoke: $isSmoke | Output: $outputDir');
+    '  Mode: $mode | Samples: $sampleCount | Smoke: $isSmoke | Output: $outputDir',
+  );
   stdout.writeln(
-      '  Dart SDK: ${Platform.version.split(" ").first} (${Platform.operatingSystem})');
+    '  Dart SDK: ${Platform.version.split(" ").first} (${Platform.operatingSystem})',
+  );
   stdout.writeln(
-      '================================================================================\n');
+    '================================================================================\n',
+  );
 
-  final adapters = <BenchmarkAdapter>[
-    DependencyBoxAdapter(),
-    GetItAdapter(),
-  ];
+  final adapters = <BenchmarkAdapter>[DependencyBoxAdapter(), GetItAdapter()];
 
   final options = BenchmarkOptions(
     sampleCount: sampleCount,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'box_config.dart';
 import 'dependency_box.dart';
 import 'dependency_ref.dart';
+import 'lookup_scope.dart';
 import 'multi_registration.dart';
 import 'registration.dart';
 
@@ -14,16 +15,57 @@ class DependencyBoxImpl extends DependencyBox {
 
   final DependencyBoxImpl? _parent;
   final String? _name;
+  final int _depth;
 
-  DependencyBoxImpl({String? name})
-      : _parent = null,
-        _name = name;
+  Set<DependencyBoxImpl>? _children;
+  Future<void>? _disposalFuture;
 
-  DependencyBoxImpl.child({
-    required DependencyBox parent,
-    String? name,
-  })  : _parent = parent as DependencyBoxImpl,
-        _name = name;
+  DependencyBoxImpl({String? name}) : _parent = null, _name = name, _depth = 0;
+
+  DependencyBoxImpl.child({required DependencyBox parent, String? name})
+    : _parent = parent as DependencyBoxImpl,
+      _name = name,
+      _depth = parent.depth + 1 {
+    _initChild();
+  }
+
+  void _initChild() {
+    final parent = _parent!;
+    if (parent._isDisposed) {
+      DependencyBox.throwError(
+        'Cannot create a child scope from a disposed DependencyBox.',
+        DependencyBoxError.disposed,
+      );
+    }
+    parent._attachChild(this);
+  }
+
+  void _attachChild(DependencyBoxImpl child) {
+    if (_isDisposed) {
+      DependencyBox.throwError(
+        'Cannot create a child scope from a disposed DependencyBox.',
+        DependencyBoxError.disposed,
+      );
+    }
+    (_children ??= Set<DependencyBoxImpl>.identity()).add(child);
+  }
+
+  void _detachChild(DependencyBoxImpl child) {
+    if (_children case final children?) {
+      children.remove(child);
+      if (children.isEmpty) {
+        _children = null;
+      }
+    }
+  }
+
+  /// Whether the direct children collection has been allocated.
+  bool get hasAllocatedChildren => _children != null;
+
+  @override
+  Iterable<DependencyBox> get children => _children == null
+      ? const []
+      : List<DependencyBox>.unmodifiable(_children!);
 
   @override
   String? get name {
@@ -45,6 +87,9 @@ class DependencyBoxImpl extends DependencyBox {
   }
 
   @override
+  int get depth => _depth;
+
+  @override
   DependencyBox createChild({String? name}) {
     if (DependencyBoxConfig.isDebug && _isDisposed) {
       DependencyBox.throwError(
@@ -53,6 +98,58 @@ class DependencyBoxImpl extends DependencyBox {
       );
     }
     return DependencyBoxImpl.child(parent: this, name: name);
+  }
+
+  @override
+  DependencyBox? findOwner<T extends Object>({
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  }) {
+    if (_isDisposed) {
+      return null;
+    }
+
+    final id = BoxDependencyRef.from<T>(key);
+
+    if (scope == LookupScope.inherited || scope == LookupScope.local) {
+      if (_container.containsKey(id) ||
+          (_multiContainer?.containsKey(id) ?? false)) {
+        return this;
+      }
+      if (scope == LookupScope.local) {
+        return null;
+      }
+    }
+
+    if (scope == LookupScope.root) {
+      final rootBox = root;
+      if (identical(this, rootBox)) {
+        return (_container.containsKey(id) ||
+                (_multiContainer?.containsKey(id) ?? false))
+            ? this
+            : null;
+      }
+      return rootBox.findOwner<T>(key: key, scope: LookupScope.local);
+    }
+
+    if (_parent case final parent?) {
+      return parent.findOwner<T>(
+        key: key,
+        scope: switch (scope) {
+          LookupScope.parent => LookupScope.local,
+          LookupScope.ancestors => LookupScope.inherited,
+          _ => LookupScope.inherited,
+        },
+      );
+    }
+
+    return null;
+  }
+
+  @override
+  bool isShadowed<T extends Object>({Object? key}) {
+    return contains<T>(key: key, scope: LookupScope.local) &&
+        contains<T>(key: key, scope: LookupScope.ancestors);
   }
 
   bool get _canMultiTypes {
@@ -68,7 +165,7 @@ class DependencyBoxImpl extends DependencyBox {
   }
 
   @override
-  void allowMultiple(Iterable<MultiRegistration> types) {
+  void allowMultiAll(Iterable<MultiRegistration> types) {
     if (DependencyBoxConfig.isDebug && _isDisposed) {
       DependencyBox.throwError(
         'Cannot configure multi-registration on a disposed DependencyBox.',
@@ -132,7 +229,7 @@ class DependencyBoxImpl extends DependencyBox {
     if (DependencyBoxConfig.isDebug && _container.containsKey(id)) {
       DependencyBox.throwError(
         'A dependency with id "$id" ($T) is already registered. '
-        'To allow multiple instances for this type, enable it via allowMultiple({MultiRegistration<$T>()}).',
+        'To allow multiple instances for this type, enable it via allowMultiAll({MultiRegistration<$T>()}).',
         DependencyBoxError.duplicateRegistration,
       );
     }
@@ -140,17 +237,11 @@ class DependencyBoxImpl extends DependencyBox {
     _container[id] = registration;
   }
 
-  void _resolveLast(
-    Object id,
-    DependencyBoxRegistration registration,
-  ) {
+  void _resolveLast(Object id, DependencyBoxRegistration registration) {
     _container[id] = registration;
   }
 
-  void _resolveFirst(
-    Object id,
-    DependencyBoxRegistration registration,
-  ) {
+  void _resolveFirst(Object id, DependencyBoxRegistration registration) {
     _container.putIfAbsent(id, () {
       return registration;
     });
@@ -200,13 +291,10 @@ class DependencyBoxImpl extends DependencyBox {
   }
 
   @override
-  void addSingletons<T extends Object>(
-    Iterable<T> instances, {
-    Object? key,
-  }) {
+  void addSingletons<T extends Object>(Iterable<T> instances, {Object? key}) {
     if (DependencyBoxConfig.isDebug && _findMultiResolution(T) == null) {
       DependencyBox.throwError(
-        'Cannot call addSingletons for type $T without enabling it first via allowMultiple({MultiRegistration<$T>()}).',
+        'Cannot call addSingletons for type $T without enabling it first via allowMultiAll({MultiRegistration<$T>()}).',
         DependencyBoxError.multiNotAllowed,
       );
     }
@@ -363,12 +451,14 @@ class DependencyBoxImpl extends DependencyBox {
     if (disposeOld) {
       final old = _container[id];
       if (old != null) {
-        unawaited(old.dispose());
+        final r = old.dispose();
+        if (r is Future<void>) unawaited(r);
       }
       if (_multiContainer?.remove(id) case final multiList?) {
         for (final r in multiList) {
           if (!identical(r, old)) {
-            unawaited(r.dispose());
+            final rDis = r.dispose();
+            if (rDis is Future<void>) unawaited(rDis);
           }
         }
       }
@@ -415,20 +505,23 @@ class DependencyBoxImpl extends DependencyBox {
 
   @override
   Iterable<Object> get registeredKeys => switch (_isDisposed) {
-        true => const [],
-        false => <Object>{
-            ..._container.keys,
-            if (_multiContainer case final multiContainer?)
-              ...multiContainer.keys,
-            if (_parent case final parent?) ...parent.registeredKeys,
-          },
-      };
+    true => const [],
+    false => <Object>{
+      ..._container.keys,
+      if (_multiContainer case final multiContainer?) ...multiContainer.keys,
+      if (_parent case final parent?) ...parent.registeredKeys,
+    },
+  };
 
   @override
   int get length => _container.length;
 
   @override
-  T get<T extends Object>({Object? args, Object? key}) {
+  T get<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  }) {
     if (DependencyBoxConfig.isDebug && _isDisposed) {
       DependencyBox.throwError(
         'Cannot resolve dependency from a disposed DependencyBox.',
@@ -437,12 +530,45 @@ class DependencyBoxImpl extends DependencyBox {
     }
 
     final id = BoxDependencyRef.from<T>(key);
-    if (_container[id] case final registration?) {
-      return registration.resolve(this, (_) {}, args) as T;
+
+    if (scope == LookupScope.inherited || scope == LookupScope.local) {
+      if (_container[id] case final registration?) {
+        return registration.resolve(this, (_) {}, args) as T;
+      }
+      if (scope == LookupScope.local) {
+        return DependencyBox.throwError(
+          'No local registration found for type $T${key != null ? ' with key "$key"' : ''}',
+          DependencyBoxError.notFound,
+        );
+      }
     }
+
+    if (scope == LookupScope.root) {
+      if (identical(this, root)) {
+        if (_container[id] case final registration?) {
+          return registration.resolve(this, (_) {}, args) as T;
+        }
+      } else {
+        return root.get<T>(args: args, key: key, scope: LookupScope.local);
+      }
+      return DependencyBox.throwError(
+        'No root registration found for type $T${key != null ? ' with key "$key"' : ''}',
+        DependencyBoxError.notFound,
+      );
+    }
+
     if (_parent case final parent?) {
-      return parent.get<T>(args: args, key: key);
+      return parent.get<T>(
+        args: args,
+        key: key,
+        scope: switch (scope) {
+          LookupScope.parent => LookupScope.local,
+          LookupScope.ancestors => LookupScope.inherited,
+          _ => LookupScope.inherited,
+        },
+      );
     }
+
     return DependencyBox.throwError(
       'No registration found for type $T${key != null ? ' with key "$key"' : ''}',
       DependencyBoxError.notFound,
@@ -450,7 +576,11 @@ class DependencyBoxImpl extends DependencyBox {
   }
 
   @override
-  Future<T> getAsync<T extends Object>({Object? args, Object? key}) async {
+  Future<T> getAsync<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  }) async {
     if (DependencyBoxConfig.isDebug && _isDisposed) {
       DependencyBox.throwError(
         'Cannot resolve dependency from a disposed DependencyBox.',
@@ -459,12 +589,45 @@ class DependencyBoxImpl extends DependencyBox {
     }
 
     final id = BoxDependencyRef.from<T>(key);
-    if (_container[id] case final registration?) {
-      final instance = await registration.resolveAsync(this, (_) {}, args);
-      return instance as T;
+
+    if (scope == LookupScope.inherited || scope == LookupScope.local) {
+      if (_container[id] case final registration?) {
+        final instance = await registration.resolveAsync(this, (_) {}, args);
+        return instance as T;
+      }
+      if (scope == LookupScope.local) {
+        return DependencyBox.throwError(
+          'No local registration found for type $T${key != null ? ' with key "$key"' : ''}',
+          DependencyBoxError.notFound,
+        );
+      }
     }
+
+    if (scope == LookupScope.root) {
+      if (identical(this, root)) {
+        if (_container[id] case final registration?) {
+          final instance = await registration.resolveAsync(this, (_) {}, args);
+          return instance as T;
+        }
+      } else {
+        return root.getAsync<T>(args: args, key: key, scope: LookupScope.local);
+      }
+      return DependencyBox.throwError(
+        'No root registration found for type $T${key != null ? ' with key "$key"' : ''}',
+        DependencyBoxError.notFound,
+      );
+    }
+
     if (_parent case final parent?) {
-      return parent.getAsync<T>(args: args, key: key);
+      return parent.getAsync<T>(
+        args: args,
+        key: key,
+        scope: switch (scope) {
+          LookupScope.parent => LookupScope.local,
+          LookupScope.ancestors => LookupScope.inherited,
+          _ => LookupScope.inherited,
+        },
+      );
     }
 
     return DependencyBox.throwError(
@@ -474,57 +637,148 @@ class DependencyBoxImpl extends DependencyBox {
   }
 
   @override
-  T? tryGet<T extends Object>({Object? args, Object? key}) {
+  T? tryGet<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  }) {
     if (_isDisposed) {
       return null;
     }
 
     final id = BoxDependencyRef.from<T>(key);
-    if (_container[id] case final registration?) {
-      return registration.resolve(this, (_) {}, args) as T;
+
+    if (scope == LookupScope.inherited || scope == LookupScope.local) {
+      if (_container[id] case final registration?) {
+        return registration.resolve(this, (_) {}, args) as T;
+      }
+      if (scope == LookupScope.local) {
+        return null;
+      }
     }
+
+    if (scope == LookupScope.root) {
+      if (identical(this, root)) {
+        return _container[id]?.resolve(this, (_) {}, args) as T?;
+      }
+      return root.tryGet<T>(args: args, key: key, scope: LookupScope.local);
+    }
+
     if (_parent case final parent?) {
-      return parent.tryGet<T>(args: args, key: key);
+      return parent.tryGet<T>(
+        args: args,
+        key: key,
+        scope: switch (scope) {
+          LookupScope.parent => LookupScope.local,
+          LookupScope.ancestors => LookupScope.inherited,
+          _ => LookupScope.inherited,
+        },
+      );
     }
+
     return null;
   }
 
   @override
-  Future<T?> tryGetAsync<T extends Object>({Object? args, Object? key}) async {
+  Future<T?> tryGetAsync<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  }) async {
     if (_isDisposed) {
       return null;
     }
 
     final id = BoxDependencyRef.from<T>(key);
-    if (_container[id] case final registration?) {
-      final instance = await registration.resolveAsync(this, (_) {}, args);
-      return instance as T;
+
+    if (scope == LookupScope.inherited || scope == LookupScope.local) {
+      if (_container[id] case final registration?) {
+        final instance = await registration.resolveAsync(this, (_) {}, args);
+        return instance as T;
+      }
+      if (scope == LookupScope.local) {
+        return null;
+      }
     }
+
+    if (scope == LookupScope.root) {
+      if (identical(this, root)) {
+        if (_container[id] case final registration?) {
+          final instance = await registration.resolveAsync(this, (_) {}, args);
+          return instance as T;
+        }
+        return null;
+      }
+      return root.tryGetAsync<T>(
+        args: args,
+        key: key,
+        scope: LookupScope.local,
+      );
+    }
+
     if (_parent case final parent?) {
-      return parent.tryGetAsync<T>(args: args, key: key);
+      return parent.tryGetAsync<T>(
+        args: args,
+        key: key,
+        scope: switch (scope) {
+          LookupScope.parent => LookupScope.local,
+          LookupScope.ancestors => LookupScope.inherited,
+          _ => LookupScope.inherited,
+        },
+      );
     }
 
     return null;
   }
 
   @override
-  List<T> getAll<T extends Object>({Object? args, Object? key}) {
+  List<T> getAll<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  }) {
     if (_isDisposed) {
       return const [];
     }
 
     final id = BoxDependencyRef.from<T>(key);
     final local = <T>[];
-    if (_multiContainer?[id] case final list?) {
-      for (final r in list) {
-        local.add(r.resolve(this, (_) {}, args) as T);
+
+    if (scope == LookupScope.inherited || scope == LookupScope.local) {
+      if (_multiContainer?[id] case final list?) {
+        for (final r in list) {
+          local.add(r.resolve(this, (_) {}, args) as T);
+        }
+      } else if (_container[id] case final registration?) {
+        local.add(registration.resolve(this, (_) {}, args) as T);
       }
-    } else if (_container[id] case final registration?) {
-      local.add(registration.resolve(this, (_) {}, args) as T);
+      if (scope == LookupScope.local) {
+        return local;
+      }
+    }
+
+    if (scope == LookupScope.root) {
+      if (identical(this, root)) {
+        if (_multiContainer?[id] case final list?) {
+          return [for (final r in list) r.resolve(this, (_) {}, args) as T];
+        } else if (_container[id] case final registration?) {
+          return [registration.resolve(this, (_) {}, args) as T];
+        }
+        return const [];
+      }
+      return root.getAll<T>(args: args, key: key, scope: LookupScope.local);
     }
 
     if (_parent case final parent?) {
-      final parentList = parent.getAll<T>(args: args, key: key);
+      final parentList = parent.getAll<T>(
+        args: args,
+        key: key,
+        scope: switch (scope) {
+          LookupScope.parent => LookupScope.local,
+          LookupScope.ancestors => LookupScope.inherited,
+          _ => LookupScope.inherited,
+        },
+      );
       if (local.isEmpty) {
         return parentList;
       }
@@ -537,6 +791,7 @@ class DependencyBoxImpl extends DependencyBox {
   Future<List<T>> getAllAsync<T extends Object>({
     Object? args,
     Object? key,
+    LookupScope scope = LookupScope.inherited,
   }) async {
     if (_isDisposed) {
       return const [];
@@ -544,18 +799,53 @@ class DependencyBoxImpl extends DependencyBox {
 
     final id = BoxDependencyRef.from<T>(key);
     final local = <T>[];
-    if (_multiContainer?[id] case final list?) {
-      for (final r in list) {
-        final instance = await r.resolveAsync(this, (_) {}, args);
+
+    if (scope == LookupScope.inherited || scope == LookupScope.local) {
+      if (_multiContainer?[id] case final list?) {
+        for (final r in list) {
+          final instance = await r.resolveAsync(this, (_) {}, args);
+          local.add(instance as T);
+        }
+      } else if (_container[id] case final registration?) {
+        final instance = await registration.resolveAsync(this, (_) {}, args);
         local.add(instance as T);
       }
-    } else if (_container[id] case final registration?) {
-      final instance = await registration.resolveAsync(this, (_) {}, args);
-      local.add(instance as T);
+      if (scope == LookupScope.local) {
+        return local;
+      }
+    }
+
+    if (scope == LookupScope.root) {
+      if (identical(this, root)) {
+        if (_multiContainer?[id] case final list?) {
+          final result = <T>[];
+          for (final r in list) {
+            result.add(await r.resolveAsync(this, (_) {}, args) as T);
+          }
+          return result;
+        } else if (_container[id] case final registration?) {
+          final instance = await registration.resolveAsync(this, (_) {}, args);
+          return [instance as T];
+        }
+        return const [];
+      }
+      return root.getAllAsync<T>(
+        args: args,
+        key: key,
+        scope: LookupScope.local,
+      );
     }
 
     if (_parent case final parent?) {
-      final parentList = await parent.getAllAsync<T>(args: args, key: key);
+      final parentList = await parent.getAllAsync<T>(
+        args: args,
+        key: key,
+        scope: switch (scope) {
+          LookupScope.parent => LookupScope.local,
+          LookupScope.ancestors => LookupScope.inherited,
+          _ => LookupScope.inherited,
+        },
+      );
       if (local.isEmpty) {
         return parentList;
       }
@@ -565,49 +855,138 @@ class DependencyBoxImpl extends DependencyBox {
   }
 
   @override
-  bool contains<T extends Object>({Object? key}) {
+  bool contains<T extends Object>({
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  }) {
     if (_isDisposed) {
       return false;
     }
 
     final id = BoxDependencyRef.from<T>(key);
-    final existsLocally = _container.containsKey(id) ||
+    final existsLocally =
+        _container.containsKey(id) ||
         (_multiContainer?.containsKey(id) ?? false);
-    if (existsLocally) {
-      return true;
+
+    if (scope == LookupScope.inherited || scope == LookupScope.local) {
+      if (existsLocally) {
+        return true;
+      }
+      if (scope == LookupScope.local) {
+        return false;
+      }
     }
-    return _parent?.contains<T>(key: key) ?? false;
+
+    if (scope == LookupScope.root) {
+      if (identical(this, root)) {
+        return existsLocally;
+      }
+      return root.contains<T>(key: key, scope: LookupScope.local);
+    }
+
+    if (_parent case final parent?) {
+      return parent.contains<T>(
+        key: key,
+        scope: switch (scope) {
+          LookupScope.parent => LookupScope.local,
+          LookupScope.ancestors => LookupScope.inherited,
+          _ => LookupScope.inherited,
+        },
+      );
+    }
+
+    return false;
   }
 
   @override
-  Future<void> dispose() async {
-    _isDisposed = true;
-
-    if (_container.isEmpty && (_multiContainer?.isEmpty ?? true)) {
-      _multiTypes?.clear();
-      return;
+  Future<void> dispose() {
+    if (_disposalFuture != null) {
+      return _disposalFuture!;
     }
+    if (_isDisposed) {
+      return Future<void>.value();
+    }
+    try {
+      final result = _disposeInternal();
+      if (result is Future<void>) {
+        return _disposalFuture = result;
+      }
+      return Future<void>.value();
+    } catch (e, st) {
+      return Future<void>.error(e, st);
+    }
+  }
 
-    final toDispose = <DependencyBoxRegistration>{
-      ..._container.values,
-      if (_multiContainer case final multiContainer?)
-        for (final list in multiContainer.values) ...list,
-    };
-
+  FutureOr<void> _disposeInternal() {
+    _isDisposed = true;
+    List<Future<void>>? pendingFutures;
     Object? firstError;
     StackTrace? firstStackTrace;
 
-    final disposedInstances = Set<Object>.identity();
-    for (final reg in toDispose) {
-      final inst = reg.currentInstance;
-      if (inst != null && !disposedInstances.add(inst)) {
-        continue;
+    // 1. Cascade disposal downward to all tracked children first
+    if (_children case final children? when children.isNotEmpty) {
+      _children = null;
+      for (final child in children) {
+        try {
+          final res = child._disposeInternal();
+          if (res is Future<void>) {
+            (pendingFutures ??= []).add(res);
+          }
+        } catch (e, st) {
+          firstError ??= e;
+          firstStackTrace ??= st;
+        }
       }
-      try {
-        await reg.dispose();
-      } catch (e, st) {
-        firstError ??= e;
-        firstStackTrace ??= st;
+    } else {
+      _children = null;
+    }
+
+    // 2. Detach self from parent if this container is a child
+    try {
+      _parent?._detachChild(this);
+    } catch (e, st) {
+      firstError ??= e;
+      firstStackTrace ??= st;
+    }
+
+    // 3. Dispose local registrations
+    if (_container.isNotEmpty || (_multiContainer?.isNotEmpty ?? false)) {
+      final disposedInstances = Set<Object>.identity();
+
+      for (final reg in _container.values) {
+        final inst = reg.currentInstance;
+        if (inst != null && !disposedInstances.add(inst)) {
+          continue;
+        }
+        try {
+          final res = reg.dispose();
+          if (res is Future<void>) {
+            (pendingFutures ??= []).add(res);
+          }
+        } catch (e, st) {
+          firstError ??= e;
+          firstStackTrace ??= st;
+        }
+      }
+
+      if (_multiContainer case final multiContainer?) {
+        for (final list in multiContainer.values) {
+          for (final reg in list) {
+            final inst = reg.currentInstance;
+            if (inst != null && !disposedInstances.add(inst)) {
+              continue;
+            }
+            try {
+              final res = reg.dispose();
+              if (res is Future<void>) {
+                (pendingFutures ??= []).add(res);
+              }
+            } catch (e, st) {
+              firstError ??= e;
+              firstStackTrace ??= st;
+            }
+          }
+        }
       }
     }
 
@@ -615,8 +994,41 @@ class DependencyBoxImpl extends DependencyBox {
     _multiContainer?.clear();
     _multiTypes?.clear();
 
+    if (pendingFutures != null) {
+      return _awaitPendingDisposals(
+        pendingFutures,
+        firstError,
+        firstStackTrace,
+      );
+    }
+
     if (firstError != null) {
       Error.throwWithStackTrace(firstError, firstStackTrace!);
+    }
+    return null;
+  }
+
+  Future<void> _awaitPendingDisposals(
+    List<Future<void>> pending,
+    Object? initialError,
+    StackTrace? initialStackTrace,
+  ) async {
+    Object? firstError = initialError;
+    StackTrace? firstStackTrace = initialStackTrace;
+    try {
+      for (final f in pending) {
+        try {
+          await f;
+        } catch (e, st) {
+          firstError ??= e;
+          firstStackTrace ??= st;
+        }
+      }
+      if (firstError != null) {
+        Error.throwWithStackTrace(firstError, firstStackTrace!);
+      }
+    } finally {
+      _disposalFuture = null;
     }
   }
 
@@ -658,16 +1070,14 @@ class DependencyBoxImpl extends DependencyBox {
 
     final inheritedEntries = <_InheritedEntry>[];
     if (includeParent && _parent != null) {
-      final seenKeys = <Object>{
-        ..._container.keys,
-        ...?_multiContainer?.keys,
-      };
+      final seenKeys = <Object>{..._container.keys, ...?_multiContainer?.keys};
       final inheritedKeys = <Object>{};
 
       var current = _parent;
       while (current != null) {
-        final parentScope =
-            current._name != null ? "'${current._name}'" : '<unnamed>';
+        final parentScope = current._name != null
+            ? "'${current._name}'"
+            : '<unnamed>';
 
         for (final entry in current._container.entries) {
           if (current._multiContainer == null ||
@@ -693,8 +1103,9 @@ class DependencyBoxImpl extends DependencyBox {
                   id: entry.key,
                   sourceScope: parentScope,
                   multiList: entry.value,
-                  multiResolution:
-                      current._findMultiResolution(_typeFromId(entry.key)),
+                  multiResolution: current._findMultiResolution(
+                    _typeFromId(entry.key),
+                  ),
                   isShadowed: seenKeys.contains(entry.key),
                 ),
               );
@@ -741,8 +1152,10 @@ class DependencyBoxImpl extends DependencyBox {
           for (var i = 0; i < list.length; i++) {
             final reg = list[i];
             final isActive = identical(_container[entry.key], reg);
-            final itemDetails =
-                _formatRegistration(reg, isActiveInMulti: isActive);
+            final itemDetails = _formatRegistration(
+              reg,
+              isActiveInMulti: isActive,
+            );
             subLines.add('[$i] $itemDetails');
           }
           lines.add(
@@ -765,7 +1178,8 @@ class DependencyBoxImpl extends DependencyBox {
         for (final entry in inheritedEntries) {
           final idLabel = _formatId(entry.id);
           if (entry.isShadowed) {
-            final kind = entry.singleReg?.kind ??
+            final kind =
+                entry.singleReg?.kind ??
                 'Multi(${entry.multiList?.length ?? 0} items)';
             lines.add(
               _DiagnosticLine(
@@ -841,24 +1255,24 @@ class DependencyBoxImpl extends DependencyBox {
   }
 
   static ({Type type, Object? key}) _extractId(Object id) => switch (id) {
-        BoxDependencyRef(:final type, :final key) => (type: type, key: key),
-        Type type => (type: type, key: null),
-        _ => (type: id.runtimeType, key: null),
-      };
+    BoxDependencyRef(:final type, :final key) => (type: type, key: key),
+    Type type => (type: type, key: null),
+    _ => (type: id.runtimeType, key: null),
+  };
 
   static String _formatId(Object id) => switch (_extractId(id)) {
-        (type: final type, key: final Object key) =>
-          '$type (key: ${key is String ? "'$key'" : key})',
-        (type: final type, key: null) => '$type',
-      };
+    (type: final type, key: final Object key) =>
+      '$type (key: ${key is String ? "'$key'" : key})',
+    (type: final type, key: null) => '$type',
+  };
 
   static Type _typeFromId(Object id) => _extractId(id).type;
 
   static String _formatInstance(Object? instance) => switch (instance) {
-        null => 'null',
-        String s => '"$s"',
-        _ => _safeToString(instance),
-      };
+    null => 'null',
+    String s => '"$s"',
+    _ => _safeToString(instance),
+  };
 
   static String _safeToString(Object instance) {
     try {
@@ -880,23 +1294,23 @@ class DependencyBoxImpl extends DependencyBox {
       'Singleton' =>
         'Singleton (instance: ${_formatInstance(reg.currentInstance)})',
       'LazySingleton' => switch ((reg.isResolving, reg.currentInstance)) {
-          (true, _) => 'LazySingleton [resolving...]',
-          (false, final inst?) =>
-            'LazySingleton [initialized: ${_formatInstance(inst)}]',
-          _ => 'LazySingleton [uninitialized]',
-        },
+        (true, _) => 'LazySingleton [resolving...]',
+        (false, final inst?) =>
+          'LazySingleton [initialized: ${_formatInstance(inst)}]',
+        _ => 'LazySingleton [uninitialized]',
+      },
       'AsyncSingleton' => switch ((reg.isResolving, reg.currentInstance)) {
-          (true, _) => 'AsyncSingleton [resolving...]',
-          (false, final inst?) =>
-            'AsyncSingleton [initialized: ${_formatInstance(inst)}]',
-          _ => 'AsyncSingleton [uninitialized]',
-        },
+        (true, _) => 'AsyncSingleton [resolving...]',
+        (false, final inst?) =>
+          'AsyncSingleton [initialized: ${_formatInstance(inst)}]',
+        _ => 'AsyncSingleton [uninitialized]',
+      },
       'CachedFactory' => switch ((reg.isResolving, reg.currentInstance)) {
-          (true, _) => 'CachedFactory [resolving...]',
-          (false, final inst?) =>
-            'CachedFactory [cached: ${_formatInstance(inst)}]',
-          _ => 'CachedFactory [uninitialized/collected]',
-        },
+        (true, _) => 'CachedFactory [resolving...]',
+        (false, final inst?) =>
+          'CachedFactory [cached: ${_formatInstance(inst)}]',
+        _ => 'CachedFactory [uninitialized/collected]',
+      },
       final otherKind => otherKind,
     };
     return '$details$activeTag';
@@ -907,20 +1321,14 @@ final class _DiagnosticSection {
   final String title;
   final List<_DiagnosticLine> lines;
 
-  const _DiagnosticSection({
-    required this.title,
-    this.lines = const [],
-  });
+  const _DiagnosticSection({required this.title, this.lines = const []});
 }
 
 final class _DiagnosticLine {
   final String text;
   final List<String> subLines;
 
-  const _DiagnosticLine(
-    this.text, {
-    this.subLines = const [],
-  });
+  const _DiagnosticLine(this.text, {this.subLines = const []});
 }
 
 final class _InheritedEntry {

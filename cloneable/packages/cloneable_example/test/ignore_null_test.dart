@@ -20,9 +20,7 @@ void main() {
   });
 
   group('Class-level ignoreNull', () {
-    test(
-        'passing null to nullable fields on class-level ignoreNull preserves values',
-        () {
+    test('passing null to nullable fields on class-level ignoreNull preserves values', () {
       const original = ClassLevelIgnoreNullModel(
         name: 'Ahmed',
         bio: 'Developer',

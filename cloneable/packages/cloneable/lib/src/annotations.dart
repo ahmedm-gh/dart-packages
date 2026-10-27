@@ -20,7 +20,7 @@ enum CloneableStrategy {
   /// Generates a Dart Mixin.
   /// Requires mixing in `_$ClassNameCloneable` or `_$ClassNameCopyWith`
   /// (or a prefix-customized mixin) in the class declaration (only the written one is generated).
-  mixin;
+  mixin,
 }
 
 /// The sentinel strategy used to distinguish omitted arguments from explicit `null`s
@@ -40,7 +40,7 @@ enum CloneableSentinel {
   private,
 
   /// Always references the canonical [$undefined] constant from `package:cloneable`.
-  package;
+  package,
 }
 
 /// The resolution strategy when fields are specified in both [@Cloneable(fields: ...)]
@@ -56,7 +56,7 @@ enum CloneableFieldsConflict {
   inClass,
 
   /// Prefers and uses only the fields defined in the [@Cloneable(fields: ...)] annotation.
-  inAnnotation;
+  inAnnotation,
 }
 
 /// The destination output format for generated code.
@@ -103,7 +103,7 @@ enum CloneableCleanup {
   ///
   /// This action is **only active** when [sentinel] is set to [CloneableSentinel.private],
   /// ensuring the generated code is 100% self-contained and free of runtime dependencies.
-  remove;
+  remove,
 }
 
 /// The activation state and override precedence for code generation.
@@ -137,10 +137,7 @@ class CloneableAffix {
   final String? suffix;
 
   /// Creates a new [CloneableAffix] with optional [prefix] and [suffix].
-  const CloneableAffix({
-    this.prefix,
-    this.suffix,
-  });
+  const CloneableAffix({this.prefix, this.suffix});
 
   @override
   bool operator ==(Object other) =>
@@ -179,10 +176,7 @@ class CloneableNaming {
   );
 
   /// The default affix for generated files (`$className.cloneable.g.dart`).
-  static const defaultFile = CloneableAffix(
-    prefix: '',
-    suffix: '.cloneable.g',
-  );
+  static const defaultFile = CloneableAffix(prefix: '', suffix: '.cloneable.g');
 
   /// The default target directory path for generated files (`null`, indicating the same folder level).
   static const String? defaultDirectory = null;
@@ -261,17 +255,17 @@ class CloneableNaming {
 
   @override
   int get hashCode => Object.hash(
-        method,
-        sentinel,
-        mixin,
-        extension,
-        file,
-        directory,
-        part,
-        standalone,
-        inLibrary,
-        inClass,
-      );
+    method,
+    sentinel,
+    mixin,
+    extension,
+    file,
+    directory,
+    part,
+    standalone,
+    inLibrary,
+    inClass,
+  );
 
   @override
   String toString() =>
@@ -464,8 +458,8 @@ class Cloneable {
     this.cloneableFieldsGetter,
     this.fieldsConflict,
     this.naming,
-  })  : output = CloneableOutput.inClass,
-        strategy = null;
+  }) : output = CloneableOutput.inClass,
+       strategy = null;
 
   /// Creates a [Cloneable] annotation configured for in-library code generation.
   ///
@@ -514,8 +508,8 @@ class Cloneable {
     this.cloneableFieldsGetter,
     this.fieldsConflict,
     this.naming,
-  })  : output = CloneableOutput.standalone,
-        strategy = CloneableStrategy.extension;
+  }) : output = CloneableOutput.standalone,
+       strategy = CloneableStrategy.extension;
 
   /// Programmatic setter to update default values at runtime (e.g. in test suites).
   static void setDefaults({
@@ -576,8 +570,8 @@ class CloneableDefaults extends Cloneable {
       super.activeness ??
       (super.active != null
           ? (super.active!
-              ? CloneableActiveness.active
-              : CloneableActiveness.inactive)
+                ? CloneableActiveness.active
+                : CloneableActiveness.inactive)
           : CloneableActiveness.active);
 
   /// Whether code generation is active by default.
@@ -637,17 +631,17 @@ class CloneableDefaults extends Cloneable {
 
   @override
   int get hashCode => Object.hash(
-        output,
-        strategy,
-        sentinel,
-        deepCopyCollections,
-        ignoreNull,
-        active,
-        activeness,
-        cleanup,
-        fieldsConflict,
-        naming,
-      );
+    output,
+    strategy,
+    sentinel,
+    deepCopyCollections,
+    ignoreNull,
+    active,
+    activeness,
+    cleanup,
+    fieldsConflict,
+    naming,
+  );
 
   @override
   String toString() =>

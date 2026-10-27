@@ -10,19 +10,11 @@ class User {
   final int age;
   final String? nickname;
 
-  const User({
-    required this.name,
-    required this.age,
-    this.nickname,
-  });
+  const User({required this.name, required this.age, this.nickname});
 }
 
 void main() {
-  const user = User(
-    name: 'Ahmed',
-    age: 25,
-    nickname: 'Dev',
-  );
+  const user = User(name: 'Ahmed', age: 25, nickname: 'Dev');
 
   print('Original user: ${user.name}, age ${user.age}, nick: ${user.nickname}');
   print('Sentinel for explicit null support: ${$undefined}');

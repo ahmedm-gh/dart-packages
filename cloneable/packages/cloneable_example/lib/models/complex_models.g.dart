@@ -5,7 +5,7 @@ part of 'complex_models.dart';
 /// Generated cloneable mixin for [Address].
 mixin _$AddressCloneable {
   Address Function({String street, String city, String? zipCode})
-      get copyWith => _copyWith;
+  get copyWith => _copyWith;
 
   Address _copyWith({
     Object? street = $undefined,
@@ -16,8 +16,9 @@ mixin _$AddressCloneable {
     return Address(
       street: identical(street, $undefined) ? self.street : street as String,
       city: identical(city, $undefined) ? self.city : city as String,
-      zipCode:
-          identical(zipCode, $undefined) ? self.zipCode : zipCode as String?,
+      zipCode: identical(zipCode, $undefined)
+          ? self.zipCode
+          : zipCode as String?,
     );
   }
 }
@@ -31,7 +32,8 @@ mixin _$EmployeeCloneable {
     Address? address,
     List<String> tags,
     Map<String, dynamic>? metadata,
-  }) get copyWith => _copyWith;
+  })
+  get copyWith => _copyWith;
 
   Employee _copyWith({
     Object? id = $undefined,
@@ -46,8 +48,9 @@ mixin _$EmployeeCloneable {
       id: identical(id, $undefined) ? self.id : id as String,
       name: identical(name, $undefined) ? self.name : name as String,
       role: identical(role, $undefined) ? self.role : role as Role,
-      address:
-          identical(address, $undefined) ? self.address : address as Address?,
+      address: identical(address, $undefined)
+          ? self.address
+          : address as Address?,
       tags: identical(tags, $undefined) ? self.tags : tags as List<String>,
       metadata: identical(metadata, $undefined)
           ? self.metadata

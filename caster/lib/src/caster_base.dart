@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+
 import 'exceptions.dart';
 
 /// The central namespace for [caster] configuration, custom type defaults,
@@ -190,11 +191,7 @@ T resolveFallbackOrDefault<T>({
 /// 6. Otherwise, throws a [CasterTypeException].
 ///
 /// Diagnostic logs are output to [developer.log] when [Caster.debug] is `true`.
-T safeCast<T>(
-  Object? input, {
-  T? fallback,
-  bool useDefaults = true,
-}) {
+T safeCast<T>(Object? input, {T? fallback, bool useDefaults = true}) {
   if (isInvalidType<T>()) {
     throw CasterException.argument(
       'Type parameter T must be specified, got $T.',

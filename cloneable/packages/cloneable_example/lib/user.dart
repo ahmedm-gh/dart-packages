@@ -3,11 +3,7 @@ class User {
   final int age;
   final String? nickname;
 
-  const User({
-    required this.name,
-    required this.age,
-    this.nickname,
-  });
+  const User({required this.name, required this.age, this.nickname});
 }
 
 const _$undefined = Object();

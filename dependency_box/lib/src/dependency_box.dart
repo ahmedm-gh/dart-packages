@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'box_config.dart';
 import 'dependency_box_impl.dart';
+import 'lookup_scope.dart';
 import 'multi_registration.dart';
 
 /// Runtime error types for [DependencyBox].
@@ -49,8 +50,8 @@ abstract interface class DependencyDisposable {
 
 /// Represents a modular collection of dependency registrations.
 abstract interface class DependencyModule {
-  /// Registers dependencies onto the provided [box].
-  void register(DependencyBox box);
+  /// Registers dependencies onto the provided [dbox].
+  void register(DependencyBox dbox);
 }
 
 /// An inversion-of-control container managing dependency registrations,
@@ -77,10 +78,8 @@ abstract class DependencyBox {
   factory DependencyBox.main({String? name}) = DependencyBoxImpl;
 
   /// Creates a new child container with the specified [parent].
-  factory DependencyBox.child({
-    required DependencyBox parent,
-    String? name,
-  }) = DependencyBoxImpl.child;
+  factory DependencyBox.child({required DependencyBox parent, String? name}) =
+      DependencyBoxImpl.child;
 
   /// The optional name identifying this container.
   String? get name;
@@ -91,8 +90,30 @@ abstract class DependencyBox {
   /// The root container in this hierarchy, or `this` if this is already the root.
   DependencyBox get root;
 
+  /// The active direct child containers of this container.
+  ///
+  /// Returns an empty iterable if this container has no active direct children.
+  Iterable<DependencyBox> get children;
+
+  /// The 0-based depth level of this container in the hierarchy.
+  ///
+  /// Root containers have a depth of `0`. Each subsequent child scope increments
+  /// depth by `1`.
+  int get depth;
+
   /// Creates a scoped child container that inherits registrations from this container.
   DependencyBox createChild({String? name});
+
+  /// Returns the specific [DependencyBox] in the hierarchy that holds the registration
+  /// for type [T], optionally qualified by [key], or `null` if not registered.
+  DependencyBox? findOwner<T extends Object>({
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  });
+
+  /// Returns `true` if type [T] is registered locally in this container AND
+  /// also exists in one of its ancestor containers.
+  bool isShadowed<T extends Object>({Object? key});
 
   /// Installs a modular collection of registrations via [module].
   void install(DependencyModule module) {
@@ -108,7 +129,7 @@ abstract class DependencyBox {
 
   /// Configures multiple registrations for the specified [types] using [MultiRegistration]
   /// value entities.
-  void allowMultiple(Iterable<MultiRegistration> types);
+  void allowMultiAll(Iterable<MultiRegistration> types);
 
   /// Enables multiple registrations for type [T] with an optional [resolution] strategy.
   void allowMulti<T extends Object>({
@@ -126,11 +147,8 @@ abstract class DependencyBox {
 
   /// Registers multiple [instances] of type [T], optionally qualified by [key].
   ///
-  /// Requires type [T] to be configured beforehand via [allowMultiple].
-  void addSingletons<T extends Object>(
-    Iterable<T> instances, {
-    Object? key,
-  });
+  /// Requires type [T] to be configured beforehand via [allowMultiAll].
+  void addSingletons<T extends Object>(Iterable<T> instances, {Object? key});
 
   /// Registers a lazy singleton of type [T] constructed via [factory] on first access,
   /// optionally qualified by [key].
@@ -235,33 +253,68 @@ abstract class DependencyBox {
 
   /// Resolves the registered instance of type [T], optionally qualified by [key].
   ///
-  /// For parameterized factories, provide [args]. Throws [StateError] if type [T]
-  /// is not registered.
-  T get<T extends Object>({Object? args, Object? key});
+  /// For parameterized factories, provide [args]. Provide [scope] to customize
+  /// the hierarchy search boundary (defaults to [LookupScope.inherited]).
+  /// Throws [StateError] if type [T] is not registered within the specified scope.
+  T get<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  });
 
-  /// Resolves the registered instance of type [T], or returns `null` if not registered.
-  T? tryGet<T extends Object>({Object? args, Object? key});
+  /// Resolves the registered instance of type [T], or returns `null` if not registered
+  /// within the specified [scope].
+  T? tryGet<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  });
 
   /// Resolves the registered instance of type [T] asynchronously, optionally qualified by [key].
   ///
   /// For parameterized factories, provide [args]. If type [T] is registered as a synchronous
   /// dependency, it is resolved immediately and returned as a completed [Future].
-  /// Throws [StateError] if type [T] is not registered.
-  Future<T> getAsync<T extends Object>({Object? args, Object? key});
+  /// Provide [scope] to customize the hierarchy search boundary (defaults to [LookupScope.inherited]).
+  /// Throws [StateError] if type [T] is not registered within the specified scope.
+  Future<T> getAsync<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  });
 
-  /// Resolves the registered instance of type [T] asynchronously, or returns `null` if not registered.
-  Future<T?> tryGetAsync<T extends Object>({Object? args, Object? key});
+  /// Resolves the registered instance of type [T] asynchronously, or returns `null` if not registered
+  /// within the specified [scope].
+  Future<T?> tryGetAsync<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  });
 
   /// Returns a list of all registered instances of type [T], optionally qualified by [key].
   ///
-  /// Returns an empty list if type [T] is not registered.
-  List<T> getAll<T extends Object>({Object? args, Object? key});
+  /// Provide [scope] to customize the hierarchy search boundary (defaults to [LookupScope.inherited]).
+  /// Returns an empty list if type [T] is not registered within the specified scope.
+  List<T> getAll<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  });
 
   /// Returns a list of all registered instances of type [T] asynchronously, optionally qualified by [key].
-  Future<List<T>> getAllAsync<T extends Object>({Object? args, Object? key});
+  ///
+  /// Provide [scope] to customize the hierarchy search boundary (defaults to [LookupScope.inherited]).
+  Future<List<T>> getAllAsync<T extends Object>({
+    Object? args,
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  });
 
-  /// Returns `true` if an instance or factory of type [T] is registered with the optional [key].
-  bool contains<T extends Object>({Object? key});
+  /// Returns `true` if an instance or factory of type [T] is registered with the optional [key]
+  /// within the specified [scope].
+  bool contains<T extends Object>({
+    Object? key,
+    LookupScope scope = LookupScope.inherited,
+  });
 
   /// Returns all registration keys present in this container (including parent registrations).
   Iterable<Object> get registeredKeys;

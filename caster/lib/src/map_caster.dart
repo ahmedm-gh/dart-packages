@@ -10,11 +10,7 @@ extension MapCaster<K, V> on Map<K, V> {
   /// or registered custom defaults are used.
   ///
   /// Throws a [CasterArgumentException] if [T] is unconstrained (`Object`, `Object?`, or `dynamic`).
-  T safeCast<T>(
-    K key, {
-    T? fallback,
-    bool useDefaults = true,
-  }) {
+  T safeCast<T>(K key, {T? fallback, bool useDefaults = true}) {
     if (caster.isInvalidType<T>()) {
       throw CasterException.argument(
         'Type parameter T must be specified, got $T.',
@@ -70,11 +66,7 @@ extension MapCaster<K, V> on Map<K, V> {
   /// or the type default (via [resolveFallbackOrDefault]).
   ///
   /// Throws a [CasterArgumentException] if [T] is unconstrained (`Object`, `Object?`, or `dynamic`).
-  T safeCastFirst<T>(
-    Iterable<K> keys, {
-    T? fallback,
-    bool useDefaults = true,
-  }) {
+  T safeCastFirst<T>(Iterable<K> keys, {T? fallback, bool useDefaults = true}) {
     if (caster.isInvalidType<T>()) {
       throw CasterException.argument(
         'Type parameter T must be specified, got $T.',
