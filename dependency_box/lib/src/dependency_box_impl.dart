@@ -3,6 +3,8 @@ import 'dart:async';
 import 'box_config.dart';
 import 'dependency_box.dart';
 import 'dependency_ref.dart';
+import 'inspection/container_inspector.dart';
+import 'inspection/inspection_models.dart';
 import 'lookup_scope.dart';
 import 'multi_registration.dart';
 import 'registration.dart';
@@ -1239,6 +1241,26 @@ class DependencyBoxImpl extends DependencyBox {
     final result = buffer.toString().trimRight();
     (printer ?? print)(result);
     return result;
+  }
+
+  @override
+  ContainerSnapshot getSnapshot({bool fromRoot = true}) {
+    return ContainerInspector.capture(this, fromRoot: fromRoot);
+  }
+
+  /// Internal read-only view of direct registrations for inspection tooling.
+  Map<Object, DependencyBoxRegistration> inspectDirectContainer() {
+    return Map.unmodifiable(_container);
+  }
+
+  /// Internal read-only view of direct multi-registrations for inspection tooling.
+  Map<Object, List<DependencyBoxRegistration>>? inspectMultiContainer() {
+    return _multiContainer != null ? Map.unmodifiable(_multiContainer!) : null;
+  }
+
+  /// Internal resolution strategy lookup for inspection tooling.
+  MultiResolution? inspectMultiResolution(Type type) {
+    return _findMultiResolution(type);
   }
 
   String _formatHierarchy() {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- **Flutter DevTools Extension Integration**: Added official DevTools inspection support via `package:dependency_box/devtools.dart` and companion package `dependency_box_devtools`. Enables interactive inspection of registrations, scopes, dependency graphs, and health diagnostics with verified zero runtime overhead when DevTools is inactive.
+- **On-Demand Inspection Engine**: Added `getSnapshot()` and `ContainerInspector` to capture immutable serializable container state (`ContainerSnapshot`, `ScopeSnapshot`, `RegistrationSnapshot`, `DiagnosticNotice`) without instantiating lazy singletons or invoking factories.
+- **VM Service Extensions**: Added `DependencyBoxDevTools.register()` to expose VM Service RPC endpoints (`ext.dependencyBox.getSnapshot`, `ext.dependencyBox.getScopes`, `ext.dependencyBox.getRegistrations`, `ext.dependencyBox.ping`) with automatic weak-reference container tracking.
+- **Package Archive Optimization**: Streamlined `.pubignore` to exclude development tools, internal benchmarks, and offline docs, keeping published archive size minimal (<35 KB).
+
 ## 1.1.0
 
 - **Hierarchy Boundary Resolution (`LookupScope`)**: Introduced the `LookupScope` enum (`inherited`, `local`, `parent`, `ancestors`, `root`) across `get()`, `tryGet()`, `getAsync()`, `tryGetAsync()`, `contains()`, `getAll()`, and `getAllAsync()`. Enables pinpoint resolution boundaries with zero heap allocation overhead, preserving sub-15ns hot paths.

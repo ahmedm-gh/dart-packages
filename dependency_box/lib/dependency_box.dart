@@ -5,5 +5,6 @@ library;
 export 'src/box_config.dart';
 export 'src/dependency_box.dart';
 export 'src/dependency_ref.dart';
+export 'src/inspection/inspection_models.dart';
 export 'src/lookup_scope.dart';
 export 'src/multi_registration.dart';

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'box_config.dart';
 import 'dependency_box_impl.dart';
+import 'inspection/inspection_models.dart';
 import 'lookup_scope.dart';
 import 'multi_registration.dart';
 
@@ -345,4 +346,10 @@ abstract class DependencyBox {
     void Function(Object? object)? printer,
     bool includeParent = true,
   });
+
+  /// Captures an on-demand, read-only [ContainerSnapshot] of this container hierarchy.
+  ///
+  /// Set [fromRoot] to `true` (default) to capture the entire hierarchy from
+  /// the root container, or `false` to capture only the subtree starting at this scope.
+  ContainerSnapshot getSnapshot({bool fromRoot = true});
 }

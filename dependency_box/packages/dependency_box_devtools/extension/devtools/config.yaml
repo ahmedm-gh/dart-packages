@@ -1,0 +1,6 @@
+name: dependency_box_devtools
+version: 1.0.0
+issueTracker: https://github.com/ahmedm-gh/dart-packages/issues
+materialIconCodePoint: '0xe318'
+requiresConnection: true
+

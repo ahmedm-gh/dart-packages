@@ -1,0 +1,36 @@
+name: dependency_box_devtools
+description: Official Flutter DevTools extension for dependency_box to inspect registrations, scopes, and dependency graphs
+version: 1.0.0
+repository: https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/packages/dependency_box_devtools
+issue_tracker: https://github.com/ahmedm-gh/dart-packages/issues
+documentation: https://github.com/ahmedm-gh/dart-packages/tree/main/dependency_box/packages/dependency_box_devtools
+
+funding:
+  - https://github.com/sponsors/ahmedm-gh
+  - https://buymeacoffee.com/ahmeds1
+
+topics:
+  - devtools
+  - devtools-extension
+  - dependency-injection
+  - ioc
+  - container
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  devtools_extensions: ^0.5.1
+  vm_service: ">=13.0.0 <16.0.0"
+  dependency_box: ^1.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

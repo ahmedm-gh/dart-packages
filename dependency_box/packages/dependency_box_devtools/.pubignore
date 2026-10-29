@@ -1,0 +1,25 @@
+# Excluded from pub.dev package archive
+
+# Internal developer test suites and build scaffolding
+test/
+web/
+
+# Flutter build outputs and workspace overrides
+/build/
+!extension/devtools/build/**
+coverage/
+.dart_tool/
+pubspec.lock
+pubspec_overrides.yaml
+.flutter-plugins-dependencies
+
+# IDE and OS artifacts
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.exe
+*.log
+*.tmp
+*.bak

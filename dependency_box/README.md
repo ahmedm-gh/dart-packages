@@ -389,6 +389,47 @@ dbox.allowMultiAll({
 
 ---
 
+## 🛠️ Flutter DevTools Extension (Beta)
+
+`dependency_box` provides an official, zero-overhead Flutter DevTools extension via the companion package [`dependency_box_devtools`](https://pub.dev/packages/dependency_box_devtools).
+
+- **Registrations Table**: Search and filter registrations by type, qualifying key, lifecycle kind, and heap allocation state.
+- **Scope Hierarchy Tree**: Inspect container nesting depths, direct registration counts, and disposal state.
+- **Dependency Graph Viewer**: Interactive pan-and-zoom visual cluster view mapping services to their owning scopes.
+- **Diagnostics & Health Audits**: Automatic detection of shadowed bindings, disposed scope leaks, and multi-registration strategies.
+- **Zero Runtime Overhead**: On-demand snapshot model. Absolutely zero work or allocation is performed on hot resolution paths when DevTools is inactive.
+
+### Quick Start
+
+Add `dependency_box_devtools` to your `dev_dependencies`:
+
+```yaml
+dev_dependencies:
+  dependency_box_devtools: ^1.0.0
+```
+
+Register your container in your app's startup code:
+
+```dart
+import 'package:dependency_box/dependency_box.dart';
+import 'package:dependency_box/devtools.dart';
+
+void main() {
+  final box = DependencyBox.main(name: 'AppRoot');
+  
+  // Register dependencies...
+  
+  // Register with DevTools
+  DependencyBoxDevTools.register(box);
+  
+  runApp(const MyApp());
+}
+```
+
+For complete architecture details and benchmark overhead analysis, see [doc/devtools.md](doc/devtools.md).
+
+---
+
 ## Supporting & Contributing
 
 If you find `dependency_box` helpful, here are several ways you can support the project:

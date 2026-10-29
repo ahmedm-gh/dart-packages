@@ -1,16 +1,36 @@
 # Excluded from pub.dev package archive
 
+# Subpackages (published independently)
+packages/
+
 # Internal benchmarks, test suites, and tooling
+
 tool/
-
-# Detailed benchmark report (hosted on GitHub)
-doc/benchmarks.md
-doc/api/
-
-# Comprehensive test suite (hosted on GitHub)
+tools/
+benchmark/
+benchmarks/
 test/
 
-# Standard pub/dart artifacts
+# Documentation and architecture notes (hosted on GitHub)
+
+doc/
+
+# Temporary, build, and coverage artifacts
+
+build/
+coverage/
 .dart_tool/
 pubspec.lock
+pubspec_overrides.yaml
+
+# IDE and OS artifacts
+
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
 *.exe
+*.log
+*.tmp
+*.bak
