@@ -166,6 +166,11 @@ await featureDbox.dispose();
 
 Child containers resolve dependencies locally first, then seamlessly delegate missing lookups up the ancestor chain to the root container. Sibling child scopes remain completely isolated from each other:
 
+![dependency_box scope hierarchy and LookupScope boundaries](doc/scope_hierarchy.svg)
+
+<details>
+<summary>ASCII scope hierarchy representation</summary>
+
 ```text
 dbox (DependencyBox.main) [depth: 0]
 ├── GlobalConfig                          (Singleton)
@@ -189,6 +194,8 @@ dbox (DependencyBox.main) [depth: 0]
         ▲
         └── Isolated from sibling featureDbox; resolves inherited from dbox
 ```
+
+</details>
 
 #### Hierarchy Resolution Boundaries (`LookupScope`)
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+- **Scope Hierarchy & Resolution Visuals**: Added detailed scope hierarchy and resolution boundaries diagram (`doc/scope_hierarchy.svg`) in `README.md`, visualizing upward resolution delegation, sibling scope isolation, and `LookupScope` boundaries.
+- **Documentation**: Harmonized visual diagram styling and corner radii across documentation assets.
+
 ## 1.2.0
 
 - **Flutter DevTools Extension Integration**: Added official DevTools inspection support via `package:dependency_box/devtools.dart` and companion package `dependency_box_devtools`. Enables interactive inspection of registrations, scopes, dependency graphs, and health diagnostics with verified zero runtime overhead when DevTools is inactive.
